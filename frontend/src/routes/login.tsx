@@ -1,4 +1,5 @@
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons"
+import { FcGoogle } from "react-icons/fc" // You'll need to install react-icons
 import {
   Button,
   Container,
@@ -39,6 +40,10 @@ export const Route = createFileRoute("/login")({
 function Login() {
   const [show, setShow] = useBoolean()
   const { loginMutation, error, resetError } = useAuth()
+  const handleGoogleLogin = () => {
+    // Redirect to your backend's Google OAuth endpoint
+    window.location.href = `${import.meta.env.VITE_API_URL}/api/v1/auth/google/login`
+  }
   const {
     register,
     handleSubmit,
@@ -84,6 +89,22 @@ function Login() {
           alignSelf="center"
           mb={4}
         />
+        
+        {/* Add Google login button */}
+        <Button
+          w="100%"
+          variant="outline"
+          leftIcon={<FcGoogle />}
+          onClick={handleGoogleLogin}
+        >
+          Continue with Google
+        </Button>
+
+        {/* Add a divider */}
+        <Text textAlign="center" color="gray.500">
+          or
+        </Text>
+
         <FormControl id="username" isInvalid={!!errors.username || !!error}>
           <Input
             id="username"
@@ -138,6 +159,7 @@ function Login() {
             Sign up
           </Link>
         </Text>
+
       </Container>
     </>
   )

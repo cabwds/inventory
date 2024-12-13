@@ -17,3 +17,12 @@ sqlmodel<1.0.0
 tenacity<9.0.0
 uvicorn
 sentry-sdk
+authlib
+google-api-python-client
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+requests
+asyncio
+aiohttp
+urllib
