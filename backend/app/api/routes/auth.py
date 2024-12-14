@@ -105,7 +105,7 @@ async def google_callback(session:SessionDep, request: Request, response: Respon
     
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     
-    auth_token=security.create_access_token(user.id, expires_delta=access_token_expires, user_email=user.email)
+    auth_token=security.create_access_token(user.id, expires_delta=access_token_expires, user_email=user.email, is_socialUser=True)
 
     #response.set_cookie(key="access_token", value=access_token, httponly=False, max_age=300, samesite='none', domain='localhost')
     return RedirectResponse(

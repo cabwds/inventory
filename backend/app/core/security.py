@@ -12,9 +12,9 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 ALGORITHM = "HS256"
 
 
-def create_access_token(subject: str | Any, expires_delta: timedelta, user_email: str) -> str:
+def create_access_token(subject: str | Any, expires_delta: timedelta, user_email: str, is_socialUser:bool = False) -> str:
     expire = datetime.now(timezone.utc) + expires_delta
-    to_encode = {"exp": expire, "sub": str(subject), "email": user_email}
+    to_encode = {"exp": expire, "sub": str(subject), "email": user_email, "is_socialUser": is_socialUser}
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
