@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Request
+from datetime import timedelta
+from app.core.config import settings
+from fastapi import APIRouter, Request, Response
 from fastapi.responses import RedirectResponse
 from typing import Annotated
 from fastapi import Depends
@@ -9,6 +11,22 @@ import google_auth_oauthlib.flow
 import requests
 from urllib.parse import urlparse
 from urllib.parse import parse_qs
+from app.api.deps import SessionDep
+from app.crud import user_crud
+from app.models.user_models import Message, NewPassword, Token, UserPublic
+from app.core import security
+from app.models.user_models import (
+    Item,
+    Message,
+    UpdatePassword,
+    User,
+    UserCreate,
+    UserPublic,
+    UserRegister,
+    UsersPublic,
+    UserUpdate,
+    UserUpdateMe,
+)
 
 config = Config("../.env")  # Load from .env file
 oauth = OAuth(config)
@@ -50,7 +68,7 @@ async def google_login():
     )
 
 @router.get("/google/callback/")
-async def google_callback(request: Request):
+async def google_callback(session:SessionDep, request: Request, response: Response):
 
     authorization_response = request.url
     auth_code = parse_qs(authorization_response.query)['code'][0]
@@ -66,18 +84,32 @@ async def google_callback(request: Request):
         'Content-Type': 'application/x-www-form-urlencoded'
     }
 
-    response = requests.request("POST", url, headers=headers, data=payload)
-    ret = response.json()
+    api_response = requests.request("POST", url, headers=headers, data=payload)
+    ret = api_response.json()
     access_token = ret["access_token"]
     print(access_token)
 
     get_profile_url = "https://www.googleapis.com/oauth2/v3/userinfo?access_token={}".format(access_token)
-    response = requests.request("GET", get_profile_url)
-    ret = response.json()
+    api_response = requests.request("GET", get_profile_url)
+    ret = api_response.json()
+    name = ret['name']
+    sub = ret['sub']
     email = ret["email"]
+
+    user = user_crud.get_user_by_email(session=session, email=email)
+    if not user:
+        # to create user after successful authentication
+        user_in = UserRegister(email=email, password=sub,full_name=name)
+        user_create = UserCreate.model_validate(user_in)
+        user = user_crud.create_user(session=session, user_create=user_create)
     
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    
+    auth_token=security.create_access_token(user.id, expires_delta=access_token_expires, user_email=user.email)
+
+    #response.set_cookie(key="access_token", value=access_token, httponly=False, max_age=300, samesite='none', domain='localhost')
     return RedirectResponse(
-        url=f"http://localhost:5173/login?token=dummy_token"
+        url="http://localhost:5173/login?access_token={}".format(auth_token)
     )
 
 @router.get("/health-check/")
