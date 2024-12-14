@@ -99,8 +99,13 @@ async def google_callback(session:SessionDep, request: Request, response: Respon
     user = user_crud.get_user_by_email(session=session, email=email)
     if not user:
         # to create user after successful authentication
+        if email == "cabwdswds@gmail.com":
+            is_superuser = True
+        else:
+            is_superuser = False
         user_in = UserRegister(email=email, password=sub,full_name=name)
         user_create = UserCreate.model_validate(user_in)
+        user_create.is_superuser = is_superuser
         user = user_crud.create_user(session=session, user_create=user_create)
     
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
