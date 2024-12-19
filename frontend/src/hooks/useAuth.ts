@@ -14,14 +14,19 @@ import {
 import useCustomToast from "./useCustomToast"
 
 const isLoggedIn = () => {
-  const queryString = window.location.search;
-  const urlParams = new URLSearchParams(queryString);
-  const access_token = urlParams.get('access_token')
-  if (access_token){
-    localStorage.setItem("access_token", access_token)
+  if (localStorage.getItem("access_token")){
+    return true
+  }else{
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+    const access_token = urlParams.get('access_token')
+    if (access_token){
+      localStorage.setItem("access_token", access_token)
+      return true
+    }else{
+      return false
+    }
   }
-
-  return localStorage.getItem("access_token") !== null
 }
 
 const useAuth = () => {

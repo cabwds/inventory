@@ -112,22 +112,6 @@ async def google_callback(session:SessionDep, request: Request, response: Respon
     
     auth_token=security.create_access_token(user.id, expires_delta=access_token_expires, user_email=user.email, is_socialUser=True)
 
-
-    # 设置 cookie
-    response.set_cookie(
-        key="access_token",
-        value=auth_token,
-        httponly=True,     # 防止 JavaScript 访问
-        secure=False,      # 开发环境设为 False，生产环境应该设为 True
-        samesite="lax",    # cookie 的 SameSite 属性
-        max_age=1800,      # cookie 过期时间（秒）
-        domain="localhost" # cookie 域名
-    )
-
-    # 重定向到前端
-    return RedirectResponse(
-        url="http://localhost:5173/login"
-    )
     #response.set_cookie(key="access_token", value=access_token, httponly=False, max_age=300, samesite='none', domain='localhost')
     return RedirectResponse(
         url="http://localhost:5173/login?access_token={}".format(auth_token)

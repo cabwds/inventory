@@ -16,6 +16,10 @@ export const passwordRules = (isRequired = true) => {
       value: 8,
       message: "Password must be at least 8 characters",
     },
+    pattern: {
+      value: /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[A-Za-z\d@$!%*?&]{6,20}$/, 
+      message: "Password must contain at least one uppercase letter, one lowercase letter, and one number",
+    }, // 正则表达式验证密码包含至少一个大写字母、一个小写字母和一个数字
   }
 
   if (isRequired) {
