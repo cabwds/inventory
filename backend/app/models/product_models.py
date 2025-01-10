@@ -12,7 +12,7 @@ class ProductType(str, Enum):
     WALL_DECALS = 'Wall Decals'
 
 
-class Address:
+class Address(SQLModel):
     street: str = Field(min_length=1, max_length=255)
     city: str = Field(min_length=1, max_length=255)
     state: str = Field(min_length=1, max_length=255)
@@ -21,13 +21,14 @@ class Address:
 
 class Product(SQLModel):
     id: str = Field(min_length=1, primary_key=True)
-    name: str = Field(min_length=1)
+    serial_number: str = Field(min_length=1)
     brand: str = Field(min_length=1)
     type: ProductType
     unit_price: float = Field(default=0)
+    unit_cost: float = Field(default=0)
     width: float  # Width of the film (e.g., 1.5 meters)
     length: float  # Length of the film (e.g., 10 meters)
-    weight: float  # Weight of the product (e.g., 2 kg)
+    thickness: float  # Thickness of the film (e.g., 0.014 meters)
 
 # Enum for Order Status
 class OrderStatus(str, Enum):
@@ -44,7 +45,8 @@ class PaymentStatus(str, Enum):
     FAILED = 'Failed'
 
 class Order(SQLModel):
-    order_items: list[Product]
+    id: str = Field(min_length=1, primary_key=True)
+    order_items: list[str]
     order_quantity: list[int]
     customer_id: str = Field(min_length=1)
     order_date: str = Field(min_length=1)
@@ -53,22 +55,31 @@ class Order(SQLModel):
     notes: str | None = Field(default=None)
     total_price: float = Field(default=0)
 
+
 # Shared properties
 class CustomerBase(SQLModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    company: str = Field(min_length=1, index=True)
-    first_name: str | None = Field(default=None)
-    last_name: str | None = Field(default=None)
-    email: EmailStr = Field(max_length=255)
-    phone: str = Field(min_length=1, max_length=255)
-    gender: str = Field(min_length=1, max_length=255)
-    address: Address 
-    preferred_language: str | None = Field(default=None)
+    #company: str = Field(min_length=1, index=True)
+    #first_name: str | None = Field(default=None)
+    #last_name: str | None = Field(default=None)
+    #email: EmailStr = Field(max_length=255)
+    #phone: str = Field(min_length=1, max_length=255)
+    #gender: str = Field(min_length=1, max_length=255)
+    #address: Address
+    #preferred_language: str | None = Field(default=None)
 
 
 # Database model, database table inferred from class name
-class Customer(CustomerBase, table=True):
+class Customer(CustomerBase):
     description: str | None = Field(default=None)
-    payment_method: str | None = Field(default=None)
-    preferences: str | None = Field(default=None)
-    orders: list[Order]
+    #payment_method: str | None = Field(default=None)
+    #preferences: str | None = Field(default=None)
+    #orders: list[str]
+
+class CustomersPublic(SQLModel):
+    data: list[Customer]
+    count: int
+
+# Properties to receive on customer creation
+class CustomerCreate(Customer):
+    pass

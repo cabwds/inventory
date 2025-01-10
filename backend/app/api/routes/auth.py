@@ -4,9 +4,7 @@ from fastapi import APIRouter, Request, Response
 from fastapi.responses import RedirectResponse
 from typing import Annotated
 from fastapi import Depends
-from authlib.integrations.starlette_client import OAuth
 from starlette.config import Config
-import google.oauth2.credentials
 import google_auth_oauthlib.flow
 import requests
 from urllib.parse import urlparse
@@ -29,7 +27,6 @@ from app.models.user_models import (
 )
 
 config = Config("../.env")  # Load from .env file
-oauth = OAuth(config)
 GOOGLE_CLIENT_ID = config('GOOGLE_CLIENT_ID', default='')
 GOOGLE_CLIENT_SECRET = config('GOOGLE_CLIENT_SECRET', default='')
 GOOGLE_CONF_URL = 'https://accounts.google.com/.well-known/openid-configuration'

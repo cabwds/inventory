@@ -209,7 +209,7 @@ export const sendRequest = async <T>(
     method: options.method,
     signal: controller.signal,
     url,
-    withCredentials: true,
+    withCredentials: config.WITH_CREDENTIALS,
   }
 
   onCancel(() => controller.abort())

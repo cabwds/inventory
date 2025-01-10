@@ -9,6 +9,21 @@ export type Body_login_login_access_token = {
   client_secret?: string | null
 }
 
+export type Customer = {
+  id?: string
+  description?: string | null
+}
+
+export type CustomerCreate = {
+  id?: string
+  description?: string | null
+}
+
+export type CustomersPublic = {
+  data: Array<Customer>
+  count: number
+}
+
 export type HTTPValidationError = {
   detail?: Array<ValidationError>
 }
@@ -42,6 +57,13 @@ export type Message = {
 export type NewPassword = {
   token: string
   new_password: string
+}
+
+export type PrivateUserCreate = {
+  email: string
+  password: string
+  full_name: string
+  is_verified?: boolean
 }
 
 export type Token = {
@@ -100,6 +122,37 @@ export type ValidationError = {
   type: string
 }
 
+export type AuthGoogleLoginResponse = unknown
+
+export type AuthGoogleCallbackResponse = unknown
+
+export type AuthHealthCheckResponse = boolean
+
+export type CustomersReadCustomerData = {
+  id: string
+}
+
+export type CustomersReadCustomerResponse = Customer
+
+export type CustomersDeleteCustomerData = {
+  id: string
+}
+
+export type CustomersDeleteCustomerResponse = Message
+
+export type CustomersReadCustomersData = {
+  limit?: number
+  skip?: number
+}
+
+export type CustomersReadCustomersResponse = CustomersPublic
+
+export type CustomersCreateCustomerData = {
+  requestBody: CustomerCreate
+}
+
+export type CustomersCreateCustomerResponse = Customer
+
 export type ItemsReadItemsData = {
   limit?: number
   skip?: number
@@ -157,6 +210,12 @@ export type LoginRecoverPasswordHtmlContentData = {
 }
 
 export type LoginRecoverPasswordHtmlContentResponse = string
+
+export type PrivateCreateUserData = {
+  requestBody: PrivateUserCreate
+}
+
+export type PrivateCreateUserResponse = UserPublic
 
 export type UsersReadUsersData = {
   limit?: number
