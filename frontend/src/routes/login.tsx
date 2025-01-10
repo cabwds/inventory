@@ -39,7 +39,7 @@ export const Route = createFileRoute("/login")({
 
 function Login() {
   const [show, setShow] = useBoolean()
-  const { loginMutation, error, resetError } = useAuth()
+  const { loginMutation, state_err: error, resetError } = useAuth()
   const handleGoogleLogin = () => {
     // Redirect to your backend's Google OAuth endpoint
     window.location.href = `${import.meta.env.VITE_API_URL}/api/v1/auth/google/login`
