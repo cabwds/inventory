@@ -15,50 +15,57 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { type SubmitHandler, useForm } from "react-hook-form"
 
-import { type ApiError, type CustomerCreate, CustomersService } from "../../client"
+import {
+  type ApiError,
+  type CustomerPublic,
+  type CustomerUpdate,
+  CustomersService,
+} from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
 import { handleError } from "../../utils"
 
-interface AddCustomerProps {
+interface EditCustomerProps {
+  customer: CustomerPublic
   isOpen: boolean
   onClose: () => void
 }
 
-const AddCustomer = ({ isOpen, onClose }: AddCustomerProps) => {
+const EditCustomer = ({ customer, isOpen, onClose }: EditCustomerProps) => {
   const queryClient = useQueryClient()
   const showToast = useCustomToast()
   const {
     register,
     handleSubmit,
     reset,
-    formState: { errors, isSubmitting },
-  } = useForm<CustomerCreate>({
+    formState: { isSubmitting, errors, isDirty },
+  } = useForm<CustomerUpdate>({
     mode: "onBlur",
     criteriaMode: "all",
-    defaultValues: {
-      id: "",
-      description: "",
-    },
+    defaultValues: customer,
   })
 
   const mutation = useMutation({
-    mutationFn: (data: CustomerCreate) =>
-      CustomersService.createCustomer({ requestBody: data }),
+    mutationFn: (data: CustomerUpdate) =>
+      CustomersService.updateCustomer({ id: customer.id, requestBody: data }),
     onSuccess: () => {
-      showToast("Success!", "Customer created successfully.", "success")
-      reset()
+      showToast("Success!", "Customer updated successfully.", "success")
       onClose()
     },
     onError: (err: ApiError) => {
       handleError(err, showToast)
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["Customers"] })
+      queryClient.invalidateQueries({ queryKey: ["customers"] })
     },
   })
 
-  const onSubmit: SubmitHandler<CustomerCreate> = (data) => {
+  const onSubmit: SubmitHandler<CustomerUpdate> = async (data) => {
     mutation.mutate(data)
+  }
+
+  const onCancel = () => {
+    reset()
+    onClose()
   }
 
   return (
@@ -71,21 +78,20 @@ const AddCustomer = ({ isOpen, onClose }: AddCustomerProps) => {
       >
         <ModalOverlay />
         <ModalContent as="form" onSubmit={handleSubmit(onSubmit)}>
-          <ModalHeader>Add Customer</ModalHeader>
+          <ModalHeader>Edit Customer</ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>
-            <FormControl isRequired isInvalid={!!errors.id}>
-              <FormLabel htmlFor="title">Id</FormLabel>
+            <FormControl isInvalid={!!errors.description}>
+              <FormLabel htmlFor="description">Description</FormLabel>
               <Input
-                id="id"
-                {...register("id", {
-                  required: "Id is required.",
+                id="description"
+                {...register("description", {
+                  required: "Description is required",
                 })}
-                placeholder="Id"
                 type="text"
               />
-              {errors.id && (
-                <FormErrorMessage>{errors.id.message}</FormErrorMessage>
+              {errors.description && (
+                <FormErrorMessage>{errors.description.message}</FormErrorMessage>
               )}
             </FormControl>
             <FormControl mt={4}>
@@ -98,12 +104,16 @@ const AddCustomer = ({ isOpen, onClose }: AddCustomerProps) => {
               />
             </FormControl>
           </ModalBody>
-
           <ModalFooter gap={3}>
-            <Button variant="primary" type="submit" isLoading={isSubmitting}>
+            <Button
+              variant="primary"
+              type="submit"
+              isLoading={isSubmitting}
+              isDisabled={!isDirty}
+            >
               Save
             </Button>
-            <Button onClick={onClose}>Cancel</Button>
+            <Button onClick={onCancel}>Cancel</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
@@ -111,4 +121,4 @@ const AddCustomer = ({ isOpen, onClose }: AddCustomerProps) => {
   )
 }
 
-export default AddCustomer
+export default EditCustomer

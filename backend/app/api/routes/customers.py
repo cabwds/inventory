@@ -35,11 +35,6 @@ def read_customers(
     """
 
     if current_user.is_superuser:
-        new_customer = Customer(id="7d84738f-dfb3-41eb-bc2a-689262a90989",description="test user 1")
-        customer = Customer.model_validate(new_customer)
-        session.add(customer)
-        session.commit()
-        session.refresh(customer)
         count_statement = select(func.count()).select_from(Customer)
         count = session.exec(count_statement).one()
         statement = select(Customer).offset(skip).limit(limit)
@@ -54,16 +49,37 @@ def create_customer(
     """
     Create new item.
     """
-    new_customer = {
-        "id" : "7d84738f-dfb3-41eb-bc2a-689262a90989",
-        "description" : "test user 1"
-    }
+    new_uuid = uuid.uuid4()
+    new_customer = customer_in
+    new_customer.id = new_uuid
     customer = Customer.model_validate(new_customer)
     session.add(customer)
     session.commit()
     session.refresh(customer)
     return customer
 
+@router.put("/{id}", response_model=CustomerPublic)
+def update_customer(
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    id: uuid.UUID,
+    customer_in: CustomerUpdate,
+) -> Any:
+    """
+    Update an Custome.
+    """
+    customer = session.get(Customer, id)
+    if not customer:
+        raise HTTPException(status_code=404, detail="Custome not found")
+    if not current_user.is_superuser:
+        raise HTTPException(status_code=400, detail="Not enough permissions")
+    update_dict = customer_in.model_dump(exclude_unset=True)
+    customer.sqlmodel_update(update_dict)
+    session.add(customer)
+    session.commit()
+    session.refresh(customer)
+    return customer
 
 @router.delete("/{id}")
 def delete_customer(

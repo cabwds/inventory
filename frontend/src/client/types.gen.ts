@@ -10,18 +10,27 @@ export type Body_login_login_access_token = {
 }
 
 export type Customer = {
-  id?: string
   description?: string | null
+  id?: string
 }
 
 export type CustomerCreate = {
-  id?: string
   description?: string | null
+  id?: string
+}
+
+export type CustomerPublic = {
+  description?: string | null
+  id: string
 }
 
 export type CustomersPublic = {
   data: Array<Customer>
   count: number
+}
+
+export type CustomerUpdate = {
+  description?: string | null
 }
 
 export type HTTPValidationError = {
@@ -133,6 +142,13 @@ export type CustomersReadCustomerData = {
 }
 
 export type CustomersReadCustomerResponse = Customer
+
+export type CustomersUpdateCustomerData = {
+  id: string
+  requestBody: CustomerUpdate
+}
+
+export type CustomersUpdateCustomerResponse = CustomerPublic
 
 export type CustomersDeleteCustomerData = {
   id: string

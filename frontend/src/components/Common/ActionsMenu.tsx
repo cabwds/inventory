@@ -9,19 +9,20 @@ import {
 import { BsThreeDotsVertical } from "react-icons/bs"
 import { FiEdit, FiTrash } from "react-icons/fi"
 
-import type { ItemPublic, UserPublic, Customer } from "../../client"
+import type { ItemPublic, UserPublic, CustomerPublic} from "../../client"
 import EditUser from "../Admin/EditUser"
 import EditItem from "../Items/EditItem"
+import EditCustomer from "../Customers/EditCustomer"
 import Delete from "./DeleteAlert"
 
 interface ActionsMenuProps {
   type: string
-  value: ItemPublic | UserPublic | Customer
+  value: ItemPublic | UserPublic | CustomerPublic
   disabled?: boolean
 }
 
 const ActionsMenu = ({ type, value, disabled }: ActionsMenuProps) => {
-  const editUserModal = useDisclosure()
+  const editModal = useDisclosure()
   const deleteModal = useDisclosure()
 
   return (
@@ -35,7 +36,7 @@ const ActionsMenu = ({ type, value, disabled }: ActionsMenuProps) => {
         />
         <MenuList>
           <MenuItem
-            onClick={editUserModal.onOpen}
+            onClick={editModal.onOpen}
             icon={<FiEdit fontSize="16px" />}
           >
             Edit {type}
@@ -51,16 +52,22 @@ const ActionsMenu = ({ type, value, disabled }: ActionsMenuProps) => {
         {type === "User" ? (
           <EditUser
             user={value as UserPublic}
-            isOpen={editUserModal.isOpen}
-            onClose={editUserModal.onClose}
+            isOpen={editModal.isOpen}
+            onClose={editModal.onClose}
           />
-        ) : (
+        ) : type === "Item" ? (
           <EditItem
             item={value as ItemPublic}
-            isOpen={editUserModal.isOpen}
-            onClose={editUserModal.onClose}
+            isOpen={editModal.isOpen}
+            onClose={editModal.onClose}
           />
-        )}
+        ) :  type === "Customer" ?(
+          <EditCustomer
+            customer={value as CustomerPublic}
+            isOpen={editModal.isOpen}
+            onClose={editModal.onClose}
+          />
+        ): null}
         <Delete
           type={type}
           id={value.id}

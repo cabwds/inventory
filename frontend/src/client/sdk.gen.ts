@@ -9,6 +9,8 @@ import type {
   AuthHealthCheckResponse,
   CustomersReadCustomerData,
   CustomersReadCustomerResponse,
+  CustomersUpdateCustomerData,
+  CustomersUpdateCustomerResponse,
   CustomersDeleteCustomerData,
   CustomersDeleteCustomerResponse,
   CustomersReadCustomersData,
@@ -115,6 +117,32 @@ export class CustomersService {
       path: {
         id: data.id,
       },
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Update Customer
+   * Update an Custome.
+   * @param data The data for the request.
+   * @param data.id
+   * @param data.requestBody
+   * @returns CustomerPublic Successful Response
+   * @throws ApiError
+   */
+  public static updateCustomer(
+    data: CustomersUpdateCustomerData,
+  ): CancelablePromise<CustomersUpdateCustomerResponse> {
+    return __request(OpenAPI, {
+      method: "PUT",
+      url: "/api/v1/customers/{id}",
+      path: {
+        id: data.id,
+      },
+      body: data.requestBody,
+      mediaType: "application/json",
       errors: {
         422: "Validation Error",
       },
