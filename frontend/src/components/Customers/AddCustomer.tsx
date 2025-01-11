@@ -53,7 +53,7 @@ const AddCustomer = ({ isOpen, onClose }: AddCustomerProps) => {
       handleError(err, showToast)
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["Customers"] })
+      queryClient.invalidateQueries({ queryKey: ["customers"] })
     },
   })
 
