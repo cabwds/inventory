@@ -77,16 +77,16 @@ class Customer(CustomerBase, table=True):
     #orders: list[str]
     #order_id = Column(Integer, ForeignKey("order.id"))
 
-class CustomersPublic(SQLModel):
-    data: list[Customer]
-    count: int
-
 # Properties to receive on item update
 class CustomerUpdate(CustomerBase):
     description: str | None = Field(default=None, min_length=1, max_length=255)  # type: ignore
 
 class CustomerPublic(CustomerBase):
     id: uuid.UUID
+
+class CustomersPublic(SQLModel):
+    data: list[CustomerPublic]
+    count: int
 
 # Properties to receive on customer creation
 class CustomerCreate(Customer):

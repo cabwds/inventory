@@ -25,7 +25,7 @@ export type CustomerPublic = {
 }
 
 export type CustomersPublic = {
-  data: Array<Customer>
+  data: Array<CustomerPublic>
   count: number
 }
 
