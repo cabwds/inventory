@@ -36,6 +36,16 @@ import type {
   LoginResetPasswordResponse,
   LoginRecoverPasswordHtmlContentData,
   LoginRecoverPasswordHtmlContentResponse,
+  OrdersReadOrderData,
+  OrdersReadOrderResponse,
+  OrdersUpdateOrderData,
+  OrdersUpdateOrderResponse,
+  OrdersDeleteOrderData,
+  OrdersDeleteOrderResponse,
+  OrdersReadOrdersData,
+  OrdersReadOrdersResponse,
+  OrdersCreateOrderData,
+  OrdersCreateOrderResponse,
   PrivateCreateUserData,
   PrivateCreateUserResponse,
   UsersReadUsersData,
@@ -125,7 +135,7 @@ export class CustomersService {
 
   /**
    * Update Customer
-   * Update an Custome.
+   * Update a customer.
    * @param data The data for the request.
    * @param data.id
    * @param data.requestBody
@@ -151,7 +161,7 @@ export class CustomersService {
 
   /**
    * Delete Customer
-   * Delete an item.
+   * Delete a customer.
    * @param data The data for the request.
    * @param data.id
    * @returns Message Successful Response
@@ -199,7 +209,7 @@ export class CustomersService {
 
   /**
    * Create Customer
-   * Create new item.
+   * Create new customer.
    * @param data The data for the request.
    * @param data.requestBody
    * @returns Customer Successful Response
@@ -439,6 +449,127 @@ export class LoginService {
       path: {
         email: data.email,
       },
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+}
+
+export class OrdersService {
+  /**
+   * Read Order
+   * Get order by ID.
+   * @param data The data for the request.
+   * @param data.id
+   * @returns Order Successful Response
+   * @throws ApiError
+   */
+  public static readOrder(
+    data: OrdersReadOrderData,
+  ): CancelablePromise<OrdersReadOrderResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/orders/{id}",
+      path: {
+        id: data.id,
+      },
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Update Order
+   * Update an order.
+   * @param data The data for the request.
+   * @param data.id
+   * @param data.requestBody
+   * @returns OrderPublic Successful Response
+   * @throws ApiError
+   */
+  public static updateOrder(
+    data: OrdersUpdateOrderData,
+  ): CancelablePromise<OrdersUpdateOrderResponse> {
+    return __request(OpenAPI, {
+      method: "PUT",
+      url: "/api/v1/orders/{id}",
+      path: {
+        id: data.id,
+      },
+      body: data.requestBody,
+      mediaType: "application/json",
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Delete Order
+   * Delete an order. To mark order invalid
+   * @param data The data for the request.
+   * @param data.id
+   * @returns Message Successful Response
+   * @throws ApiError
+   */
+  public static deleteOrder(
+    data: OrdersDeleteOrderData,
+  ): CancelablePromise<OrdersDeleteOrderResponse> {
+    return __request(OpenAPI, {
+      method: "DELETE",
+      url: "/api/v1/orders/{id}",
+      path: {
+        id: data.id,
+      },
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Read Orders
+   * Retrieve orders.
+   * @param data The data for the request.
+   * @param data.skip
+   * @param data.limit
+   * @returns OrdersPublic Successful Response
+   * @throws ApiError
+   */
+  public static readOrders(
+    data: OrdersReadOrdersData = {},
+  ): CancelablePromise<OrdersReadOrdersResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/orders/",
+      query: {
+        skip: data.skip,
+        limit: data.limit,
+      },
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Create Order
+   * Create new order.
+   * @param data The data for the request.
+   * @param data.requestBody
+   * @returns Order Successful Response
+   * @throws ApiError
+   */
+  public static createOrder(
+    data: OrdersCreateOrderData,
+  ): CancelablePromise<OrdersCreateOrderResponse> {
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/api/v1/orders/",
+      body: data.requestBody,
+      mediaType: "application/json",
       errors: {
         422: "Validation Error",
       },

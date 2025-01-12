@@ -99,6 +99,70 @@ export type NewPassword = {
   new_password: string
 }
 
+export type Order = {
+  order_items: string | null
+  order_quantity: string | null
+  customer_id: string | null
+  order_date: string | null
+  order_status?: OrderStatus | null
+  payment_status?: PaymentStatus | null
+  notes?: string | null
+  total_price?: number | null
+  is_valid?: boolean
+  id?: string
+}
+
+export type OrderCreate = {
+  order_items: string | null
+  order_quantity: string | null
+  customer_id: string | null
+  order_date: string | null
+  order_status?: OrderStatus | null
+  payment_status?: PaymentStatus | null
+  notes?: string | null
+  total_price?: number | null
+  is_valid?: boolean
+}
+
+export type OrderPublic = {
+  order_items: string | null
+  order_quantity: string | null
+  customer_id: string | null
+  order_date: string | null
+  order_status?: OrderStatus | null
+  payment_status?: PaymentStatus | null
+  notes?: string | null
+  total_price?: number | null
+  is_valid?: boolean
+  id?: string
+}
+
+export type OrdersPublic = {
+  data: Array<OrderPublic>
+  count: number
+}
+
+export type OrderStatus =
+  | "Pending"
+  | "Processing"
+  | "Shipped"
+  | "Delivered"
+  | "Cancelled"
+
+export type OrderUpdate = {
+  order_items: string | null
+  order_quantity: string | null
+  customer_id: string | null
+  order_date: string | null
+  order_status?: OrderStatus | null
+  payment_status?: PaymentStatus | null
+  notes?: string | null
+  total_price?: number | null
+  is_valid?: boolean
+}
+
+export type PaymentStatus = "Pending" | "Paid" | "Failed"
+
 export type PrivateUserCreate = {
   email: string
   password: string
@@ -257,6 +321,38 @@ export type LoginRecoverPasswordHtmlContentData = {
 }
 
 export type LoginRecoverPasswordHtmlContentResponse = string
+
+export type OrdersReadOrderData = {
+  id: string
+}
+
+export type OrdersReadOrderResponse = Order
+
+export type OrdersUpdateOrderData = {
+  id: string
+  requestBody: OrderUpdate
+}
+
+export type OrdersUpdateOrderResponse = OrderPublic
+
+export type OrdersDeleteOrderData = {
+  id: string
+}
+
+export type OrdersDeleteOrderResponse = Message
+
+export type OrdersReadOrdersData = {
+  limit?: number
+  skip?: number
+}
+
+export type OrdersReadOrdersResponse = OrdersPublic
+
+export type OrdersCreateOrderData = {
+  requestBody: OrderCreate
+}
+
+export type OrdersCreateOrderResponse = Order
 
 export type PrivateCreateUserData = {
   requestBody: PrivateUserCreate

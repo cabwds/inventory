@@ -39,7 +39,7 @@ class Customer(CustomerBase, table=True):
     #preferences: str | None = Field(default=None)
     #orders: list[str]
 
-# Properties to receive on item update
+# Properties to receive on customer update
 class CustomerUpdate(CustomerBase):
     description: str | None = Field(default=None, max_length=255)  # type: ignore
 

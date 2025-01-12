@@ -20,6 +20,7 @@ fileConfig(config.config_file_name)
 
 from app.models.user_models import SQLModel  # noqa
 from app.models.customer_models import Customer  # noqa
+from app.models.order_models import Order  # noqa
 from app.core.config import settings # noqa
 
 target_metadata = SQLModel.metadata

@@ -11,9 +11,6 @@ from pydantic import BaseModel
 
 router = APIRouter(prefix="/customers", tags=["customers"])
 
-class ResponseMessage(BaseModel):
-    message: str
-
 @router.get("/{id}", response_model=Customer)
 def read_customer(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) -> Any:
     """
@@ -47,7 +44,7 @@ def create_customer(
     *, session: SessionDep, current_user: CurrentUser, customer_in: CustomerCreate
 ) -> Any:
     """
-    Create new item.
+    Create new customer.
     """
     new_uuid = uuid.uuid4()
     #customer_in.description = "123"
@@ -71,11 +68,11 @@ def update_customer(
     customer_in: CustomerUpdate,
 ) -> Any:
     """
-    Update an Custome.
+    Update a customer.
     """
     customer = session.get(Customer, id)
     if not customer:
-        raise HTTPException(status_code=404, detail="Custome not found")
+        raise HTTPException(status_code=404, detail="Customer not found")
     if not current_user.is_superuser:
         raise HTTPException(status_code=400, detail="Not enough permissions")
     update_dict = customer_in.model_dump(exclude_unset=True)
@@ -90,7 +87,7 @@ def delete_customer(
     session: SessionDep, current_user: CurrentUser, id: uuid.UUID
 ) -> Message:
     """
-    Delete an item.
+    Delete a customer.
     """
     customer = session.get(Customer, id)
     if not customer:
