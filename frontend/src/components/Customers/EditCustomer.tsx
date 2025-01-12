@@ -15,6 +15,7 @@ import {
   Text,
   Box,
   VStack,
+  Select,
 } from "@chakra-ui/react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { type SubmitHandler, useForm } from "react-hook-form"
@@ -52,12 +53,23 @@ interface FormField {
       message: string;
     };
   };
+  options?: Array<{ value: string; label: string }>;
 }
 
 interface FormSection {
   section: string;
   fields: FormField[];
 }
+
+const GENDER_OPTIONS = [
+  { value: "male", label: "Male" },
+  { value: "female", label: "Female" }
+]
+
+const LANGUAGE_OPTIONS = [
+  { value: "English", label: "English" },
+  { value: "Chinese", label: "Chinese" },
+]
 
 const EditCustomer = ({ customer, isOpen, onClose }: EditCustomerProps) => {
   const queryClient = useQueryClient()
@@ -118,7 +130,9 @@ const EditCustomer = ({ customer, isOpen, onClose }: EditCustomerProps) => {
         {
           id: "gender",
           label: "Gender",
-          placeholder: "Enter gender"
+          placeholder: "Select gender",
+          type: "select",
+          options: GENDER_OPTIONS
         }
       ]
     },
@@ -149,7 +163,9 @@ const EditCustomer = ({ customer, isOpen, onClose }: EditCustomerProps) => {
         {
           id: "preferred_language",
           label: "Preferred Language",
-          placeholder: "Enter preferred language"
+          placeholder: "Select preferred language",
+          type: "select",
+          options: LANGUAGE_OPTIONS
         },
         {
           id: "description",
@@ -206,13 +222,28 @@ const EditCustomer = ({ customer, isOpen, onClose }: EditCustomerProps) => {
                               <Text as="span" color="red.500" ml={1}>*</Text>
                             }
                           </FormLabel>
-                          <Input
-                            id={field.id}
-                            {...register(field.id as keyof CustomerUpdate, field.validation)}
-                            placeholder={field.placeholder}
-                            type={field.type || "text"}
-                            {...editCustomerStyles.input}
-                          />
+                          {field.type === "select" ? (
+                            <Select
+                              id={field.id}
+                              {...register(field.id as keyof CustomerUpdate, field.validation)}
+                              placeholder={field.placeholder}
+                              {...editCustomerStyles.input}
+                            >
+                              {field.options?.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </Select>
+                          ) : (
+                            <Input
+                              id={field.id}
+                              {...register(field.id as keyof CustomerUpdate, field.validation)}
+                              placeholder={field.placeholder}
+                              type={field.type || "text"}
+                              {...editCustomerStyles.input}
+                            />
+                          )}
                           {errors[field.id as keyof CustomerUpdate] && (
                             <FormErrorMessage>
                               {errors[field.id as keyof CustomerUpdate]?.message}

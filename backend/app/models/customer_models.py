@@ -7,13 +7,6 @@ from enum import Enum
 from datetime import datetime
 from typing import List
 
-class Address(SQLModel):
-    street: str
-    city: str
-    state: str
-    zipCode: str
-    country: str
-
 # Shared properties
 class CustomerBase(SQLModel):
     company: str = Field(min_length=1, index=True, default=None)
@@ -23,7 +16,7 @@ class CustomerBase(SQLModel):
     phone: str | None  = Field(min_length=1, max_length=255, default=None)
     gender: str | None  = Field(min_length=1, max_length=255, default=None)
     preferred_language: str | None = Field(default=None)
-    address: str | None  = Field(default="{}")  # Store as serialized JSON
+    address: str | None  = Field(default=None) 
     order_ids: str | None = Field(default="[]")  # Store as serialized JSON
 
     def get_address(self) -> dict:
