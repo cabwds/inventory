@@ -53,7 +53,7 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
 
   const mutation = useMutation({
     mutationFn: (data: OrderUpdate) =>
-      OrdersService.updateOrder({ id: order.id, requestBody: data }),
+      OrdersService.updateOrder({ id: order.id!, requestBody: data }),
     onSuccess: () => {
       showToast("Success!", "Order updated successfully.", "success")
       onClose()

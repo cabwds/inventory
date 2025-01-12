@@ -16,7 +16,7 @@ import useCustomToast from "../../hooks/useCustomToast"
 
 interface DeleteProps {
   type: string
-  id: string
+  id?: string
   isOpen: boolean
   onClose: () => void
 }
@@ -70,6 +70,7 @@ const Delete = ({ type, id, isOpen, onClose }: DeleteProps) => {
   })
 
   const onSubmit = async () => {
+    if (!id) return;
     mutation.mutate(id)
   }
 

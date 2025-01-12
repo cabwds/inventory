@@ -38,7 +38,7 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
     criteriaMode: "all",
     defaultValues: {
       customer_id: "",
-      order_status: "Pending",
+      order_status: "Pending" as const,
       total_price: 0,
     },
   })
@@ -111,11 +111,11 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
                 required: "Status is required.",
               })}
             >
-              <option value="PENDING">Pending</option>
-              <option value="PROCESSING">Processing</option>
-              <option value="SHIPPED">Shipped</option>
-              <option value="DELIVERED">Delivered</option>
-              <option value="CANCELLED">Cancelled</option>
+              <option value="Pending">Pending</option>
+              <option value="Processing">Processing</option>
+              <option value="Shipped">Shipped</option>
+              <option value="Delivered">Delivered</option>
+              <option value="Cancelled">Cancelled</option>
             </Select>
             {errors.order_status && (
               <FormErrorMessage>{errors.order_status.message}</FormErrorMessage>
