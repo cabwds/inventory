@@ -1,4 +1,13 @@
 import {
+    Modal,
+    ModalOverlay,
+    ModalContent,
+    ModalHeader,
+    ModalBody,
+    ModalCloseButton,
+    Text,
+    VStack,
+    Box,
     Container,
     Heading,
     SkeletonText,
@@ -12,10 +21,11 @@ import {
     } from "@chakra-ui/react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { z } from "zod"
 
-import { CustomersService } from "../../client"
+import { CustomersService , CustomersReadCustomerData, Customer } from "../../client"
+import useCustomToast from "../../hooks/useCustomToast"
 import ActionsMenu from "../../components/Common/ActionsMenu"
 import Navbar from "../../components/Common/Navbar"
 import AddCustomer from "../../components/Customers/AddCustomer"
@@ -41,12 +51,19 @@ function getCustomersQueryOptions({ page }: { page: number }) {
   }
 }
 
+
+
 function CustomersTable() {
   const queryClient = useQueryClient()
   const { page } = Route.useSearch()
+  const showToast = useCustomToast()
   const navigate = useNavigate({ from: Route.fullPath })
   const setPage = (page: number) =>
     navigate({ search: (prev: {[key: string]: string}) => ({ ...prev, page }) })
+
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
 
   const {
     data: customers,
@@ -56,6 +73,19 @@ function CustomersTable() {
     ...getCustomersQueryOptions({ page }),
     placeholderData: (prevData) => prevData,
   })
+
+  const handleCustomerClick = async (customerId : string) => {
+    try {
+      const data: CustomersReadCustomerData = {
+        id: customerId  // Pass the ID in the expected format
+      }
+      const customerData = await CustomersService.readCustomer(data)
+      setSelectedCustomer(customerData)
+      setIsModalOpen(true)
+    } catch (error) {
+      showToast("Failure!", "Customer checking failed.", "error")
+    }
+  }
 
   const hasNextPage = !isPlaceholderData && customers?.data.length === PER_PAGE
   const hasPreviousPage = page > 1
@@ -68,6 +98,55 @@ function CustomersTable() {
 
   return (
     <>
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Customer Details</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6}>
+            {selectedCustomer && (
+              <VStack align="stretch" spacing={4}>
+                <Box>
+                  <Text fontWeight="bold">Company</Text>
+                  <Text>{selectedCustomer.company}</Text>
+                </Box>
+                <Box>
+                  <Text fontWeight="bold">Email</Text>
+                  <Text>{selectedCustomer.email || 'N/A'}</Text>
+                </Box>
+                <Box>
+                  <Text fontWeight="bold">Phone</Text>
+                  <Text>{selectedCustomer.phone || 'N/A'}</Text>
+                </Box>
+                <Box>
+                  <Text fontWeight="bold">Full Name</Text>
+                  <Text>{selectedCustomer.full_name || 'N/A'}</Text>
+                </Box>
+                <Box>
+                  <Text fontWeight="bold">Gender</Text>
+                  <Text>{selectedCustomer.gender || 'N/A'}</Text>
+                </Box>
+                <Box>
+                  <Text fontWeight="bold">Preferred Language</Text>
+                  <Text>{selectedCustomer.preferred_language || 'N/A'}</Text>
+                </Box>
+                <Box>
+                  <Text fontWeight="bold">Description</Text>
+                  <Text>{selectedCustomer.description || 'N/A'}</Text>
+                </Box>
+                <Box>
+                  <Text fontWeight="bold">Address</Text>
+                  <Text>{selectedCustomer.address || 'N/A'}</Text>
+                </Box>
+                <Box>
+                  <Text fontWeight="bold">Order List</Text>
+                  <Text>{selectedCustomer.order_ids || 'N/A'}</Text>
+                </Box>
+              </VStack>
+            )}
+          </ModalBody>
+        </ModalContent>
+      </Modal>
       <TableContainer>
         <Table size={{ base: "sm", md: "md" }}>
           <Thead>
@@ -95,6 +174,10 @@ function CustomersTable() {
                 <Tr key={customer.id} opacity={isPlaceholderData ? 0.5 : 1}>
                   <Td isTruncated 
                       maxWidth="50px"
+                      cursor="pointer"
+                      color="blue.500"
+                      _hover={{ color: "blue.600", textDecoration: "underline" }}
+                      onClick={() => handleCustomerClick(customer.id)}
                   >
                       {customer.id}
                   </Td>
