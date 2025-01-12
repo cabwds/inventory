@@ -12,7 +12,7 @@ class CustomerBase(SQLModel):
     company: str = Field(min_length=1, index=True, default=None)
     description: str | None = Field(default=None)
     full_name: str | None = Field(default=None)
-    email: EmailStr | None = Field(max_length=255)
+    email: str | None = Field(max_length=255, default=None)
     phone: str | None  = Field(default=None)
     gender: str | None  = Field(default=None)
     preferred_language: str | None = Field(default=None)

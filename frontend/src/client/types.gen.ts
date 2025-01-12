@@ -13,7 +13,7 @@ export type Customer = {
   company?: string
   description?: string | null
   full_name?: string | null
-  email: string | null
+  email?: string | null
   phone?: string | null
   gender?: string | null
   preferred_language?: string | null
@@ -26,7 +26,7 @@ export type CustomerCreate = {
   company?: string
   description?: string | null
   full_name?: string | null
-  email: string | null
+  email?: string | null
   phone?: string | null
   gender?: string | null
   preferred_language?: string | null
@@ -38,7 +38,7 @@ export type CustomerPublic = {
   company?: string
   description?: string | null
   full_name?: string | null
-  email: string | null
+  email?: string | null
   phone?: string | null
   gender?: string | null
   preferred_language?: string | null
@@ -56,7 +56,7 @@ export type CustomerUpdate = {
   company?: string
   description?: string | null
   full_name?: string | null
-  email: string | null
+  email?: string | null
   phone?: string | null
   gender?: string | null
   preferred_language?: string | null

@@ -132,12 +132,8 @@ const AddCustomer = ({ isOpen, onClose }: AddCustomerProps) => {
         {
           id: "email",
           label: "Email",
-          required: true,
           placeholder: "Enter email address",
           type: "email",
-          validation: {
-            required: "Email is required",
-          }
         },
         {
           id: "phone",
@@ -215,7 +211,7 @@ const AddCustomer = ({ isOpen, onClose }: AddCustomerProps) => {
                           >
                             {field.label}
                             {field.required && 
-                              <Text as="span" color="red.500" ml={1}>*</Text>
+                              <Text as="span" color="red.500" ml={1}></Text>
                             }
                           </FormLabel>
                           {field.type === "select" ? (
