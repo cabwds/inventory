@@ -110,23 +110,18 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
             )}
           </FormControl>
 
-          <FormControl mt={4} isRequired isInvalid={!!errors.order_status}>
+          <FormControl mt={4}>
             <FormLabel htmlFor="status">Order Status</FormLabel>
             <Select
               id="status"
-              {...register("order_status", {
-                required: "Status is required.",
-              })}
+              {...register("order_status")}
             >
-              <option value="PENDING">Pending</option>
-              <option value="PROCESSING">Processing</option>
-              <option value="SHIPPED">Shipped</option>
-              <option value="DELIVERED">Delivered</option>
-              <option value="CANCELLED">Cancelled</option>
+              <option value="Pending">Pending</option>
+              <option value="Processing">Processing</option>
+              <option value="Shipped">Shipped</option>
+              <option value="Delivered">Delivered</option>
+              <option value="Cancelled">Cancelled</option>
             </Select>
-            {errors.order_status && (
-              <FormErrorMessage>{errors.order_status.message}</FormErrorMessage>
-            )}
           </FormControl>
 
           <FormControl mt={4} isRequired isInvalid={!!errors.total_price}>

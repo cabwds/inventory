@@ -100,40 +100,22 @@ export type NewPassword = {
 }
 
 export type Order = {
-  order_items: string | null
-  order_quantity: string | null
   customer_id: string | null
-  order_date: string | null
-  order_status?: OrderStatus | null
-  payment_status?: PaymentStatus | null
-  notes?: string | null
+  order_status?: string | null
   total_price?: number | null
-  is_valid?: boolean
   id?: string
 }
 
 export type OrderCreate = {
-  order_items: string | null
-  order_quantity: string | null
   customer_id: string | null
-  order_date: string | null
-  order_status?: OrderStatus | null
-  payment_status?: PaymentStatus | null
-  notes?: string | null
+  order_status?: string | null
   total_price?: number | null
-  is_valid?: boolean
 }
 
 export type OrderPublic = {
-  order_items: string | null
-  order_quantity: string | null
   customer_id: string | null
-  order_date: string | null
-  order_status?: OrderStatus | null
-  payment_status?: PaymentStatus | null
-  notes?: string | null
+  order_status?: string | null
   total_price?: number | null
-  is_valid?: boolean
   id?: string
 }
 
@@ -142,26 +124,11 @@ export type OrdersPublic = {
   count: number
 }
 
-export type OrderStatus =
-  | "Pending"
-  | "Processing"
-  | "Shipped"
-  | "Delivered"
-  | "Cancelled"
-
 export type OrderUpdate = {
-  order_items: string | null
-  order_quantity: string | null
   customer_id: string | null
-  order_date: string | null
-  order_status?: OrderStatus | null
-  payment_status?: PaymentStatus | null
-  notes?: string | null
+  order_status?: string | null
   total_price?: number | null
-  is_valid?: boolean
 }
-
-export type PaymentStatus = "Pending" | "Paid" | "Failed"
 
 export type PrivateUserCreate = {
   email: string

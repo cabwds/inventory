@@ -38,7 +38,7 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
     criteriaMode: "all",
     defaultValues: {
       customer_id: "",
-      order_status: "Pending" as const,
+      order_status: "Pending",
       total_price: 0,
     },
   })
@@ -65,6 +65,7 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
   })
 
   const onSubmit: SubmitHandler<OrderCreate> = (data) => {
+    console.log('Submitting order data:', data);
     mutation.mutate({
       ...data,
       total_price: Number(data.total_price),
@@ -103,13 +104,11 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
             )}
           </FormControl>
 
-          <FormControl mt={4} isRequired isInvalid={!!errors.order_status}>
+          <FormControl mt={4}>
             <FormLabel htmlFor="order_status">Order Status</FormLabel>
             <Select
               id="order_status"
-              {...register("order_status", {
-                required: "Status is required.",
-              })}
+              {...register("order_status")}
             >
               <option value="Pending">Pending</option>
               <option value="Processing">Processing</option>
@@ -117,9 +116,6 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
               <option value="Delivered">Delivered</option>
               <option value="Cancelled">Cancelled</option>
             </Select>
-            {errors.order_status && (
-              <FormErrorMessage>{errors.order_status.message}</FormErrorMessage>
-            )}
           </FormControl>
 
           <FormControl mt={4} isRequired isInvalid={!!errors.total_price}>

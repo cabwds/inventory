@@ -70,8 +70,8 @@ def update_order(
     order = session.get(Order, id)
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
-    if not order.is_valid:
-        raise HTTPException(status_code=404, detail="Order is not valid")
+    #if not order.is_valid:
+    #    raise HTTPException(status_code=404, detail="Order is not valid")
     if not current_user.is_superuser:
         raise HTTPException(status_code=400, detail="Not enough permissions")
     update_dict = order_in.model_dump(exclude_unset=True)
