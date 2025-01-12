@@ -168,7 +168,6 @@ function CustomersTable() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-
   const {
     data: customers,
     isPending,
@@ -211,7 +210,7 @@ function CustomersTable() {
         <Table size={{ base: "sm", md: "md" }} variant="simple">
           <Thead bg="gray.50">
             <Tr>
-              <Th>ID</Th>
+              <Th>No.</Th>
               <Th>Company</Th>
               <Th>Email</Th>
               <Th>Phone</Th>
@@ -230,15 +229,19 @@ function CustomersTable() {
             </Tbody>
           ) : (
             <Tbody>
-              {customers?.data.map((customer) => (
+              {customers?.data.map((customer, index) => (
                 <Tr 
                   key={customer.id} 
                   opacity={isPlaceholderData ? 0.5 : 1}
                   _hover={{ bg: "gray.50" }}
                   transition="background-color 0.2s"
                 >
-                  <Td {...customerDetailsStyles.customerIdCell} onClick={() => handleCustomerClick(customer.id)}>
-                    {customer.id}
+                  <Td 
+                    {...customerDetailsStyles.customerIdCell} 
+                    onClick={() => handleCustomerClick(customer.id)}
+                    width="80px"
+                  >
+                    {(page - 1) * PER_PAGE + index + 1}
                   </Td>
                   <Td isTruncated maxWidth="150px" fontWeight="medium">
                     {customer.company}
@@ -290,7 +293,6 @@ function Customers() {
           Customers Management
         </Heading>
       </Box>
-
       <Box mb={6}>
         <Navbar type="Customer" addModalAs={AddCustomer} />
       </Box>
