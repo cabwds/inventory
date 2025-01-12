@@ -34,6 +34,30 @@ interface EditCustomerProps {
   onClose: () => void
 }
 
+interface FormField {
+  id: string;
+  label: string;
+  placeholder: string;
+  required?: boolean;
+  type?: string;
+  validation?: {
+    required?: string;
+    pattern?: {
+      value: RegExp;
+      message: string;
+    };
+    minLength?: {
+      value: number;
+      message: string;
+    };
+  };
+}
+
+interface FormSection {
+  section: string;
+  fields: FormField[];
+}
+
 const EditCustomer = ({ customer, isOpen, onClose }: EditCustomerProps) => {
   const queryClient = useQueryClient()
   const showToast = useCustomToast()
@@ -72,7 +96,7 @@ const EditCustomer = ({ customer, isOpen, onClose }: EditCustomerProps) => {
     onClose()
   }
 
-  const formSections = [
+  const formSections: FormSection[] = [
     {
       section: "Basic Information",
       fields: [
