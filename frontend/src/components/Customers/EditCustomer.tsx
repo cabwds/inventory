@@ -27,6 +27,7 @@ import {
 } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
 import { handleError } from "../../utils"
+import { modalScrollbarStyles, editCustomerStyles } from "../../styles/customers.styles"
 
 interface EditCustomerProps {
   customer: CustomerPublic
@@ -169,13 +170,7 @@ const EditCustomer = ({ customer, isOpen, onClose }: EditCustomerProps) => {
     >
       <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(5px)" />
       <ModalContent maxH="85vh">
-        <ModalHeader 
-          borderBottom="1px" 
-          borderColor="gray.200"
-          pb={4}
-          bg="gray.50"
-          borderTopRadius="md"
-        >
+        <ModalHeader {...editCustomerStyles.modalHeader}>
           <Text fontSize="xl">Edit Customer</Text>
           <Text fontSize="sm" color="gray.600" mt={1}>
             ID: {customer.id}
@@ -186,36 +181,13 @@ const EditCustomer = ({ customer, isOpen, onClose }: EditCustomerProps) => {
           py={6} 
           px={8}
           overflowY="auto"
-          css={{
-            '&::-webkit-scrollbar': {
-              width: '8px',
-            },
-            '&::-webkit-scrollbar-track': {
-              background: '#f1f1f1',
-              borderRadius: '4px',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              background: '#cbd5e0',
-              borderRadius: '4px',
-            },
-            '&::-webkit-scrollbar-thumb:hover': {
-              background: '#a0aec0',
-            },
-          }}
+          css={modalScrollbarStyles}
         >
           <form id="edit-customer-form" onSubmit={handleSubmit(onSubmit)}>
             <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={8}>
               {formSections.map((section) => (
                 <Box key={section.section}>
-                  <Text 
-                    fontSize="md" 
-                    fontWeight="bold" 
-                    color="blue.600" 
-                    mb={4}
-                    pb={2}
-                    borderBottom="2px"
-                    borderColor="blue.100"
-                  >
+                  <Text {...editCustomerStyles.sectionTitle}>
                     {section.section}
                   </Text>
                   <VStack spacing={4} align="stretch">
@@ -224,25 +196,10 @@ const EditCustomer = ({ customer, isOpen, onClose }: EditCustomerProps) => {
                         key={field.id} 
                         isInvalid={!!errors[field.id as keyof CustomerUpdate]}
                       >
-                        <Box
-                          p={4}
-                          borderRadius="md"
-                          borderWidth="1px"
-                          borderColor="gray.200"
-                          bg="white"
-                          _hover={{ 
-                            borderColor: "gray.300",
-                            transform: "translateY(-1px)",
-                            boxShadow: "sm"
-                          }}
-                          transition="all 0.2s"
-                        >
+                        <Box {...editCustomerStyles.formBox}>
                           <FormLabel 
                             htmlFor={field.id}
-                            fontSize="sm"
-                            color="gray.600"
-                            fontWeight="medium"
-                            mb={2}
+                            {...editCustomerStyles.formLabel}
                           >
                             {field.label}
                             {field.required && 
@@ -254,13 +211,7 @@ const EditCustomer = ({ customer, isOpen, onClose }: EditCustomerProps) => {
                             {...register(field.id as keyof CustomerUpdate, field.validation)}
                             placeholder={field.placeholder}
                             type={field.type || "text"}
-                            bg="white"
-                            borderColor="gray.300"
-                            _hover={{ borderColor: "gray.400" }}
-                            _focus={{ 
-                              borderColor: "blue.400",
-                              boxShadow: "0 0 0 1px var(--chakra-colors-blue-400)"
-                            }}
+                            {...editCustomerStyles.input}
                           />
                           {errors[field.id as keyof CustomerUpdate] && (
                             <FormErrorMessage>
@@ -276,11 +227,7 @@ const EditCustomer = ({ customer, isOpen, onClose }: EditCustomerProps) => {
             </SimpleGrid>
           </form>
         </ModalBody>
-        <ModalFooter 
-          borderTop="1px" 
-          borderColor="gray.200"
-          gap={3}
-        >
+        <ModalFooter {...editCustomerStyles.modalFooter}>
           <Button
             variant="primary"
             type="submit"

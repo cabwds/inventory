@@ -31,6 +31,7 @@ import ActionsMenu from "../../components/Common/ActionsMenu"
 import Navbar from "../../components/Common/Navbar"
 import AddCustomer from "../../components/Customers/AddCustomer"
 import { PaginationFooter } from "../../components/Common/PaginationFooter.tsx"
+import { modalScrollbarStyles, customerDetailsStyles } from "../../styles/customers.styles"
 
 const customersSearchSchema = z.object({
     page: z.number().catch(1),
@@ -100,13 +101,7 @@ function CustomerDetailsModal({
     >
       <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(5px)" />
       <ModalContent maxH="85vh">
-        <ModalHeader 
-          borderBottom="1px" 
-          borderColor="gray.200"
-          pb={4}
-          bg="gray.50"
-          borderTopRadius="md"
-        >
+        <ModalHeader {...customerDetailsStyles.modalHeader}>
           <Text fontSize="xl">Customer Details</Text>
           <Text fontSize="sm" color="gray.600" mt={1}>
             ID: {customer?.id}
@@ -117,54 +112,20 @@ function CustomerDetailsModal({
           py={6} 
           px={8}
           overflowY="auto"
-          css={{
-            '&::-webkit-scrollbar': {
-              width: '8px',
-            },
-            '&::-webkit-scrollbar-track': {
-              background: '#f1f1f1',
-              borderRadius: '4px',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              background: '#cbd5e0',
-              borderRadius: '4px',
-            },
-            '&::-webkit-scrollbar-thumb:hover': {
-              background: '#a0aec0',
-            },
-          }}
+          css={modalScrollbarStyles}
         >
           {customer && (
             <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={8}>
               {customerDetails.map((section) => (
                 <Box key={section.section}>
-                  <Text 
-                    fontSize="md" 
-                    fontWeight="bold" 
-                    color="blue.600" 
-                    mb={4}
-                    pb={2}
-                    borderBottom="2px"
-                    borderColor="blue.100"
-                  >
+                  <Text {...customerDetailsStyles.sectionTitle}>
                     {section.section}
                   </Text>
                   <VStack spacing={4} align="stretch">
                     {section.items.map(({ label, value }) => (
                       <Box 
                         key={label} 
-                        p={4} 
-                        borderRadius="md" 
-                        borderWidth="1px"
-                        borderColor="gray.200"
-                        bg="white"
-                        _hover={{ 
-                          bg: "gray.50",
-                          borderColor: "gray.300",
-                          transform: "translateY(-1px)",
-                          boxShadow: "sm"
-                        }}
-                        transition="all 0.2s"
+                        {...customerDetailsStyles.detailBox}
                       >
                         <Text 
                           fontSize="sm" 
@@ -246,12 +207,7 @@ function CustomersTable() {
         onClose={() => setIsModalOpen(false)} 
         customer={selectedCustomer} 
       />
-      <TableContainer 
-        borderWidth="1px" 
-        borderRadius="lg" 
-        borderColor="gray.200"
-        shadow="sm"
-      >
+      <TableContainer {...customerDetailsStyles.tableContainer}>
         <Table size={{ base: "sm", md: "md" }} variant="simple">
           <Thead bg="gray.50">
             <Tr>
@@ -281,15 +237,7 @@ function CustomersTable() {
                   _hover={{ bg: "gray.50" }}
                   transition="background-color 0.2s"
                 >
-                  <Td 
-                    isTruncated 
-                    maxWidth="50px"
-                    cursor="pointer"
-                    color="blue.500"
-                    _hover={{ color: "blue.600", textDecoration: "underline" }}
-                    onClick={() => handleCustomerClick(customer.id)}
-                    fontWeight="medium"
-                  >
+                  <Td {...customerDetailsStyles.customerIdCell} onClick={() => handleCustomerClick(customer.id)}>
                     {customer.id}
                   </Td>
                   <Td isTruncated maxWidth="150px" fontWeight="medium">
