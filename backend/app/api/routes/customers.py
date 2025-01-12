@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException
 from sqlmodel import func, select
 
 from app.api.deps import CurrentUser, SessionDep
-from app.models.product_models import *
+from app.models.customer_models import *
 from app.models.user_models import Message
 from pydantic import BaseModel
 
@@ -52,6 +52,14 @@ def create_customer(
     new_uuid = uuid.uuid4()
     new_customer = customer_in
     new_customer.id = new_uuid
+    customer_in.description = "123"
+    customer_in.full_name = "123"
+    #email
+    customer_in.phone = "123"
+    customer_in.gender= "123"
+    customer_in.preferred_language= "123"
+    customer_in.set_address({})
+    customer_in.set_order_ids({})
     customer = Customer.model_validate(new_customer)
     session.add(customer)
     session.commit()

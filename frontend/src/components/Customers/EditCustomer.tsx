@@ -81,25 +81,34 @@ const EditCustomer = ({ customer, isOpen, onClose }: EditCustomerProps) => {
           <ModalHeader>Edit Customer</ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>
-            <FormControl isInvalid={!!errors.description}>
-              <FormLabel htmlFor="description">Description</FormLabel>
+            <FormControl isInvalid={!!errors.company}>
+              <FormLabel htmlFor="company">company</FormLabel>
               <Input
-                id="description"
-                {...register("description", {
-                  required: "Description is required",
+                id="company"
+                {...register("company", {
+                  required: "Company name is required",
                 })}
                 type="text"
               />
-              {errors.description && (
-                <FormErrorMessage>{errors.description.message}</FormErrorMessage>
+              {errors.company && (
+                <FormErrorMessage>{errors.company.message}</FormErrorMessage>
               )}
             </FormControl>
             <FormControl mt={4}>
-              <FormLabel htmlFor="description">Description</FormLabel>
+              <FormLabel htmlFor="email">Email</FormLabel>
               <Input
-                id="description"
-                {...register("description")}
-                placeholder="Description"
+                id="email"
+                {...register("email")}
+                placeholder="Email"
+                type="text"
+              />
+            </FormControl>
+            <FormControl mt={4}>
+              <FormLabel htmlFor="phone">Phone</FormLabel>
+              <Input
+                id="phone"
+                {...register("phone")}
+                placeholder="Phone"
                 type="text"
               />
             </FormControl>

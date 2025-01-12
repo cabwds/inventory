@@ -10,17 +10,41 @@ export type Body_login_login_access_token = {
 }
 
 export type Customer = {
+  company?: string
   description?: string | null
+  full_name?: string | null
+  email: string
+  phone?: string
+  gender?: string
+  preferred_language?: string | null
+  address?: string
+  order_ids?: string
   id?: string
 }
 
 export type CustomerCreate = {
+  company?: string
   description?: string | null
+  full_name?: string | null
+  email?: string
+  phone?: string
+  gender?: string
+  preferred_language?: string | null
+  address?: string
+  order_ids?: string
   id?: string
 }
 
 export type CustomerPublic = {
+  company?: string
   description?: string | null
+  full_name?: string | null
+  email: string
+  phone?: string
+  gender?: string
+  preferred_language?: string | null
+  address?: string
+  order_ids?: string
   id: string
 }
 
@@ -30,7 +54,15 @@ export type CustomersPublic = {
 }
 
 export type CustomerUpdate = {
+  company?: string
   description?: string | null
+  full_name?: string | null
+  email: string
+  phone?: string
+  gender?: string
+  preferred_language?: string | null
+  address?: string
+  order_ids?: string
 }
 
 export type HTTPValidationError = {

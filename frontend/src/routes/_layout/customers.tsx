@@ -73,8 +73,9 @@ function CustomersTable() {
           <Thead>
             <Tr>
               <Th>ID</Th>
-              <Th>Title</Th>
-              <Th>Description</Th>
+              <Th>Company</Th>
+              <Th>Email</Th>
+              <Th>Phone</Th>
               <Th>Actions</Th>
             </Tr>
           </Thead>
@@ -92,16 +93,30 @@ function CustomersTable() {
             <Tbody>
               {customers?.data.map((customer) => (
                 <Tr key={customer.id} opacity={isPlaceholderData ? 0.5 : 1}>
-                  <Td>{customer.id}</Td>
-                  <Td isTruncated maxWidth="150px">
-                    {customer.id}
+                  <Td isTruncated 
+                      maxWidth="50px"
+                  >
+                      {customer.id}
+                  </Td>
+                  <Td 
+                    isTruncated 
+                    maxWidth="150px"
+                  >
+                    {customer.company}
                   </Td>
                   <Td
-                    color={!customer.description ? "ui.dim" : "inherit"}
+                    color={!customer.email ? "ui.dim" : "inherit"}
                     isTruncated
                     maxWidth="150px"
                   >
-                    {customer.description || "N/A"}
+                    {customer.email || "N/A"}
+                  </Td>
+                  <Td
+                    color={!customer.phone ? "ui.dim" : "inherit"}
+                    isTruncated
+                    maxWidth="150px"
+                  >
+                    {customer.phone || "N/A"}
                   </Td>
                   <Td>
                     <ActionsMenu type={"Customer"} value={customer} />

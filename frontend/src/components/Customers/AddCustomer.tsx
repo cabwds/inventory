@@ -36,8 +36,8 @@ const AddCustomer = ({ isOpen, onClose }: AddCustomerProps) => {
     mode: "onBlur",
     criteriaMode: "all",
     defaultValues: {
-      id: "",
-      description: "",
+      company: "",
+      email: "",
     },
   })
 
@@ -74,26 +74,26 @@ const AddCustomer = ({ isOpen, onClose }: AddCustomerProps) => {
           <ModalHeader>Add Customer</ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>
-            <FormControl isRequired isInvalid={!!errors.id}>
-              <FormLabel htmlFor="title">Id</FormLabel>
+            <FormControl isRequired isInvalid={!!errors.company}>
+              <FormLabel htmlFor="company">Company</FormLabel>
               <Input
-                id="id"
-                {...register("id", {
-                  required: "Id is required.",
+                id="company"
+                {...register("company", {
+                  required: "Company is required.",
                 })}
-                placeholder="Id"
+                placeholder="company"
                 type="text"
               />
-              {errors.id && (
-                <FormErrorMessage>{errors.id.message}</FormErrorMessage>
+              {errors.company && (
+                <FormErrorMessage>{errors.company.message}</FormErrorMessage>
               )}
             </FormControl>
             <FormControl mt={4}>
-              <FormLabel htmlFor="description">Description</FormLabel>
+              <FormLabel htmlFor="email">Email</FormLabel>
               <Input
-                id="description"
-                {...register("description")}
-                placeholder="Description"
+                id="email"
+                {...register("email")}
+                placeholder="email"
                 type="text"
               />
             </FormControl>
