@@ -18,6 +18,7 @@ import {
     Th,
     Thead,
     Tr,
+    SimpleGrid,
     } from "@chakra-ui/react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
@@ -62,34 +63,132 @@ function CustomerDetailsModal({
   onClose: () => void; 
   customer: Customer | null;
 }) {
+  const customerDetails = [
+    {
+      section: "Basic Information",
+      items: [
+        { label: "Company", value: customer?.company },
+        { label: "Full Name", value: customer?.full_name },
+        { label: "Gender", value: customer?.gender },
+        { label: "Preferred Language", value: customer?.preferred_language }
+      ]
+    },
+    {
+      section: "Contact Details",
+      items: [
+        { label: "Email", value: customer?.email },
+        { label: "Phone", value: customer?.phone },
+        { label: "Address", value: customer?.address }
+      ]
+    },
+    {
+      section: "Additional Information",
+      items: [
+        { label: "Description", value: customer?.description },
+        { label: "Order List", value: customer?.order_ids }
+      ]
+    }
+  ];
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg">
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>Customer Details</ModalHeader>
+    <Modal 
+      isOpen={isOpen} 
+      onClose={onClose} 
+      size="6xl" 
+      isCentered
+      motionPreset="slideInBottom"
+    >
+      <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(5px)" />
+      <ModalContent maxH="85vh">
+        <ModalHeader 
+          borderBottom="1px" 
+          borderColor="gray.200"
+          pb={4}
+          bg="gray.50"
+          borderTopRadius="md"
+        >
+          <Text fontSize="xl">Customer Details</Text>
+          <Text fontSize="sm" color="gray.600" mt={1}>
+            ID: {customer?.id}
+          </Text>
+        </ModalHeader>
         <ModalCloseButton />
-        <ModalBody pb={6}>
+        <ModalBody 
+          py={6} 
+          px={8}
+          overflowY="auto"
+          css={{
+            '&::-webkit-scrollbar': {
+              width: '8px',
+            },
+            '&::-webkit-scrollbar-track': {
+              background: '#f1f1f1',
+              borderRadius: '4px',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: '#cbd5e0',
+              borderRadius: '4px',
+            },
+            '&::-webkit-scrollbar-thumb:hover': {
+              background: '#a0aec0',
+            },
+          }}
+        >
           {customer && (
-            <VStack align="stretch" spacing={4} divider={<Box borderColor="gray.200" borderWidth="1px" />}>
-              {[
-                { label: "Company", value: customer.company },
-                { label: "Email", value: customer.email },
-                { label: "Phone", value: customer.phone },
-                { label: "Full Name", value: customer.full_name },
-                { label: "Gender", value: customer.gender },
-                { label: "Preferred Language", value: customer.preferred_language },
-                { label: "Description", value: customer.description },
-                { label: "Address", value: customer.address },
-                { label: "Order List", value: customer.order_ids }
-              ].map(({ label, value }) => (
-                <Box key={label}>
-                  <Text fontWeight="bold" fontSize="sm" color="gray.600">
-                    {label}
+            <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={8}>
+              {customerDetails.map((section) => (
+                <Box key={section.section}>
+                  <Text 
+                    fontSize="md" 
+                    fontWeight="bold" 
+                    color="blue.600" 
+                    mb={4}
+                    pb={2}
+                    borderBottom="2px"
+                    borderColor="blue.100"
+                  >
+                    {section.section}
                   </Text>
-                  <Text>{value || 'N/A'}</Text>
+                  <VStack spacing={4} align="stretch">
+                    {section.items.map(({ label, value }) => (
+                      <Box 
+                        key={label} 
+                        p={4} 
+                        borderRadius="md" 
+                        borderWidth="1px"
+                        borderColor="gray.200"
+                        bg="white"
+                        _hover={{ 
+                          bg: "gray.50",
+                          borderColor: "gray.300",
+                          transform: "translateY(-1px)",
+                          boxShadow: "sm"
+                        }}
+                        transition="all 0.2s"
+                      >
+                        <Text 
+                          fontSize="sm" 
+                          color="gray.600" 
+                          mb={1}
+                          fontWeight="medium"
+                        >
+                          {label}
+                        </Text>
+                        <Text 
+                          fontSize="md"
+                          fontWeight={value ? "medium" : "normal"}
+                          color={value ? "black" : "gray.400"}
+                          whiteSpace="pre-wrap"
+                          wordBreak="break-word"
+                        >
+                          {value || 'N/A'}
+                        </Text>
+                      </Box>
+                    ))}
+                  </VStack>
                 </Box>
               ))}
-            </VStack>
+            </SimpleGrid>
           )}
         </ModalBody>
       </ModalContent>
