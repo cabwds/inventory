@@ -19,12 +19,12 @@ class CustomerBase(SQLModel):
     company: str = Field(min_length=1, index=True, default=None)
     description: str | None = Field(default=None)
     full_name: str | None = Field(default=None)
-    email: EmailStr = Field(max_length=255)
-    phone: str = Field(min_length=1, max_length=255, default=None)
-    gender: str = Field(min_length=1, max_length=255, default=None)
+    email: EmailStr | None = Field(max_length=255)
+    phone: str | None  = Field(min_length=1, max_length=255, default=None)
+    gender: str | None  = Field(min_length=1, max_length=255, default=None)
     preferred_language: str | None = Field(default=None)
-    address: str = Field(default="{}")  # Store as serialized JSON
-    order_ids: str = Field(default="[]")  # Store as serialized JSON
+    address: str | None  = Field(default="{}")  # Store as serialized JSON
+    order_ids: str | None = Field(default="[]")  # Store as serialized JSON
 
     def get_address(self) -> dict:
         return json.loads(self.address)

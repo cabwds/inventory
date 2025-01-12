@@ -13,12 +13,12 @@ export type Customer = {
   company?: string
   description?: string | null
   full_name?: string | null
-  email: string
-  phone?: string
-  gender?: string
+  email: string | null
+  phone?: string | null
+  gender?: string | null
   preferred_language?: string | null
-  address?: string
-  order_ids?: string
+  address?: string | null
+  order_ids?: string | null
   id?: string
 }
 
@@ -26,24 +26,24 @@ export type CustomerCreate = {
   company?: string
   description?: string | null
   full_name?: string | null
-  email: string
-  phone?: string
-  gender?: string
+  email: string | null
+  phone?: string | null
+  gender?: string | null
   preferred_language?: string | null
-  address?: string
-  order_ids?: string
+  address?: string | null
+  order_ids?: string | null
 }
 
 export type CustomerPublic = {
   company?: string
   description?: string | null
   full_name?: string | null
-  email: string
-  phone?: string
-  gender?: string
+  email: string | null
+  phone?: string | null
+  gender?: string | null
   preferred_language?: string | null
-  address?: string
-  order_ids?: string
+  address?: string | null
+  order_ids?: string | null
   id: string
 }
 
@@ -56,12 +56,12 @@ export type CustomerUpdate = {
   company?: string
   description?: string | null
   full_name?: string | null
-  email: string
-  phone?: string
-  gender?: string
+  email: string | null
+  phone?: string | null
+  gender?: string | null
   preferred_language?: string | null
-  address?: string
-  order_ids?: string
+  address?: string | null
+  order_ids?: string | null
 }
 
 export type HTTPValidationError = {

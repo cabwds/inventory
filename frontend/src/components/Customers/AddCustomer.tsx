@@ -88,14 +88,33 @@ const AddCustomer = ({ isOpen, onClose }: AddCustomerProps) => {
                 <FormErrorMessage>{errors.company.message}</FormErrorMessage>
               )}
             </FormControl>
-            <FormControl mt={4}>
+            <FormControl mt={4} isRequired isInvalid={!!errors.email}>
               <FormLabel htmlFor="email">Email</FormLabel>
               <Input
                 id="email"
-                {...register("email")}
+                {...register("email", {
+                  required: "Email is required.",
+                })}
                 placeholder="email"
                 type="text"
               />
+              {errors.email && (
+                <FormErrorMessage>{errors.email.message}</FormErrorMessage>
+              )}
+            </FormControl>
+            <FormControl mt={4} isRequired isInvalid={!!errors.phone}>
+              <FormLabel htmlFor="phone">Phone</FormLabel>
+              <Input
+                id="phone"
+                {...register("phone", {
+                  required: "Phone number is required.",
+                })}
+                placeholder="phone"
+                type="text"
+              />
+              {errors.phone && (
+                <FormErrorMessage>{errors.phone.message}</FormErrorMessage>
+              )}
             </FormControl>
           </ModalBody>
 
