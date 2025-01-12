@@ -58,5 +58,5 @@ class CustomersPublic(SQLModel):
     count: int
 
 # Properties to receive on customer creation
-class CustomerCreate(Customer):
+class CustomerCreate(CustomerBase):
     pass

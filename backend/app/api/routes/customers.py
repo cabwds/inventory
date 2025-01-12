@@ -51,7 +51,6 @@ def create_customer(
     """
     new_uuid = uuid.uuid4()
     new_customer = customer_in
-    new_customer.id = new_uuid
     customer_in.description = "123"
     customer_in.full_name = "123"
     #email
@@ -60,7 +59,7 @@ def create_customer(
     customer_in.preferred_language= "123"
     customer_in.set_address({})
     customer_in.set_order_ids({})
-    customer = Customer.model_validate(new_customer)
+    customer = Customer.model_validate(new_customer, update={"id": new_uuid})
     session.add(customer)
     session.commit()
     session.refresh(customer)

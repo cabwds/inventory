@@ -26,13 +26,12 @@ export type CustomerCreate = {
   company?: string
   description?: string | null
   full_name?: string | null
-  email?: string
+  email: string
   phone?: string
   gender?: string
   preferred_language?: string | null
   address?: string
   order_ids?: string
-  id?: string
 }
 
 export type CustomerPublic = {
