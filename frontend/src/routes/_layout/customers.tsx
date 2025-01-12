@@ -53,6 +53,50 @@ function getCustomersQueryOptions({ page }: { page: number }) {
 
 
 
+function CustomerDetailsModal({ 
+  isOpen, 
+  onClose, 
+  customer 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  customer: Customer | null;
+}) {
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} size="lg">
+      <ModalOverlay />
+      <ModalContent>
+        <ModalHeader>Customer Details</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody pb={6}>
+          {customer && (
+            <VStack align="stretch" spacing={4} divider={<Box borderColor="gray.200" borderWidth="1px" />}>
+              {[
+                { label: "Company", value: customer.company },
+                { label: "Email", value: customer.email },
+                { label: "Phone", value: customer.phone },
+                { label: "Full Name", value: customer.full_name },
+                { label: "Gender", value: customer.gender },
+                { label: "Preferred Language", value: customer.preferred_language },
+                { label: "Description", value: customer.description },
+                { label: "Address", value: customer.address },
+                { label: "Order List", value: customer.order_ids }
+              ].map(({ label, value }) => (
+                <Box key={label}>
+                  <Text fontWeight="bold" fontSize="sm" color="gray.600">
+                    {label}
+                  </Text>
+                  <Text>{value || 'N/A'}</Text>
+                </Box>
+              ))}
+            </VStack>
+          )}
+        </ModalBody>
+      </ModalContent>
+    </Modal>
+  );
+}
+
 function CustomersTable() {
   const queryClient = useQueryClient()
   const { page } = Route.useSearch()
@@ -98,58 +142,19 @@ function CustomersTable() {
 
   return (
     <>
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Customer Details</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
-            {selectedCustomer && (
-              <VStack align="stretch" spacing={4}>
-                <Box>
-                  <Text fontWeight="bold">Company</Text>
-                  <Text>{selectedCustomer.company}</Text>
-                </Box>
-                <Box>
-                  <Text fontWeight="bold">Email</Text>
-                  <Text>{selectedCustomer.email || 'N/A'}</Text>
-                </Box>
-                <Box>
-                  <Text fontWeight="bold">Phone</Text>
-                  <Text>{selectedCustomer.phone || 'N/A'}</Text>
-                </Box>
-                <Box>
-                  <Text fontWeight="bold">Full Name</Text>
-                  <Text>{selectedCustomer.full_name || 'N/A'}</Text>
-                </Box>
-                <Box>
-                  <Text fontWeight="bold">Gender</Text>
-                  <Text>{selectedCustomer.gender || 'N/A'}</Text>
-                </Box>
-                <Box>
-                  <Text fontWeight="bold">Preferred Language</Text>
-                  <Text>{selectedCustomer.preferred_language || 'N/A'}</Text>
-                </Box>
-                <Box>
-                  <Text fontWeight="bold">Description</Text>
-                  <Text>{selectedCustomer.description || 'N/A'}</Text>
-                </Box>
-                <Box>
-                  <Text fontWeight="bold">Address</Text>
-                  <Text>{selectedCustomer.address || 'N/A'}</Text>
-                </Box>
-                <Box>
-                  <Text fontWeight="bold">Order List</Text>
-                  <Text>{selectedCustomer.order_ids || 'N/A'}</Text>
-                </Box>
-              </VStack>
-            )}
-          </ModalBody>
-        </ModalContent>
-      </Modal>
-      <TableContainer>
-        <Table size={{ base: "sm", md: "md" }}>
-          <Thead>
+      <CustomerDetailsModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        customer={selectedCustomer} 
+      />
+      <TableContainer 
+        borderWidth="1px" 
+        borderRadius="lg" 
+        borderColor="gray.200"
+        shadow="sm"
+      >
+        <Table size={{ base: "sm", md: "md" }} variant="simple">
+          <Thead bg="gray.50">
             <Tr>
               <Th>ID</Th>
               <Th>Company</Th>
@@ -161,9 +166,9 @@ function CustomersTable() {
           {isPending ? (
             <Tbody>
               <Tr>
-                {new Array(4).fill(null).map((_, index) => (
+                {Array(4).fill(null).map((_, index) => (
                   <Td key={index}>
-                    <SkeletonText noOfLines={1} paddingBlock="16px" />
+                    <SkeletonText noOfLines={1} speed={1} />
                   </Td>
                 ))}
               </Tr>
@@ -171,38 +176,42 @@ function CustomersTable() {
           ) : (
             <Tbody>
               {customers?.data.map((customer) => (
-                <Tr key={customer.id} opacity={isPlaceholderData ? 0.5 : 1}>
-                  <Td isTruncated 
-                      maxWidth="50px"
-                      cursor="pointer"
-                      color="blue.500"
-                      _hover={{ color: "blue.600", textDecoration: "underline" }}
-                      onClick={() => handleCustomerClick(customer.id)}
-                  >
-                      {customer.id}
-                  </Td>
+                <Tr 
+                  key={customer.id} 
+                  opacity={isPlaceholderData ? 0.5 : 1}
+                  _hover={{ bg: "gray.50" }}
+                  transition="background-color 0.2s"
+                >
                   <Td 
                     isTruncated 
-                    maxWidth="150px"
+                    maxWidth="50px"
+                    cursor="pointer"
+                    color="blue.500"
+                    _hover={{ color: "blue.600", textDecoration: "underline" }}
+                    onClick={() => handleCustomerClick(customer.id)}
+                    fontWeight="medium"
                   >
+                    {customer.id}
+                  </Td>
+                  <Td isTruncated maxWidth="150px" fontWeight="medium">
                     {customer.company}
                   </Td>
                   <Td
-                    color={!customer.email ? "ui.dim" : "inherit"}
+                    color={!customer.email ? "gray.400" : "inherit"}
                     isTruncated
                     maxWidth="150px"
                   >
                     {customer.email || "N/A"}
                   </Td>
                   <Td
-                    color={!customer.phone ? "ui.dim" : "inherit"}
+                    color={!customer.phone ? "gray.400" : "inherit"}
                     isTruncated
                     maxWidth="150px"
                   >
                     {customer.phone || "N/A"}
                   </Td>
                   <Td>
-                    <ActionsMenu type={"Customer"} value={customer} />
+                    <ActionsMenu type="Customer" value={customer} />
                   </Td>
                 </Tr>
               ))}
@@ -210,24 +219,35 @@ function CustomersTable() {
           )}
         </Table>
       </TableContainer>
-      <PaginationFooter
-        page={page}
-        onChangePage={setPage}
-        hasNextPage={hasNextPage}
-        hasPreviousPage={hasPreviousPage}
-      />
+      <Box mt={4}>
+        <PaginationFooter
+          page={page}
+          onChangePage={setPage}
+          hasNextPage={hasNextPage}
+          hasPreviousPage={hasPreviousPage}
+        />
+      </Box>
     </>
   )
 }
 
 function Customers() {
   return (
-    <Container maxW="full">
-      <Heading size="lg" textAlign={{ base: "center", md: "left" }} pt={12}>
-        Customers Management
-      </Heading>
+    <Container maxW="full" py={8}>
+      <Box mb={8}>
+        <Heading 
+          size="lg" 
+          textAlign={{ base: "center", md: "left" }}
+          color="gray.700"
+        >
+          Customers Management
+        </Heading>
+      </Box>
 
-      <Navbar type={"Customer"} addModalAs={AddCustomer} />
+      <Box mb={6}>
+        <Navbar type="Customer" addModalAs={AddCustomer} />
+      </Box>
+      
       <CustomersTable />
     </Container>
   )
