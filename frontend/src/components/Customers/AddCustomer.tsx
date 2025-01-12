@@ -11,6 +11,11 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
+  SimpleGrid,
+  Text,
+  Box,
+  VStack,
+  Select,
 } from "@chakra-ui/react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { type SubmitHandler, useForm } from "react-hook-form"
@@ -18,11 +23,43 @@ import { type SubmitHandler, useForm } from "react-hook-form"
 import { type ApiError, type CustomerCreate, CustomersService } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
 import { handleError } from "../../utils"
+import { modalScrollbarStyles, editCustomerStyles } from "../../styles/customers.styles"
 
 interface AddCustomerProps {
   isOpen: boolean
   onClose: () => void
 }
+
+interface FormField {
+  id: string;
+  label: string;
+  placeholder: string;
+  required?: boolean;
+  type?: string;
+  validation?: {
+    required?: string;
+    pattern?: {
+      value: RegExp;
+      message: string;
+    };
+  };
+  options?: Array<{ value: string; label: string }>;
+}
+
+interface FormSection {
+  section: string;
+  fields: FormField[];
+}
+
+const GENDER_OPTIONS = [
+  { value: "Male", label: "Male" },
+  { value: "Female", label: "Female" }
+]
+
+const LANGUAGE_OPTIONS = [
+  { value: "English", label: "English" },
+  { value: "Chinese", label: "Chinese" },
+]
 
 const AddCustomer = ({ isOpen, onClose }: AddCustomerProps) => {
   const queryClient = useQueryClient()
@@ -38,6 +75,7 @@ const AddCustomer = ({ isOpen, onClose }: AddCustomerProps) => {
     defaultValues: {
       company: "",
       email: "",
+      phone: "",
     },
   })
 
@@ -61,72 +99,179 @@ const AddCustomer = ({ isOpen, onClose }: AddCustomerProps) => {
     mutation.mutate(data)
   }
 
-  return (
-    <>
-      <Modal
-        isOpen={isOpen}
-        onClose={onClose}
-        size={{ base: "sm", md: "md" }}
-        isCentered
-      >
-        <ModalOverlay />
-        <ModalContent as="form" onSubmit={handleSubmit(onSubmit)}>
-          <ModalHeader>Add Customer</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
-            <FormControl isRequired isInvalid={!!errors.company}>
-              <FormLabel htmlFor="company">Company</FormLabel>
-              <Input
-                id="company"
-                {...register("company", {
-                  required: "Company is required.",
-                })}
-                placeholder="company"
-                type="text"
-              />
-              {errors.company && (
-                <FormErrorMessage>{errors.company.message}</FormErrorMessage>
-              )}
-            </FormControl>
-            <FormControl mt={4} isRequired isInvalid={!!errors.email}>
-              <FormLabel htmlFor="email">Email</FormLabel>
-              <Input
-                id="email"
-                {...register("email", {
-                  required: "Email is required.",
-                })}
-                placeholder="email"
-                type="text"
-              />
-              {errors.email && (
-                <FormErrorMessage>{errors.email.message}</FormErrorMessage>
-              )}
-            </FormControl>
-            <FormControl mt={4} isRequired isInvalid={!!errors.phone}>
-              <FormLabel htmlFor="phone">Phone</FormLabel>
-              <Input
-                id="phone"
-                {...register("phone", {
-                  required: "Phone number is required.",
-                })}
-                placeholder="phone"
-                type="text"
-              />
-              {errors.phone && (
-                <FormErrorMessage>{errors.phone.message}</FormErrorMessage>
-              )}
-            </FormControl>
-          </ModalBody>
+  const formSections: FormSection[] = [
+    {
+      section: "Basic Information",
+      fields: [
+        {
+          id: "company",
+          label: "Company",
+          required: true,
+          placeholder: "Enter company name",
+          validation: {
+            required: "Company name is required",
+          }
+        },
+        {
+          id: "full_name",
+          label: "Full Name",
+          placeholder: "Enter full name"
+        },
+        {
+          id: "gender",
+          label: "Gender",
+          placeholder: "Select gender",
+          type: "select",
+          options: GENDER_OPTIONS
+        }
+      ]
+    },
+    {
+      section: "Contact Details",
+      fields: [
+        {
+          id: "email",
+          label: "Email",
+          required: true,
+          placeholder: "Enter email address",
+          type: "email",
+          validation: {
+            required: "Email is required",
+          }
+        },
+        {
+          id: "phone",
+          label: "Phone",
+          required: true,
+          placeholder: "Enter phone number",
+          validation: {
+            required: "Phone number is required",
+          }
+        },
+        {
+          id: "address",
+          label: "Address",
+          placeholder: "Enter address"
+        }
+      ]
+    },
+    {
+      section: "Additional Information",
+      fields: [
+        {
+          id: "preferred_language",
+          label: "Preferred Language",
+          placeholder: "Select preferred language",
+          type: "select",
+          options: LANGUAGE_OPTIONS
+        },
+        {
+          id: "description",
+          label: "Description",
+          placeholder: "Enter description"
+        }
+      ]
+    }
+  ]
 
-          <ModalFooter gap={3}>
-            <Button variant="primary" type="submit" isLoading={isSubmitting}>
-              Save
-            </Button>
-            <Button onClick={onClose}>Cancel</Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-    </>
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size="6xl"
+      isCentered
+      motionPreset="slideInBottom"
+    >
+      <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(5px)" />
+      <ModalContent maxH="85vh">
+        <ModalHeader {...editCustomerStyles.modalHeader}>
+          <Text fontSize="xl">Add Customer</Text>
+        </ModalHeader>
+        <ModalCloseButton />
+        <ModalBody 
+          py={6} 
+          px={8}
+          overflowY="auto"
+          css={modalScrollbarStyles}
+        >
+          <form id="add-customer-form" onSubmit={handleSubmit(onSubmit)}>
+            <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={8}>
+              {formSections.map((section) => (
+                <Box key={section.section}>
+                  <Text {...editCustomerStyles.sectionTitle}>
+                    {section.section}
+                  </Text>
+                  <VStack spacing={4} align="stretch">
+                    {section.fields.map((field) => (
+                      <FormControl 
+                        key={field.id} 
+                        isRequired={field.required}
+                        isInvalid={!!errors[field.id as keyof CustomerCreate]}
+                      >
+                        <Box {...editCustomerStyles.formBox}>
+                          <FormLabel 
+                            htmlFor={field.id}
+                            {...editCustomerStyles.formLabel}
+                          >
+                            {field.label}
+                            {field.required && 
+                              <Text as="span" color="red.500" ml={1}>*</Text>
+                            }
+                          </FormLabel>
+                          {field.type === "select" ? (
+                            <Select
+                              id={field.id}
+                              {...register(field.id as keyof CustomerCreate, field.validation)}
+                              placeholder={field.placeholder}
+                              {...editCustomerStyles.input}
+                            >
+                              {field.options?.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </Select>
+                          ) : (
+                            <Input
+                              id={field.id}
+                              {...register(field.id as keyof CustomerCreate, field.validation)}
+                              placeholder={field.placeholder}
+                              type={field.type || "text"}
+                              {...editCustomerStyles.input}
+                            />
+                          )}
+                          {errors[field.id as keyof CustomerCreate] && (
+                            <FormErrorMessage>
+                              {errors[field.id as keyof CustomerCreate]?.message}
+                            </FormErrorMessage>
+                          )}
+                        </Box>
+                      </FormControl>
+                    ))}
+                  </VStack>
+                </Box>
+              ))}
+            </SimpleGrid>
+          </form>
+        </ModalBody>
+
+        <ModalFooter {...editCustomerStyles.modalFooter}>
+          <Button
+            variant="primary"
+            type="submit"
+            form="add-customer-form"
+            isLoading={isSubmitting}
+            colorScheme="blue"
+            px={6}
+          >
+            Save
+          </Button>
+          <Button onClick={onClose} variant="outline">
+            Cancel
+          </Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
   )
 }
 

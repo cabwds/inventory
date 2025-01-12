@@ -62,8 +62,8 @@ interface FormSection {
 }
 
 const GENDER_OPTIONS = [
-  { value: "male", label: "Male" },
-  { value: "female", label: "Female" }
+  { value: "Male", label: "Male" },
+  { value: "Female", label: "Female" }
 ]
 
 const LANGUAGE_OPTIONS = [

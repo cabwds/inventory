@@ -13,8 +13,8 @@ class CustomerBase(SQLModel):
     description: str | None = Field(default=None)
     full_name: str | None = Field(default=None)
     email: EmailStr | None = Field(max_length=255)
-    phone: str | None  = Field(min_length=1, max_length=255, default=None)
-    gender: str | None  = Field(min_length=1, max_length=255, default=None)
+    phone: str | None  = Field(default=None)
+    gender: str | None  = Field(default=None)
     preferred_language: str | None = Field(default=None)
     address: str | None  = Field(default=None) 
     order_ids: str | None = Field(default="[]")  # Store as serialized JSON
@@ -41,7 +41,7 @@ class Customer(CustomerBase, table=True):
 
 # Properties to receive on item update
 class CustomerUpdate(CustomerBase):
-    description: str | None = Field(default=None, min_length=1, max_length=255)  # type: ignore
+    description: str | None = Field(default=None, max_length=255)  # type: ignore
 
 class CustomerPublic(CustomerBase):
     id: uuid.UUID
