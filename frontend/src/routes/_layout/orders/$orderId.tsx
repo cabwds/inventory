@@ -54,11 +54,25 @@ function OrderDetail() {
     showToast("Error", "Failed to load order details", "error")
   }
 
+  const handleCustomerClick = () => {
+    if (order?.customer_id) {
+      navigate({ 
+        to: '/customers/$customerId', 
+        params: { customerId: order.customer_id } 
+      })
+    }
+  }
+
   const orderDetails = [
     {
       section: "Basic Information",
       items: [
-        { label: "Customer", value: customerCompany },
+        { 
+          label: "Customer", 
+          value: customerCompany,
+          onClick: handleCustomerClick,
+          isLink: true 
+        },
         { label: "Order Items", value: order?.order_items },
         { label: "Order Quantity", value: order?.order_quantity },
         { label: "Order Date", value: order?.order_date }
@@ -117,7 +131,7 @@ function OrderDetail() {
                     {section.section}
                   </Text>
                   <VStack spacing={4} align="stretch">
-                    {section.items.map(({ label, value }) => (
+                    {section.items.map(({ label, value, onClick, isLink }) => (
                       <Box 
                         key={label} 
                         p={3}
@@ -135,9 +149,12 @@ function OrderDetail() {
                         <Text 
                           fontSize="md"
                           fontWeight={value ? "medium" : "normal"}
-                          color={value ? "black" : "gray.400"}
+                          color={isLink ? "blue.500" : value ? "black" : "gray.400"}
                           whiteSpace="pre-wrap"
                           wordBreak="break-word"
+                          cursor={isLink ? "pointer" : "default"}
+                          _hover={isLink ? { textDecoration: "underline" } : undefined}
+                          onClick={onClick}
                         >
                           {value || 'N/A'}
                         </Text>

@@ -68,6 +68,14 @@ function OrderRow({
   onOrderClick: (orderId: string) => void
 }) {
   const customerCompany = useCustomerCompany(order.customer_id)
+  const navigate = useNavigate()
+
+  const handleCustomerClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (order.customer_id) {
+      navigate({ to: '/customers/$customerId', params: { customerId: order.customer_id } })
+    }
+  }
   
   return (
     <Tr 
@@ -84,7 +92,14 @@ function OrderRow({
       >
         {(page - 1) * PER_PAGE + index + 1}
       </Td>
-      <Td isTruncated maxWidth="150px" fontWeight="medium">
+      <Td 
+        isTruncated 
+        maxWidth="150px" 
+        fontWeight="medium"
+        cursor="pointer"
+        _hover={{ color: "blue.500" }}
+        onClick={handleCustomerClick}
+      >
         <Text>
           {customerCompany}
         </Text>
