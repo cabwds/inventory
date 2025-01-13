@@ -103,6 +103,7 @@ export type Order = {
   customer_id: string | null
   order_status?: string | null
   total_price?: number | null
+  is_valid?: boolean | null
   id?: string
 }
 
@@ -110,12 +111,14 @@ export type OrderCreate = {
   customer_id: string | null
   order_status?: string | null
   total_price?: number | null
+  is_valid?: boolean | null
 }
 
 export type OrderPublic = {
   customer_id: string | null
   order_status?: string | null
   total_price?: number | null
+  is_valid?: boolean | null
   id?: string
 }
 
@@ -128,6 +131,7 @@ export type OrderUpdate = {
   customer_id: string | null
   order_status?: string | null
   total_price?: number | null
+  is_valid?: boolean | null
 }
 
 export type PrivateUserCreate = {

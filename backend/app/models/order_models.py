@@ -14,7 +14,7 @@ class OrderBase(SQLModel):
     #payment_status: str | None = Field(default=None)
     #notes: str | None = Field(default=None)
     total_price: float | None = Field(default=0)
-    #is_valid: bool = Field(default=True)
+    is_valid: bool | None = Field(default=True)
 
 # Database model, database table inferred from class name
 class Order(OrderBase, table=True):

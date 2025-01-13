@@ -1,5 +1,4 @@
 import { css } from "@emotion/react"
-import { SystemStyleObject } from "@chakra-ui/react"
 
 export const modalScrollbarStyles = css`
   &::-webkit-scrollbar {

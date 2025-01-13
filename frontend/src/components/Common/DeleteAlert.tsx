@@ -63,7 +63,7 @@ const Delete = ({ type, id, isOpen, onClose }: DeleteProps) => {
     },
     onSettled: () => {
       queryClient.invalidateQueries({
-        queryKey: [type === "Item" ? "items" : type === "User" ? "users" : type === "Customer" ? "customers" : "others"]
+        queryKey: [type === "Item" ? "items" : type === "User" ? "users" : type === "Customer" ? "customers" : type === "Order" ? "orders" : "others"]
         //queryKey: [type === "Item" ? "items" : "users"],
       })
     },
