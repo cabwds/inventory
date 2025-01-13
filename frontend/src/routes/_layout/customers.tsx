@@ -21,7 +21,7 @@ import {
     SimpleGrid,
     } from "@chakra-ui/react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { createFileRoute, useNavigate, Outlet} from "@tanstack/react-router"
 import { useEffect, useState } from "react"
 import { z } from "zod"
 
@@ -53,120 +53,12 @@ function getCustomersQueryOptions({ page }: { page: number }) {
   }
 }
 
-
-
-function CustomerDetailsModal({ 
-  isOpen, 
-  onClose, 
-  customer 
-}: { 
-  isOpen: boolean; 
-  onClose: () => void; 
-  customer: Customer | null;
-}) {
-  const customerDetails = [
-    {
-      section: "Basic Information",
-      items: [
-        { label: "Company", value: customer?.company },
-        { label: "Full Name", value: customer?.full_name },
-        { label: "Gender", value: customer?.gender },
-        { label: "Preferred Language", value: customer?.preferred_language }
-      ]
-    },
-    {
-      section: "Contact Details",
-      items: [
-        { label: "Email", value: customer?.email },
-        { label: "Phone", value: customer?.phone },
-        { label: "Address", value: customer?.address }
-      ]
-    },
-    {
-      section: "Additional Information",
-      items: [
-        { label: "Description", value: customer?.description },
-        { label: "Order List", value: customer?.order_ids }
-      ]
-    }
-  ];
-
-  return (
-    <Modal 
-      isOpen={isOpen} 
-      onClose={onClose} 
-      size="6xl" 
-      isCentered
-      motionPreset="slideInBottom"
-    >
-      <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(5px)" />
-      <ModalContent maxH="85vh">
-        <ModalHeader {...customerDetailsStyles.modalHeader}>
-          <Text fontSize="xl">Customer Details</Text>
-          <Text fontSize="sm" color="gray.600" mt={1}>
-            ID: {customer?.id}
-          </Text>
-        </ModalHeader>
-        <ModalCloseButton />
-        <ModalBody 
-          py={6} 
-          px={8}
-          overflowY="auto"
-          css={modalScrollbarStyles}
-        >
-          {customer && (
-            <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={8}>
-              {customerDetails.map((section) => (
-                <Box key={section.section}>
-                  <Text {...customerDetailsStyles.sectionTitle}>
-                    {section.section}
-                  </Text>
-                  <VStack spacing={4} align="stretch">
-                    {section.items.map(({ label, value }) => (
-                      <Box 
-                        key={label} 
-                        {...customerDetailsStyles.detailBox}
-                      >
-                        <Text 
-                          fontSize="sm" 
-                          color="gray.600" 
-                          mb={1}
-                          fontWeight="medium"
-                        >
-                          {label}
-                        </Text>
-                        <Text 
-                          fontSize="md"
-                          fontWeight={value ? "medium" : "normal"}
-                          color={value ? "black" : "gray.400"}
-                          whiteSpace="pre-wrap"
-                          wordBreak="break-word"
-                        >
-                          {value || 'N/A'}
-                        </Text>
-                      </Box>
-                    ))}
-                  </VStack>
-                </Box>
-              ))}
-            </SimpleGrid>
-          )}
-        </ModalBody>
-      </ModalContent>
-    </Modal>
-  );
-}
-
 function CustomersTable() {
   const queryClient = useQueryClient()
   const { page } = Route.useSearch()
-  const showToast = useCustomToast()
   const navigate = useNavigate({ from: Route.fullPath })
   const setPage = (page: number) =>
     navigate({ search: (prev: {[key: string]: string}) => ({ ...prev, page }) })
-
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const {
     data: customers,
@@ -177,17 +69,8 @@ function CustomersTable() {
     placeholderData: (prevData) => prevData,
   })
 
-  const handleCustomerClick = async (customerId : string) => {
-    try {
-      const data: CustomersReadCustomerData = {
-        id: customerId  // Pass the ID in the expected format
-      }
-      const customerData = await CustomersService.readCustomer(data)
-      setSelectedCustomer(customerData)
-      setIsModalOpen(true)
-    } catch (error) {
-      showToast("Failure!", "Customer checking failed.", "error")
-    }
+  const handleCustomerClick = (customerId: string) => {
+    navigate({ to: '/customers/$customerId', params: { customerId } })
   }
 
   const hasNextPage = !isPlaceholderData && customers?.data.length === PER_PAGE
@@ -201,11 +84,6 @@ function CustomersTable() {
 
   return (
     <>
-      <CustomerDetailsModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        customer={selectedCustomer} 
-      />
       <TableContainer {...customerDetailsStyles.tableContainer}>
         <Table size={{ base: "sm", md: "md" }} variant="simple">
           <Thead bg="gray.50">
@@ -298,6 +176,7 @@ function Customers() {
       </Box>
       
       <CustomersTable />
+      <Outlet />
     </Container>
   )
 }

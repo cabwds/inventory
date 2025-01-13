@@ -22,6 +22,8 @@ import { Route as LayoutOrdersImport } from './routes/_layout/orders'
 import { Route as LayoutItemsImport } from './routes/_layout/items'
 import { Route as LayoutCustomersImport } from './routes/_layout/customers'
 import { Route as LayoutAdminImport } from './routes/_layout/admin'
+import { Route as LayoutOrdersOrderIdImport } from './routes/_layout/orders/$orderId'
+import { Route as LayoutCustomersCustomerIdImport } from './routes/_layout/customers/$customerId'
 
 // Create/Update Routes
 
@@ -80,6 +82,16 @@ const LayoutAdminRoute = LayoutAdminImport.update({
   getParentRoute: () => LayoutRoute,
 } as any)
 
+const LayoutOrdersOrderIdRoute = LayoutOrdersOrderIdImport.update({
+  path: '/$orderId',
+  getParentRoute: () => LayoutOrdersRoute,
+} as any)
+
+const LayoutCustomersCustomerIdRoute = LayoutCustomersCustomerIdImport.update({
+  path: '/$customerId',
+  getParentRoute: () => LayoutCustomersRoute,
+} as any)
+
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
@@ -128,6 +140,14 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutIndexImport
       parentRoute: typeof LayoutImport
     }
+    '/_layout/customers/$customerId': {
+      preLoaderRoute: typeof LayoutCustomersCustomerIdImport
+      parentRoute: typeof LayoutCustomersImport
+    }
+    '/_layout/orders/$orderId': {
+      preLoaderRoute: typeof LayoutOrdersOrderIdImport
+      parentRoute: typeof LayoutOrdersImport
+    }
   }
 }
 
@@ -136,9 +156,9 @@ declare module '@tanstack/react-router' {
 export const routeTree = rootRoute.addChildren([
   LayoutRoute.addChildren([
     LayoutAdminRoute,
-    LayoutCustomersRoute,
+    LayoutCustomersRoute.addChildren([LayoutCustomersCustomerIdRoute]),
     LayoutItemsRoute,
-    LayoutOrdersRoute,
+    LayoutOrdersRoute.addChildren([LayoutOrdersOrderIdRoute]),
     LayoutSettingsRoute,
     LayoutIndexRoute,
   ]),
