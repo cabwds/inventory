@@ -65,7 +65,8 @@ export const customerDetailsStyles = {
     color: "blue.500",
     _hover: { 
       color: "blue.600", 
-      textDecoration: "underline" 
+      textDecoration: "underline",
+      transform: "scale(1.1)"
     },
     fontWeight: "medium"
   }

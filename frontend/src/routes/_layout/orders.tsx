@@ -97,7 +97,7 @@ function OrderRow({
         maxWidth="150px" 
         fontWeight="medium"
         cursor="pointer"
-        _hover={{ color: "blue.500" }}
+        _hover={{ color: "blue.500", textDecoration: "underline", transform: "scale(1.05)"}}
         onClick={handleCustomerClick}
       >
         <Text>
