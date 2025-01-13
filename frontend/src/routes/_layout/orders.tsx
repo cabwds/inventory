@@ -100,9 +100,14 @@ function OrderDetailsModal({
       <ModalContent maxH="85vh">
         <ModalHeader {...customerDetailsStyles.modalHeader}>
           <Text fontSize="xl">Order Details</Text>
-          <Text fontSize="sm" color="gray.600" mt={1}>
-            ID: {order?.id}
-          </Text>
+          <Box display="flex" gap={4}>
+            <Text fontSize="sm" color="gray.600">
+              ID: {order?.id}
+            </Text>
+            <Text fontSize="sm" color="gray.600">
+              Last Updated: {order?.order_update_date || 'N/A'}
+            </Text>
+          </Box>
         </ModalHeader>
         <ModalCloseButton />
         <ModalBody 
