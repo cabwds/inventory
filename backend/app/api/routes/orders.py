@@ -49,12 +49,13 @@ def create_order(
     """
     count_statement = select(func.count()).select_from(Order)
     count = session.exec(count_statement).one()
-    new_id = count + 1
-
+    
     current_time = datetime.now()
     # Format the current time as a string
     formatted_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
-
+    current_year = current_time.year
+    current_month = current_time.month
+    new_id = current_year * 1000000 + current_month * 10000 + count + 1
     #order_date_str = "2025-01-13 15:30:00"
     #order_date = datetime.strptime(order_date_str, "%Y-%m-%d %H:%M:%S")
     order = Order.model_validate(order_in, update={"id": str(new_id), 

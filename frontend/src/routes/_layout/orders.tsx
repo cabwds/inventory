@@ -10,13 +10,14 @@ import {
   Th,
   Thead,
   Tr,
+  Text,
 } from "@chakra-ui/react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate, Outlet } from "@tanstack/react-router"
 import { useEffect } from "react"
 import { z } from "zod"
 
-import { OrdersService } from "../../client"
+import { OrdersService, CustomersService } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
 import ActionsMenu from "../../components/Common/ActionsMenu"
 import Navbar from "../../components/Common/Navbar"
@@ -43,6 +44,60 @@ function getOrdersQueryOptions({ page }: { page: number }) {
   }
 }
 
+function useCustomerCompany(customerId: string | null | undefined) {
+  const { data: customer } = useQuery({
+    queryKey: ['customer', customerId],
+    queryFn: () => customerId ? CustomersService.readCustomer({ id: customerId }) : null,
+    enabled: !!customerId,
+  })
+
+  return customer?.company || 'N/A'
+}
+
+function OrderRow({ 
+  order, 
+  index, 
+  page, 
+  isPlaceholderData, 
+  onOrderClick 
+}: { 
+  order: any, 
+  index: number, 
+  page: number, 
+  isPlaceholderData: boolean,
+  onOrderClick: (orderId: string) => void
+}) {
+  const customerCompany = useCustomerCompany(order.customer_id)
+  
+  return (
+    <Tr 
+      key={order.id} 
+      opacity={isPlaceholderData ? 0.5 : 1}
+      _hover={{ bg: "gray.50" }}
+      transition="background-color 0.2s"
+    >
+      <Td 
+        {...customerDetailsStyles.customerIdCell} 
+        onClick={() => onOrderClick(order.id!)}
+        width="80px"
+        cursor="pointer"
+      >
+        {(page - 1) * PER_PAGE + index + 1}
+      </Td>
+      <Td isTruncated maxWidth="150px" fontWeight="medium">
+        <Text>
+          {customerCompany}
+        </Text>
+      </Td>
+      <Td>{order.order_status}</Td>
+      <Td>${order.total_price}</Td>
+      <Td>
+        <ActionsMenu type="Order" value={order} />
+      </Td>
+    </Tr>
+  )
+}
+
 function OrdersTable() {
   const queryClient = useQueryClient()
   const { page } = Route.useSearch()
@@ -61,6 +116,7 @@ function OrdersTable() {
   })
 
   const handleOrderClick = (orderId: string) => {
+    console.log(orderId)
     navigate({ to: '/orders/$orderId', params: { orderId } })
   }
 
@@ -80,7 +136,7 @@ function OrdersTable() {
           <Thead bg="gray.50">
             <Tr>
               <Th>No.</Th>
-              <Th>Customer ID</Th>
+              <Th>Customer</Th>
               <Th>Status</Th>
               <Th>Total Amount</Th>
               <Th>Actions</Th>
@@ -99,29 +155,14 @@ function OrdersTable() {
           ) : (
             <Tbody>
               {orders?.data.map((order, index) => (
-                <Tr 
-                  key={order.id} 
-                  opacity={isPlaceholderData ? 0.5 : 1}
-                  _hover={{ bg: "gray.50" }}
-                  transition="background-color 0.2s"
-                >
-                  <Td 
-                    {...customerDetailsStyles.customerIdCell} 
-                    onClick={() => handleOrderClick(order.id!)}
-                    width="80px"
-                    cursor="pointer"
-                  >
-                    {(page - 1) * PER_PAGE + index + 1}
-                  </Td>
-                  <Td isTruncated maxWidth="150px" fontWeight="medium">
-                    {order.customer_id}
-                  </Td>
-                  <Td>{order.order_status}</Td>
-                  <Td>${order.total_price}</Td>
-                  <Td>
-                    <ActionsMenu type="Order" value={order} />
-                  </Td>
-                </Tr>
+                <OrderRow
+                  key={order.id}
+                  order={order}
+                  index={index}
+                  page={page}
+                  isPlaceholderData={isPlaceholderData}
+                  onOrderClick={handleOrderClick}
+                />
               ))}
             </Tbody>
           )}
