@@ -104,6 +104,7 @@ export type Order = {
   order_quantity: string | null
   customer_id: string | null
   order_date: string | null
+  order_update_date?: string | null
   order_status?: string | null
   payment_status?: string | null
   notes?: string | null
@@ -117,6 +118,7 @@ export type OrderCreate = {
   order_quantity: string | null
   customer_id: string | null
   order_date: string | null
+  order_update_date?: string | null
   order_status?: string | null
   payment_status?: string | null
   notes?: string | null
@@ -129,6 +131,7 @@ export type OrderPublic = {
   order_quantity: string | null
   customer_id: string | null
   order_date: string | null
+  order_update_date?: string | null
   order_status?: string | null
   payment_status?: string | null
   notes?: string | null
@@ -147,6 +150,7 @@ export type OrderUpdate = {
   order_quantity: string | null
   customer_id: string | null
   order_date: string | null
+  order_update_date?: string | null
   order_status?: string | null
   payment_status?: string | null
   notes?: string | null

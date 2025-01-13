@@ -10,6 +10,7 @@ class OrderBase(SQLModel):
     order_quantity: str | None = Field(max_length=65025)
     customer_id: str | None= Field(min_length=1, index=True)
     order_date: str | None= Field(min_length=1)
+    order_update_date: str | None= Field(default=None)
     order_status: str | None = Field(default=None)
     payment_status: str | None = Field(default=None)
     notes: str | None = Field(default=None)

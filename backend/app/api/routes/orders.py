@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
@@ -49,7 +50,16 @@ def create_order(
     count_statement = select(func.count()).select_from(Order)
     count = session.exec(count_statement).one()
     new_id = count + 1
-    order = Order.model_validate(order_in, update={"id": str(new_id)})
+
+    current_time = datetime.now()
+    # Format the current time as a string
+    formatted_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
+
+    #order_date_str = "2025-01-13 15:30:00"
+    #order_date = datetime.strptime(order_date_str, "%Y-%m-%d %H:%M:%S")
+    order = Order.model_validate(order_in, update={"id": str(new_id), 
+                                                   "order_date" : formatted_time,
+                                                   "order_update_date" : formatted_time})
     session.add(order)
     session.commit()
     session.refresh(order)
@@ -74,6 +84,11 @@ def update_order(
     #    raise HTTPException(status_code=404, detail="Order is not valid")
     if not current_user.is_superuser:
         raise HTTPException(status_code=400, detail="Not enough permissions")
+    
+    current_time = datetime.now()
+    # Format the current time as a string
+    formatted_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
+    order_in.order_update_date = formatted_time
     update_dict = order_in.model_dump(exclude_unset=True)
     order.sqlmodel_update(update_dict)
     session.add(order)
