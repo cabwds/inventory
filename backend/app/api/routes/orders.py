@@ -93,7 +93,7 @@ def delete_order(
         raise HTTPException(status_code=404, detail="Order not found")
     #if not current_user.is_superuser:
     #    raise HTTPException(status_code=400, detail="Not enough permissions")
-    order_in = OrderUpdate(is_valid=False)
+    order_in = OrderUpdate(is_valid=False, customer_id=order.customer_id)
     update_dict = order_in.model_dump(exclude_unset=True)
     #update_dict = order.model_dump(exclude_unset=True, update={"is_valid": False} )
     order.sqlmodel_update(update_dict)

@@ -100,23 +100,38 @@ export type NewPassword = {
 }
 
 export type Order = {
+  order_items: string | null
+  order_quantity: string | null
   customer_id: string | null
+  order_date: string | null
   order_status?: string | null
+  payment_status?: string | null
+  notes?: string | null
   total_price?: number | null
   is_valid?: boolean | null
   id?: string
 }
 
 export type OrderCreate = {
+  order_items: string | null
+  order_quantity: string | null
   customer_id: string | null
+  order_date: string | null
   order_status?: string | null
+  payment_status?: string | null
+  notes?: string | null
   total_price?: number | null
   is_valid?: boolean | null
 }
 
 export type OrderPublic = {
+  order_items: string | null
+  order_quantity: string | null
   customer_id: string | null
+  order_date: string | null
   order_status?: string | null
+  payment_status?: string | null
+  notes?: string | null
   total_price?: number | null
   is_valid?: boolean | null
   id?: string
@@ -128,8 +143,13 @@ export type OrdersPublic = {
 }
 
 export type OrderUpdate = {
+  order_items: string | null
+  order_quantity: string | null
   customer_id: string | null
+  order_date: string | null
   order_status?: string | null
+  payment_status?: string | null
+  notes?: string | null
   total_price?: number | null
   is_valid?: boolean | null
 }
