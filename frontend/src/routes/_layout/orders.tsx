@@ -32,6 +32,7 @@ import Navbar from "../../components/Common/Navbar"
 import AddOrder from "../../components/Orders/AddOrder"
 import { PaginationFooter } from "../../components/Common/PaginationFooter"
 import { modalScrollbarStyles, customerDetailsStyles } from "../../styles/customers.styles"
+import { CustomersService } from "../../client"
 
 const ordersSearchSchema = z.object({
   page: z.number().catch(1),
@@ -61,11 +62,32 @@ function OrderDetailsModal({
   onClose: () => void; 
   order: Order | null;
 }) {
+  const [customerCompany, setCustomerCompany] = useState<string>('');
+  const showToast = useCustomToast();
+
+  useEffect(() => {
+    const fetchCustomerDetails = async () => {
+      if (order?.customer_id) {
+        try {
+          const customerData = await CustomersService.readCustomer({
+            id: order.customer_id
+          });
+          setCustomerCompany(customerData.company || 'N/A');
+        } catch (error) {
+          showToast("Error", "Failed to fetch customer details", "error");
+          setCustomerCompany('N/A');
+        }
+      }
+    };
+
+    fetchCustomerDetails();
+  }, [order?.customer_id, showToast]);
+
   const orderDetails = [
     {
       section: "Basic Information",
       items: [
-        { label: "Customer ID", value: order?.customer_id },
+        { label: "Customer", value: customerCompany },
         { label: "Order Items", value: order?.order_items },
         { label: "Order Quantity", value: order?.order_quantity },
         { label: "Order Date", value: order?.order_date }
