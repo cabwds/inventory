@@ -9,6 +9,8 @@ import {
   VStack,
   Box,
   SimpleGrid,
+  Button,
+  Flex,
 } from "@chakra-ui/react"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
@@ -64,7 +66,7 @@ function CustomerDetail() {
   return (
     <Modal 
       isOpen={true}
-      onClose={() => navigate({ to: '/customers' })}
+      onClose={() => window.history.back()}
       size="6xl"
       isCentered
       motionPreset="slideInBottom"
@@ -72,10 +74,14 @@ function CustomerDetail() {
       <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(5px)" />
       <ModalContent maxH="85vh">
         <ModalHeader {...customerDetailsStyles.modalHeader}>
-          <Text fontSize="xl">Customer Details</Text>
-          <Text fontSize="sm" color="gray.600" mt={1}>
-            ID: {customer?.id}
-          </Text>
+          <Flex justify="space-between" align="center" width="100%">
+            <Box>
+              <Text fontSize="xl">Customer Details</Text>
+              <Text fontSize="sm" color="gray.600" mt={1}>
+                ID: {customer?.id}
+              </Text>
+            </Box>
+          </Flex>
         </ModalHeader>
         <ModalCloseButton />
         <ModalBody 
