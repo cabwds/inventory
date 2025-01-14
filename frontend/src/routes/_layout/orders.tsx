@@ -11,6 +11,9 @@ import {
   Thead,
   Tr,
   Text,
+  Select,
+  Button,
+  HStack,
 } from "@chakra-ui/react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate, Outlet } from "@tanstack/react-router"
@@ -129,6 +132,13 @@ function OrderRow({
   )
 }
 
+function useCustomers() {
+  return useQuery({
+    queryKey: ['customers'],
+    queryFn: () => CustomersService.readCustomers({ limit: 100 }),
+  })
+}
+
 function OrdersTable() {
   const queryClient = useQueryClient()
   const { page, pageSize, customerId } = Route.useSearch()
@@ -149,9 +159,32 @@ function OrdersTable() {
     placeholderData: (prevData) => prevData,
   })
 
+  const { data: customers, isLoading: isLoadingCustomers } = useCustomers()
+
   const handleOrderClick = (orderId: string) => {
     console.log(orderId)
     navigate({ to: '/orders/$orderId', params: { orderId } })
+  }
+
+  const handleCustomerChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedCustomerId = e.target.value
+    navigate({ 
+      search: (prev: Record<string, unknown>) => ({ 
+        ...prev, 
+        customerId: selectedCustomerId || undefined,
+        page: 1
+      })
+    })
+  }
+
+  const clearFilter = () => {
+    navigate({ 
+      search: (prev: Record<string, unknown>) => ({ 
+        ...prev, 
+        customerId: undefined,
+        page: 1 
+      })
+    })
   }
 
   const hasNextPage = !isPlaceholderData && orders?.data.length === pageSize
@@ -165,7 +198,26 @@ function OrdersTable() {
 
   return (
     <>
-      <Box mb={4} display="flex" justifyContent="flex-end">
+      <Box mb={4} display="flex" justifyContent="space-between" alignItems="center">
+        <HStack spacing={2} width="300px">
+          <Select
+            placeholder="Filter by customer"
+            value={customerId || ""}
+            onChange={handleCustomerChange}
+            isDisabled={isLoadingCustomers}
+          >
+            {customers?.data.map((customer) => (
+              <option key={customer.id} value={customer.id}>
+                {customer.company}
+              </option>
+            ))}
+          </Select>
+          {customerId && (
+            <Button size="sm" onClick={clearFilter}>
+              Clear
+            </Button>
+          )}
+        </HStack>
         <PageSizeSelector pageSize={pageSize} onChange={setPageSize} />
       </Box>
       <TableContainer {...customerDetailsStyles.tableContainer}>
