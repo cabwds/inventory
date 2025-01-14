@@ -1,25 +1,28 @@
-import { Select } from "@chakra-ui/react"
+import { HStack, Select, Text } from "@chakra-ui/react"
 
-interface PageSizeSelectorProps {
+export function PageSizeSelector({ 
+  pageSize, 
+  onChange 
+}: { 
   pageSize: number
-  onChange: (newSize: number) => void
-}
-
-const PAGE_SIZE_OPTIONS = [5, 10, 20, 50]
-
-export function PageSizeSelector({ pageSize, onChange }: PageSizeSelectorProps) {
+  onChange: (newSize: number) => void 
+}) {
   return (
-    <Select
-      value={pageSize}
-      onChange={(e) => onChange(Number(e.target.value))}
-      width="100px"
-      size="sm"
-    >
-      {PAGE_SIZE_OPTIONS.map((size) => (
-        <option key={size} value={size}>
-          {size} rows
-        </option>
-      ))}
-    </Select>
+    <HStack spacing={2} align="center">
+      <Text fontSize="sm" color="gray.600" whiteSpace="nowrap">
+        Rows per page:
+      </Text>
+      <Select
+        size="sm"
+        value={pageSize}
+        onChange={(e) => onChange(Number(e.target.value))}
+        width="70px"
+      >
+        <option value={5}>5</option>
+        <option value={10}>10</option>
+        <option value={20}>20</option>
+        <option value={50}>50</option>
+      </Select>
+    </HStack>
   )
 }

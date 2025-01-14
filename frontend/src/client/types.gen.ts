@@ -337,6 +337,7 @@ export type OrdersDeleteOrderData = {
 export type OrdersDeleteOrderResponse = Message
 
 export type OrdersReadOrdersData = {
+  customerId?: string
   displayInvalid?: boolean
   limit?: number
   skip?: number
@@ -349,15 +350,6 @@ export type OrdersCreateOrderData = {
 }
 
 export type OrdersCreateOrderResponse = Order
-
-export type OrdersReadCustomerOrdersData = {
-  customerId: string
-  displayInvalid?: boolean
-  limit?: number
-  skip?: number
-}
-
-export type OrdersReadCustomerOrdersResponse = OrdersPublic
 
 export type PrivateCreateUserData = {
   requestBody: PrivateUserCreate

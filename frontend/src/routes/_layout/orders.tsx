@@ -46,16 +46,11 @@ function getOrdersQueryOptions({ page, pageSize, customerId }: {
   customerId?: string;
 }) {
   return {
-    queryFn: () => customerId 
-      ? OrdersService.readCustomerOrders({ 
-          customerId,
-          skip: (page - 1) * pageSize, 
-          limit: pageSize 
-        })
-      : OrdersService.readOrders({ 
-          skip: (page - 1) * pageSize, 
-          limit: pageSize 
-        }),
+    queryFn: () => OrdersService.readOrders({ 
+      ...(customerId && { customerId }), // conditionally add customerId
+      skip: (page - 1) * pageSize, 
+      limit: pageSize 
+    }),
     queryKey: ["orders", { page, pageSize, customerId }],
   }
 }
@@ -198,28 +193,37 @@ function OrdersTable() {
 
   return (
     <>
-      <Box mb={4} display="flex" justifyContent="space-between" alignItems="center">
-        <HStack spacing={2} width="300px">
-          <Select
-            placeholder="Filter by customer"
-            value={customerId || ""}
-            onChange={handleCustomerChange}
-            isDisabled={isLoadingCustomers}
-          >
-            {customers?.data.map((customer) => (
-              <option key={customer.id} value={customer.id}>
-                {customer.company}
-              </option>
-            ))}
-          </Select>
-          {customerId && (
-            <Button size="sm" onClick={clearFilter}>
-              Clear
-            </Button>
-          )}
+      <Box mb={4}>
+        <HStack spacing={8} justify="space-between" align="center" mb={4}>
+          <HStack spacing={2} flex="1" maxW="400px">
+            <Select
+              placeholder="Filter by customer"
+              value={customerId || ""}
+              onChange={handleCustomerChange}
+              isDisabled={isLoadingCustomers}
+            >
+              {customers?.data.map((customer) => (
+                <option key={customer.id} value={customer.id}>
+                  {customer.company}
+                </option>
+              ))}
+            </Select>
+            {customerId && (
+              <Button size="sm" onClick={clearFilter}>
+                Clear
+              </Button>
+            )}
+          </HStack>
+
+          <HStack spacing={4} justify="flex-end">
+            <Text fontSize="sm" color="gray.600">
+              Showing {((page - 1) * pageSize) + 1} - {Math.min(page * pageSize, (orders?.count || 0))} of {orders?.count || 0}
+            </Text>
+            <PageSizeSelector pageSize={pageSize} onChange={setPageSize} />
+          </HStack>
         </HStack>
-        <PageSizeSelector pageSize={pageSize} onChange={setPageSize} />
       </Box>
+
       <TableContainer {...customerDetailsStyles.tableContainer}>
         <Table size={{ base: "sm", md: "md" }} variant="simple">
           <Thead bg="gray.50">
