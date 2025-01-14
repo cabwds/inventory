@@ -29,6 +29,7 @@ import { PageSizeSelector } from "../../components/Common/PageSizeSelector"
 const ordersSearchSchema = z.object({
   page: z.number().catch(1),
   pageSize: z.number().catch(5),
+  customerId: z.string().optional(),
 })
 
 export const Route = createFileRoute("/_layout/orders")({
@@ -36,11 +37,23 @@ export const Route = createFileRoute("/_layout/orders")({
   validateSearch: (search) => ordersSearchSchema.parse(search),
 })
 
-function getOrdersQueryOptions({ page, pageSize }: { page: number; pageSize: number }) {
+function getOrdersQueryOptions({ page, pageSize, customerId }: { 
+  page: number; 
+  pageSize: number;
+  customerId?: string;
+}) {
   return {
-    queryFn: () =>
-      OrdersService.readOrders({ skip: (page - 1) * pageSize, limit: pageSize }),
-    queryKey: ["orders", { page, pageSize }],
+    queryFn: () => customerId 
+      ? OrdersService.readCustomerOrders({ 
+          customerId,
+          skip: (page - 1) * pageSize, 
+          limit: pageSize 
+        })
+      : OrdersService.readOrders({ 
+          skip: (page - 1) * pageSize, 
+          limit: pageSize 
+        }),
+    queryKey: ["orders", { page, pageSize, customerId }],
   }
 }
 
@@ -118,7 +131,7 @@ function OrderRow({
 
 function OrdersTable() {
   const queryClient = useQueryClient()
-  const { page, pageSize } = Route.useSearch()
+  const { page, pageSize, customerId } = Route.useSearch()
   const showToast = useCustomToast()
   const navigate = useNavigate({ from: Route.fullPath })
   const setPage = (newPage: number) =>
@@ -132,7 +145,7 @@ function OrdersTable() {
     isPending,
     isPlaceholderData,
   } = useQuery({
-    ...getOrdersQueryOptions({ page, pageSize }),
+    ...getOrdersQueryOptions({ page, pageSize, customerId }),
     placeholderData: (prevData) => prevData,
   })
 
@@ -146,9 +159,9 @@ function OrdersTable() {
 
   useEffect(() => {
     if (hasNextPage) {
-      queryClient.prefetchQuery(getOrdersQueryOptions({ page: page + 1, pageSize }))
+      queryClient.prefetchQuery(getOrdersQueryOptions({ page: page + 1, pageSize, customerId }))
     }
-  }, [page, pageSize, queryClient, hasNextPage])
+  }, [page, pageSize, customerId, queryClient, hasNextPage])
 
   return (
     <>
