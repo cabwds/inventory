@@ -1,12 +1,4 @@
 import {
-    Modal,
-    ModalOverlay,
-    ModalContent,
-    ModalHeader,
-    ModalBody,
-    ModalCloseButton,
-    Text,
-    VStack,
     Box,
     Container,
     Heading,
@@ -18,54 +10,55 @@ import {
     Th,
     Thead,
     Tr,
-    SimpleGrid,
     } from "@chakra-ui/react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate, Outlet} from "@tanstack/react-router"
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { z } from "zod"
 
-import { CustomersService , CustomersReadCustomerData, Customer } from "../../client"
-import useCustomToast from "../../hooks/useCustomToast"
+import { CustomersService} from "../../client"
 import ActionsMenu from "../../components/Common/ActionsMenu"
 import Navbar from "../../components/Common/Navbar"
 import AddCustomer from "../../components/Customers/AddCustomer"
 import { PaginationFooter } from "../../components/Common/PaginationFooter.tsx"
-import { modalScrollbarStyles, customerDetailsStyles } from "../../styles/customers.styles"
+import { customerDetailsStyles } from "../../styles/customers.styles"
+import { PageSizeSelector } from "../../components/Common/PageSizeSelector"
 
 const customersSearchSchema = z.object({
     page: z.number().catch(1),
-  })
+    pageSize: z.number().catch(5),
+})
 
 export const Route = createFileRoute("/_layout/customers")({
   component: Customers,
   validateSearch: (search) => customersSearchSchema.parse(search),
 })
 
-
-const PER_PAGE = 5
-
-function getCustomersQueryOptions({ page }: { page: number }) {
+function getCustomersQueryOptions({ page, pageSize }: { page: number; pageSize: number }) {
   return {
     queryFn: () =>
-      CustomersService.readCustomers({ skip: (page - 1) * PER_PAGE, limit: PER_PAGE }),
-    queryKey: ["customers", { page }],
+      CustomersService.readCustomers({ skip: (page - 1) * pageSize, limit: pageSize }),
+    queryKey: ["customers", { page, pageSize }],
   }
 }
 
 function CustomersTable() {
   const queryClient = useQueryClient()
-  const { page } = Route.useSearch()
+  const { page, pageSize } = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
-  const setPage = (page: number) =>
-    navigate({ search: (prev: {[key: string]: string}) => ({ ...prev, page }) })
+  
+  const setPage = (newPage: number) =>
+    navigate({ search: (prev: Record<string, unknown>) => ({ ...prev, page: newPage }) })
+    
+  const setPageSize = (newSize: number) =>
+    navigate({ search: (prev: Record<string, unknown>) => ({ ...prev, pageSize: newSize, page: 1 }) })
 
   const {
     data: customers,
     isPending,
     isPlaceholderData,
   } = useQuery({
-    ...getCustomersQueryOptions({ page }),
+    ...getCustomersQueryOptions({ page, pageSize }),
     placeholderData: (prevData) => prevData,
   })
 
@@ -73,17 +66,20 @@ function CustomersTable() {
     navigate({ to: '/customers/$customerId', params: { customerId } })
   }
 
-  const hasNextPage = !isPlaceholderData && customers?.data.length === PER_PAGE
+  const hasNextPage = !isPlaceholderData && customers?.data.length === pageSize
   const hasPreviousPage = page > 1
 
   useEffect(() => {
     if (hasNextPage) {
-      queryClient.prefetchQuery(getCustomersQueryOptions({ page: page + 1 }))
+      queryClient.prefetchQuery(getCustomersQueryOptions({ page: page + 1, pageSize }))
     }
-  }, [page, queryClient, hasNextPage])
+  }, [page, pageSize, queryClient, hasNextPage])
 
   return (
     <>
+      <Box mb={4} display="flex" justifyContent="flex-end">
+        <PageSizeSelector pageSize={pageSize} onChange={setPageSize} />
+      </Box>
       <TableContainer {...customerDetailsStyles.tableContainer}>
         <Table size={{ base: "sm", md: "md" }} variant="simple">
           <Thead bg="gray.50">
@@ -119,7 +115,7 @@ function CustomersTable() {
                     onClick={() => handleCustomerClick(customer.id)}
                     width="80px"
                   >
-                    {(page - 1) * PER_PAGE + index + 1}
+                    {(page - 1) * pageSize + index + 1}
                   </Td>
                   <Td isTruncated maxWidth="150px" fontWeight="medium">
                     {customer.company}

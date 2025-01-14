@@ -24,9 +24,11 @@ import Navbar from "../../components/Common/Navbar"
 import AddOrder from "../../components/Orders/AddOrder"
 import { PaginationFooter } from "../../components/Common/PaginationFooter"
 import { customerDetailsStyles } from "../../styles/customers.styles"
+import { PageSizeSelector } from "../../components/Common/PageSizeSelector"
 
 const ordersSearchSchema = z.object({
   page: z.number().catch(1),
+  pageSize: z.number().catch(5),
 })
 
 export const Route = createFileRoute("/_layout/orders")({
@@ -36,11 +38,11 @@ export const Route = createFileRoute("/_layout/orders")({
 
 const PER_PAGE = 5
 
-function getOrdersQueryOptions({ page }: { page: number }) {
+function getOrdersQueryOptions({ page, pageSize }: { page: number; pageSize: number }) {
   return {
     queryFn: () =>
-      OrdersService.readOrders({ skip: (page - 1) * PER_PAGE, limit: PER_PAGE }),
-    queryKey: ["orders", { page }],
+      OrdersService.readOrders({ skip: (page - 1) * pageSize, limit: pageSize }),
+    queryKey: ["orders", { page, pageSize }],
   }
 }
 
@@ -58,12 +60,14 @@ function OrderRow({
   order, 
   index, 
   page, 
+  pageSize, 
   isPlaceholderData, 
   onOrderClick 
 }: { 
   order: any, 
   index: number, 
   page: number, 
+  pageSize: number, 
   isPlaceholderData: boolean,
   onOrderClick: (orderId: string) => void
 }) {
@@ -90,7 +94,7 @@ function OrderRow({
         width="80px"
         cursor="pointer"
       >
-        {(page - 1) * PER_PAGE + index + 1}
+        {(page - 1) * pageSize + index + 1}
       </Td>
       <Td 
         isTruncated 
@@ -116,18 +120,21 @@ function OrderRow({
 
 function OrdersTable() {
   const queryClient = useQueryClient()
-  const { page } = Route.useSearch()
+  const { page, pageSize } = Route.useSearch()
   const showToast = useCustomToast()
   const navigate = useNavigate({ from: Route.fullPath })
-  const setPage = (page: number) =>
-    navigate({ search: (prev: {[key: string]: string}) => ({ ...prev, page }) })
+  const setPage = (newPage: number) =>
+    navigate({ search: (prev: Record<string, unknown>) => ({ ...prev, page: newPage }) })
+    
+  const setPageSize = (newSize: number) =>
+    navigate({ search: (prev: Record<string, unknown>) => ({ ...prev, pageSize: newSize, page: 1 }) })
 
   const {
     data: orders,
     isPending,
     isPlaceholderData,
   } = useQuery({
-    ...getOrdersQueryOptions({ page }),
+    ...getOrdersQueryOptions({ page, pageSize }),
     placeholderData: (prevData) => prevData,
   })
 
@@ -136,17 +143,20 @@ function OrdersTable() {
     navigate({ to: '/orders/$orderId', params: { orderId } })
   }
 
-  const hasNextPage = !isPlaceholderData && orders?.data.length === PER_PAGE
+  const hasNextPage = !isPlaceholderData && orders?.data.length === pageSize
   const hasPreviousPage = page > 1
 
   useEffect(() => {
     if (hasNextPage) {
-      queryClient.prefetchQuery(getOrdersQueryOptions({ page: page + 1 }))
+      queryClient.prefetchQuery(getOrdersQueryOptions({ page: page + 1, pageSize }))
     }
-  }, [page, queryClient, hasNextPage])
+  }, [page, pageSize, queryClient, hasNextPage])
 
   return (
     <>
+      <Box mb={4} display="flex" justifyContent="flex-end">
+        <PageSizeSelector pageSize={pageSize} onChange={setPageSize} />
+      </Box>
       <TableContainer {...customerDetailsStyles.tableContainer}>
         <Table size={{ base: "sm", md: "md" }} variant="simple">
           <Thead bg="gray.50">
@@ -177,6 +187,7 @@ function OrdersTable() {
                   order={order}
                   index={index}
                   page={page}
+                  pageSize={pageSize}
                   isPlaceholderData={isPlaceholderData}
                   onOrderClick={handleOrderClick}
                 />
