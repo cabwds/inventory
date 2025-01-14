@@ -340,6 +340,7 @@ export type OrdersReadOrdersData = {
   customerId?: string
   displayInvalid?: boolean
   limit?: number
+  orderStatus?: string
   skip?: number
 }
 

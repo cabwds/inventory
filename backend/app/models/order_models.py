@@ -30,6 +30,11 @@ class Order(OrderBase, table=True):
         index=True,
         sa_column_kwargs={"index": True}
     )
+    order_status: str | None = Field(
+        default=None,
+        index=True,
+        sa_column_kwargs={"index": True}
+    )
 
 # Properties to receive on order update
 class OrderUpdate(OrderBase):

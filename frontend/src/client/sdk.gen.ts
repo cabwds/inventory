@@ -537,6 +537,7 @@ export class OrdersService {
    * @param data.limit
    * @param data.displayInvalid
    * @param data.customerId
+   * @param data.orderStatus
    * @returns OrdersPublic Successful Response
    * @throws ApiError
    */
@@ -551,6 +552,7 @@ export class OrdersService {
         limit: data.limit,
         display_invalid: data.displayInvalid,
         customer_id: data.customerId,
+        order_status: data.orderStatus,
       },
       errors: {
         422: "Validation Error",

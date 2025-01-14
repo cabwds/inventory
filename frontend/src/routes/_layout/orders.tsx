@@ -33,6 +33,7 @@ const ordersSearchSchema = z.object({
   page: z.number().catch(1),
   pageSize: z.number().catch(5),
   customerId: z.string().optional(),
+  orderStatus: z.string().optional(),
 })
 
 export const Route = createFileRoute("/_layout/orders")({
@@ -40,18 +41,20 @@ export const Route = createFileRoute("/_layout/orders")({
   validateSearch: (search) => ordersSearchSchema.parse(search),
 })
 
-function getOrdersQueryOptions({ page, pageSize, customerId }: { 
+function getOrdersQueryOptions({ page, pageSize, customerId, orderStatus }: { 
   page: number; 
   pageSize: number;
   customerId?: string;
+  orderStatus?: string;
 }) {
   return {
     queryFn: () => OrdersService.readOrders({ 
-      ...(customerId && { customerId }), // conditionally add customerId
+      ...(customerId && { customerId }),
+      ...(orderStatus && { orderStatus }),
       skip: (page - 1) * pageSize, 
       limit: pageSize 
     }),
-    queryKey: ["orders", { page, pageSize, customerId }],
+    queryKey: ["orders", { page, pageSize, customerId, orderStatus }],
   }
 }
 
@@ -134,9 +137,18 @@ function useCustomers() {
   })
 }
 
+// First, let's define the order status options
+const ORDER_STATUS_OPTIONS = [
+  "Pending",
+  "Processing",
+  "Shipped",
+  "Completed",
+  "Cancelled"
+] as const;
+
 function OrdersTable() {
   const queryClient = useQueryClient()
-  const { page, pageSize, customerId } = Route.useSearch()
+  const { page, pageSize, customerId, orderStatus } = Route.useSearch()
   const showToast = useCustomToast()
   const navigate = useNavigate({ from: Route.fullPath })
   const setPage = (newPage: number) =>
@@ -150,7 +162,7 @@ function OrdersTable() {
     isPending,
     isPlaceholderData,
   } = useQuery({
-    ...getOrdersQueryOptions({ page, pageSize, customerId }),
+    ...getOrdersQueryOptions({ page, pageSize, customerId, orderStatus }),
     placeholderData: (prevData) => prevData,
   })
 
@@ -172,11 +184,23 @@ function OrdersTable() {
     })
   }
 
-  const clearFilter = () => {
+  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedStatus = e.target.value
+    navigate({ 
+      search: (prev: Record<string, unknown>) => ({ 
+        ...prev, 
+        orderStatus: selectedStatus || undefined,
+        page: 1
+      })
+    })
+  }
+
+  const clearFilters = () => {
     navigate({ 
       search: (prev: Record<string, unknown>) => ({ 
         ...prev, 
         customerId: undefined,
+        orderStatus: undefined,
         page: 1 
       })
     })
@@ -187,15 +211,20 @@ function OrdersTable() {
 
   useEffect(() => {
     if (hasNextPage) {
-      queryClient.prefetchQuery(getOrdersQueryOptions({ page: page + 1, pageSize, customerId }))
+      queryClient.prefetchQuery(getOrdersQueryOptions({ 
+        page: page + 1, 
+        pageSize, 
+        customerId, 
+        orderStatus
+      }))
     }
-  }, [page, pageSize, customerId, queryClient, hasNextPage])
+  }, [page, pageSize, customerId, orderStatus, queryClient, hasNextPage])
 
   return (
     <>
       <Box mb={4}>
         <HStack spacing={8} justify="space-between" align="center" mb={4}>
-          <HStack spacing={2} flex="1" maxW="400px">
+          <HStack spacing={2} flex="1" maxW="600px">
             <Select
               placeholder="Filter by customer"
               value={customerId || ""}
@@ -208,8 +237,20 @@ function OrdersTable() {
                 </option>
               ))}
             </Select>
-            {customerId && (
-              <Button size="sm" onClick={clearFilter}>
+            <Select
+              placeholder="Filter by status"
+              value={orderStatus || ""}
+              onChange={handleStatusChange}
+              maxW="200px"
+            >
+              {ORDER_STATUS_OPTIONS.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </Select>
+            {(customerId || orderStatus) && (
+              <Button size="sm" onClick={clearFilters}>
                 Clear
               </Button>
             )}

@@ -27,7 +27,8 @@ def read_order(session: SessionDep, current_user: CurrentUser, id: str) -> Any:
 @router.get("/", response_model=OrdersPublic)
 def read_orders(
     session: SessionDep, current_user: CurrentUser, 
-    skip: int = 0, limit: int = 100, display_invalid: bool = False, customer_id: str = None
+    skip: int = 0, limit: int = 100,
+    display_invalid: bool = False, customer_id: str = None, order_status: str = None
 ) -> Any:
     """
     Retrieve orders.
@@ -45,6 +46,10 @@ def read_orders(
         if customer_id:
             query = query.where(Order.customer_id == customer_id)
             count_query = count_query.where(Order.customer_id == customer_id)
+
+        if order_status:
+            query = query.where(Order.order_status == order_status)
+            count_query = count_query.where(Order.order_status == order_status)
 
         # Add pagination
         query = query.offset(skip).limit(limit)
