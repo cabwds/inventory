@@ -26,16 +26,20 @@ def read_order(session: SessionDep, current_user: CurrentUser, id: str) -> Any:
 
 @router.get("/", response_model=OrdersPublic)
 def read_orders(
-    session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100
+    session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100, display_invalid: bool = False
 ) -> Any:
     """
     Retrieve orders.
     """
 
     if current_user.is_superuser:
-        count_statement = select(func.count()).select_from(Order)
+        if display_invalid:
+            count_statement = select(func.count()).select_from(Order)
+            statement = select(Order).offset(skip).limit(limit)
+        else:
+            count_statement = select(func.count()).select_from(Order).where(Order.is_valid == True)
+            statement = select(Order).where(Order.is_valid == True).offset(skip).limit(limit)
         count = session.exec(count_statement).one()
-        statement = select(Order).offset(skip).limit(limit)
         orders = session.exec(statement).all()
 
     return OrdersPublic(data=orders, count=count)

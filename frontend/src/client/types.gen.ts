@@ -337,6 +337,7 @@ export type OrdersDeleteOrderData = {
 export type OrdersDeleteOrderResponse = Message
 
 export type OrdersReadOrdersData = {
+  displayInvalid?: boolean
   limit?: number
   skip?: number
 }

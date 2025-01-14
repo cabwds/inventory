@@ -83,8 +83,7 @@ function OrderDetail() {
       items: [
         { label: "Order Status", value: order?.order_status },
         { label: "Payment Status", value: order?.payment_status },
-        { label: "Total Price", value: order?.total_price ? `$${order.total_price}` : null },
-        { label: "Is Valid", value: order?.is_valid ? "Yes" : "No" }
+        { label: "Total Price", value: order?.total_price ? `$${order.total_price}` : null }
       ]
     },
     {

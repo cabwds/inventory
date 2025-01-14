@@ -178,16 +178,6 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
           label: "Notes",
           placeholder: "Enter notes",
           type: "textarea"
-        },
-        {
-          id: "is_valid",
-          label: "Is Valid",
-          type: "select",
-          placeholder: "Yes?",
-          options: [
-            { value: "true", label: "Yes" },
-            { value: "false", label: "No" }
-          ]
         }
       ]
     }

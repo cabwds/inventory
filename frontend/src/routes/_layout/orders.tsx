@@ -106,6 +106,7 @@ function OrderRow({
       </Td>
       <Td>{order.order_status}</Td>
       <Td>${order.total_price}</Td>
+      <Td>{order.order_date}</Td>
       <Td>
         <ActionsMenu type="Order" value={order} />
       </Td>
@@ -154,6 +155,7 @@ function OrdersTable() {
               <Th>Customer</Th>
               <Th>Status</Th>
               <Th>Total Amount</Th>
+              <Th>Created Date</Th>
               <Th>Actions</Th>
             </Tr>
           </Thead>

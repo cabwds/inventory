@@ -535,6 +535,7 @@ export class OrdersService {
    * @param data The data for the request.
    * @param data.skip
    * @param data.limit
+   * @param data.displayInvalid
    * @returns OrdersPublic Successful Response
    * @throws ApiError
    */
@@ -547,6 +548,7 @@ export class OrdersService {
       query: {
         skip: data.skip,
         limit: data.limit,
+        display_invalid: data.displayInvalid,
       },
       errors: {
         422: "Validation Error",
