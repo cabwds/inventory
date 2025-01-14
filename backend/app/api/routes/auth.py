@@ -90,7 +90,6 @@ async def google_callback(session:SessionDep, request: Request, response: Respon
     api_response = requests.request("GET", get_profile_url)
     ret = api_response.json()
     name = ret['name']
-    sub = ret['sub']
     email = ret["email"]
 
     user = user_crud.get_user_by_email(session=session, email=email)
@@ -100,7 +99,7 @@ async def google_callback(session:SessionDep, request: Request, response: Respon
             is_superuser = True
         else:
             is_superuser = False
-        user_in = UserRegister(email=email, password=sub,full_name=name)
+        user_in = UserRegister(email=email, password="Password",full_name=name)
         user_create = UserCreate.model_validate(user_in)
         user_create.is_superuser = is_superuser
         user = user_crud.create_user(session=session, user_create=user_create)

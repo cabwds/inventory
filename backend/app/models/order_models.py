@@ -6,10 +6,10 @@ from enum import Enum
 from datetime import datetime
 
 class OrderBase(SQLModel):
-    order_items: str | None = Field(max_length=65025)
-    order_quantity: str | None = Field(max_length=65025)
+    order_items: str | None = Field(max_length=65025, default=None)
+    order_quantity: str | None = Field(max_length=65025, default=None)
     customer_id: str | None= Field(min_length=1, index=True)
-    order_date: str | None= Field(min_length=1)
+    order_date: str | None= Field(min_length=1, default=None)
     order_update_date: str | None= Field(default=None)
     order_status: str | None = Field(default=None)
     payment_status: str | None = Field(default=None)
