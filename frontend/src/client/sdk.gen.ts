@@ -46,6 +46,8 @@ import type {
   OrdersReadOrdersResponse,
   OrdersCreateOrderData,
   OrdersCreateOrderResponse,
+  OrdersReadCustomerOrdersData,
+  OrdersReadCustomerOrdersResponse,
   PrivateCreateUserData,
   PrivateCreateUserResponse,
   UsersReadUsersData,
@@ -572,6 +574,37 @@ export class OrdersService {
       url: "/api/v1/orders/",
       body: data.requestBody,
       mediaType: "application/json",
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Read Customer Orders
+   * Retrieve orders.
+   * @param data The data for the request.
+   * @param data.customerId
+   * @param data.skip
+   * @param data.limit
+   * @param data.displayInvalid
+   * @returns OrdersPublic Successful Response
+   * @throws ApiError
+   */
+  public static readCustomerOrders(
+    data: OrdersReadCustomerOrdersData,
+  ): CancelablePromise<OrdersReadCustomerOrdersResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/orders/customer/{customer_id}",
+      path: {
+        customer_id: data.customerId,
+      },
+      query: {
+        skip: data.skip,
+        limit: data.limit,
+        display_invalid: data.displayInvalid,
+      },
       errors: {
         422: "Validation Error",
       },

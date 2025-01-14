@@ -36,8 +36,6 @@ export const Route = createFileRoute("/_layout/orders")({
   validateSearch: (search) => ordersSearchSchema.parse(search),
 })
 
-const PER_PAGE = 5
-
 function getOrdersQueryOptions({ page, pageSize }: { page: number; pageSize: number }) {
   return {
     queryFn: () =>

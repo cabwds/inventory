@@ -20,6 +20,16 @@ class OrderBase(SQLModel):
 # Database model, database table inferred from class name
 class Order(OrderBase, table=True):
     id: str = Field(default=None, primary_key=True)
+    customer_id: str | None = Field(
+        min_length=1, 
+        index=True,
+        sa_column_kwargs={"index": True}
+    )
+    is_valid: bool | None = Field(
+        default=True,
+        index=True,
+        sa_column_kwargs={"index": True}
+    )
 
 # Properties to receive on order update
 class OrderUpdate(OrderBase):

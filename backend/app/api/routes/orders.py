@@ -26,21 +26,60 @@ def read_order(session: SessionDep, current_user: CurrentUser, id: str) -> Any:
 
 @router.get("/", response_model=OrdersPublic)
 def read_orders(
-    session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100, display_invalid: bool = False
+    session: SessionDep, current_user: CurrentUser, 
+    skip: int = 0, limit: int = 100, display_invalid: bool = False
 ) -> Any:
     """
     Retrieve orders.
     """
-
     if current_user.is_superuser:
-        if display_invalid:
-            count_statement = select(func.count()).select_from(Order)
-            statement = select(Order).offset(skip).limit(limit)
-        else:
-            count_statement = select(func.count()).select_from(Order).where(Order.is_valid == True)
-            statement = select(Order).where(Order.is_valid == True).offset(skip).limit(limit)
-        count = session.exec(count_statement).one()
-        orders = session.exec(statement).all()
+        # Build base query
+        query = select(Order)
+        count_query = select(func.count()).select_from(Order)
+
+        # Add filters
+        if not display_invalid:
+            query = query.where(Order.is_valid == True)
+            count_query = count_query.where(Order.is_valid == True)
+
+        # Add pagination
+        query = query.offset(skip).limit(limit)
+        
+            
+        count = session.exec(count_query).one()
+        orders = session.exec(query).all()
+
+    return OrdersPublic(data=orders, count=count)
+
+
+@router.get("/customer/{customer_id}", response_model=OrdersPublic)
+def read_customer_orders(
+    session: SessionDep, current_user: CurrentUser, customer_id: str,
+    skip: int = 0, limit: int = 100, display_invalid: bool = False
+) -> Any:
+    """
+    Retrieve orders.
+    """
+    if current_user.is_superuser:
+        # Build base query
+        query = select(Order)
+        count_query = select(func.count()).select_from(Order)
+
+        # Add filters
+        if not display_invalid:
+            query = query.where(Order.is_valid == True)
+            count_query = count_query.where(Order.is_valid == True)
+        
+        if customer_id:
+            query = query.where(Order.customer_id == customer_id)
+            count_query = count_query.where(Order.customer_id == customer_id)
+
+        # Add pagination
+        query = query.offset(skip).limit(limit)
+        
+            
+        count = session.exec(count_query).one()
+        orders = session.exec(query).all()
 
     return OrdersPublic(data=orders, count=count)
 
