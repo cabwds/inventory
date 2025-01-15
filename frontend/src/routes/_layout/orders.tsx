@@ -251,7 +251,7 @@ function OrdersTable() {
     navigate({ 
       search: (prev: Record<string, unknown>) => ({ 
         ...prev, 
-        startDate: e.target.value || undefined,
+        startDate: e.target.value ? `${e.target.value}T00:00:00` : undefined,
         page: 1
       })
     })
@@ -261,7 +261,7 @@ function OrdersTable() {
     navigate({ 
       search: (prev: Record<string, unknown>) => ({ 
         ...prev, 
-        endDate: e.target.value || undefined,
+        endDate: e.target.value ? `${e.target.value}T23:59:59` : undefined,
         page: 1
       })
     })
@@ -342,8 +342,8 @@ function OrdersTable() {
               <FormControl maxW="200px">
                 <FormLabel fontSize="sm" mb={1}>Start Date</FormLabel>
                 <Input
-                  type="datetime-local"
-                  value={startDate || ""}
+                  type="date"
+                  value={startDate?.split('T')[0] || ""}
                   onChange={handleStartDateChange}
                   size="md"
                 />
@@ -352,8 +352,8 @@ function OrdersTable() {
               <FormControl maxW="200px">
                 <FormLabel fontSize="sm" mb={1}>End Date</FormLabel>
                 <Input
-                  type="datetime-local"
-                  value={endDate || ""}
+                  type="date"
+                  value={endDate?.split('T')[0] || ""}
                   onChange={handleEndDateChange}
                   size="md"
                 />
