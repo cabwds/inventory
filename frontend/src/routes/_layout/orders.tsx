@@ -19,6 +19,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate, Outlet } from "@tanstack/react-router"
 import { useEffect } from "react"
 import { z } from "zod"
+import { ChevronUpIcon, ChevronDownIcon } from "@chakra-ui/icons"
 
 import { OrdersService, CustomersService } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
@@ -29,11 +30,14 @@ import { PaginationFooter } from "../../components/Common/PaginationFooter"
 import { customerDetailsStyles } from "../../styles/customers.styles"
 import { PageSizeSelector } from "../../components/Common/PageSizeSelector"
 
+type SortOrder = "asc" | "desc"
+
 const ordersSearchSchema = z.object({
   page: z.number().catch(1),
   pageSize: z.number().catch(5),
   customerId: z.string().optional(),
   orderStatus: z.string().optional(),
+  sortOrder: z.enum(["asc", "desc"]).optional(),
 })
 
 export const Route = createFileRoute("/_layout/orders")({
@@ -41,20 +45,28 @@ export const Route = createFileRoute("/_layout/orders")({
   validateSearch: (search) => ordersSearchSchema.parse(search),
 })
 
-function getOrdersQueryOptions({ page, pageSize, customerId, orderStatus }: { 
+function getOrdersQueryOptions({ 
+  page, 
+  pageSize, 
+  customerId, 
+  orderStatus,
+  sortOrder 
+}: { 
   page: number; 
   pageSize: number;
   customerId?: string;
   orderStatus?: string;
+  sortOrder?: SortOrder;
 }) {
   return {
     queryFn: () => OrdersService.readOrders({ 
       ...(customerId && { customerId }),
       ...(orderStatus && { orderStatus }),
+      ...(sortOrder && { sortOrder }),
       skip: (page - 1) * pageSize, 
       limit: pageSize 
     }),
-    queryKey: ["orders", { page, pageSize, customerId, orderStatus }],
+    queryKey: ["orders", { page, pageSize, customerId, orderStatus, sortOrder }],
   }
 }
 
@@ -146,9 +158,27 @@ const ORDER_STATUS_OPTIONS = [
   "Cancelled"
 ] as const;
 
+// First, let's create a styled header component for the sort toggle
+function SortableHeader({ sortOrder, onToggle }: { sortOrder?: SortOrder; onToggle: () => void }) {
+  return (
+    <HStack 
+      spacing={1} 
+      cursor="pointer" 
+      onClick={onToggle}
+      _hover={{ color: "blue.500" }}
+      transition="color 0.2s"
+    >
+      <Text>Created Date</Text>
+      <Box color={sortOrder ? "blue.500" : "gray.400"}>
+        {sortOrder === "desc" ? <ChevronDownIcon /> : <ChevronUpIcon />}
+      </Box>
+    </HStack>
+  )
+}
+
 function OrdersTable() {
   const queryClient = useQueryClient()
-  const { page, pageSize, customerId, orderStatus } = Route.useSearch()
+  const { page, pageSize, customerId, orderStatus, sortOrder } = Route.useSearch()
   const showToast = useCustomToast()
   const navigate = useNavigate({ from: Route.fullPath })
   const setPage = (newPage: number) =>
@@ -162,7 +192,7 @@ function OrdersTable() {
     isPending,
     isPlaceholderData,
   } = useQuery({
-    ...getOrdersQueryOptions({ page, pageSize, customerId, orderStatus }),
+    ...getOrdersQueryOptions({ page, pageSize, customerId, orderStatus, sortOrder }),
     placeholderData: (prevData) => prevData,
   })
 
@@ -195,12 +225,23 @@ function OrdersTable() {
     })
   }
 
+  const toggleSortOrder = () => {
+    navigate({ 
+      search: (prev: Record<string, unknown>) => ({ 
+        ...prev, 
+        sortOrder: sortOrder === "desc" ? "asc" : "desc",
+        page: 1
+      })
+    })
+  }
+
   const clearFilters = () => {
     navigate({ 
       search: (prev: Record<string, unknown>) => ({ 
         ...prev, 
         customerId: undefined,
         orderStatus: undefined,
+        sortOrder: undefined,
         page: 1 
       })
     })
@@ -215,10 +256,11 @@ function OrdersTable() {
         page: page + 1, 
         pageSize, 
         customerId, 
-        orderStatus
+        orderStatus,
+        sortOrder
       }))
     }
-  }, [page, pageSize, customerId, orderStatus, queryClient, hasNextPage])
+  }, [page, pageSize, customerId, orderStatus, sortOrder, queryClient, hasNextPage])
 
   return (
     <>
@@ -249,7 +291,7 @@ function OrdersTable() {
                 </option>
               ))}
             </Select>
-            {(customerId || orderStatus) && (
+            {(customerId || orderStatus || sortOrder) && (
               <Button size="sm" onClick={clearFilters}>
                 Clear
               </Button>
@@ -273,7 +315,12 @@ function OrdersTable() {
               <Th>Customer</Th>
               <Th>Status</Th>
               <Th>Total Amount</Th>
-              <Th>Created Date</Th>
+              <Th>
+                <SortableHeader 
+                  sortOrder={sortOrder} 
+                  onToggle={toggleSortOrder}
+                />
+              </Th>
               <Th>Actions</Th>
             </Tr>
           </Thead>
