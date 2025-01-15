@@ -14,6 +14,10 @@ import {
   Select,
   Button,
   HStack,
+  Input,
+  FormControl,
+  FormLabel,
+  VStack,
 } from "@chakra-ui/react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate, Outlet } from "@tanstack/react-router"
@@ -38,6 +42,8 @@ const ordersSearchSchema = z.object({
   customerId: z.string().optional(),
   orderStatus: z.string().optional(),
   sortOrder: z.enum(["asc", "desc"]).optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
 })
 
 export const Route = createFileRoute("/_layout/orders")({
@@ -50,23 +56,29 @@ function getOrdersQueryOptions({
   pageSize, 
   customerId, 
   orderStatus,
-  sortOrder 
+  sortOrder,
+  startDate,
+  endDate
 }: { 
   page: number; 
   pageSize: number;
   customerId?: string;
   orderStatus?: string;
   sortOrder?: SortOrder;
+  startDate?: string;
+  endDate?: string;
 }) {
   return {
     queryFn: () => OrdersService.readOrders({ 
       ...(customerId && { customerId }),
       ...(orderStatus && { orderStatus }),
       ...(sortOrder && { sortOrder }),
+      ...(startDate && { startDate }),
+      ...(endDate && { endDate }),
       skip: (page - 1) * pageSize, 
       limit: pageSize 
     }),
-    queryKey: ["orders", { page, pageSize, customerId, orderStatus, sortOrder }],
+    queryKey: ["orders", { page, pageSize, customerId, orderStatus, sortOrder, startDate, endDate }],
   }
 }
 
@@ -178,7 +190,7 @@ function SortableHeader({ sortOrder, onToggle }: { sortOrder?: SortOrder; onTogg
 
 function OrdersTable() {
   const queryClient = useQueryClient()
-  const { page, pageSize, customerId, orderStatus, sortOrder } = Route.useSearch()
+  const { page, pageSize, customerId, orderStatus, sortOrder, startDate, endDate } = Route.useSearch()
   const showToast = useCustomToast()
   const navigate = useNavigate({ from: Route.fullPath })
   const setPage = (newPage: number) =>
@@ -192,7 +204,7 @@ function OrdersTable() {
     isPending,
     isPlaceholderData,
   } = useQuery({
-    ...getOrdersQueryOptions({ page, pageSize, customerId, orderStatus, sortOrder }),
+    ...getOrdersQueryOptions({ page, pageSize, customerId, orderStatus, sortOrder, startDate, endDate }),
     placeholderData: (prevData) => prevData,
   })
 
@@ -235,6 +247,26 @@ function OrdersTable() {
     })
   }
 
+  const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    navigate({ 
+      search: (prev: Record<string, unknown>) => ({ 
+        ...prev, 
+        startDate: e.target.value || undefined,
+        page: 1
+      })
+    })
+  }
+
+  const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    navigate({ 
+      search: (prev: Record<string, unknown>) => ({ 
+        ...prev, 
+        endDate: e.target.value || undefined,
+        page: 1
+      })
+    })
+  }
+
   const clearFilters = () => {
     navigate({ 
       search: (prev: Record<string, unknown>) => ({ 
@@ -242,6 +274,8 @@ function OrdersTable() {
         customerId: undefined,
         orderStatus: undefined,
         sortOrder: undefined,
+        startDate: undefined,
+        endDate: undefined,
         page: 1 
       })
     })
@@ -257,7 +291,9 @@ function OrdersTable() {
         pageSize, 
         customerId, 
         orderStatus,
-        sortOrder
+        sortOrder,
+        startDate,
+        endDate
       }))
     }
   }, [page, pageSize, customerId, orderStatus, sortOrder, queryClient, hasNextPage])
@@ -265,38 +301,63 @@ function OrdersTable() {
   return (
     <>
       <Box mb={4}>
-        <HStack spacing={8} justify="space-between" align="center" mb={4}>
-          <HStack spacing={2} flex="1" maxW="600px">
-            <Select
-              placeholder="Filter by customer"
-              value={customerId || ""}
-              onChange={handleCustomerChange}
-              isDisabled={isLoadingCustomers}
-            >
-              {customers?.data.map((customer) => (
-                <option key={customer.id} value={customer.id}>
-                  {customer.company}
-                </option>
-              ))}
-            </Select>
-            <Select
-              placeholder="Filter by status"
-              value={orderStatus || ""}
-              onChange={handleStatusChange}
-              maxW="200px"
-            >
-              {ORDER_STATUS_OPTIONS.map((status) => (
-                <option key={status} value={status}>
-                  {status}
-                </option>
-              ))}
-            </Select>
-            {(customerId || orderStatus || sortOrder) && (
-              <Button size="sm" onClick={clearFilters}>
-                Clear
-              </Button>
-            )}
-          </HStack>
+        <HStack spacing={8} justify="space-between" align="flex-start" mb={4}>
+          <VStack spacing={4} align="stretch" flex="1" maxW="800px">
+            <HStack spacing={2}>
+              <Select
+                placeholder="Filter by customer"
+                value={customerId || ""}
+                onChange={handleCustomerChange}
+                isDisabled={isLoadingCustomers}
+              >
+                {customers?.data.map((customer) => (
+                  <option key={customer.id} value={customer.id}>
+                    {customer.company}
+                  </option>
+                ))}
+              </Select>
+              <Select
+                placeholder="Filter by status"
+                value={orderStatus || ""}
+                onChange={handleStatusChange}
+                maxW="200px"
+              >
+                {ORDER_STATUS_OPTIONS.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+              </Select>
+            </HStack>
+            
+            <HStack spacing={4}>
+              <FormControl>
+                <FormLabel fontSize="sm">Start Date</FormLabel>
+                <Input
+                  type="datetime-local"
+                  value={startDate || ""}
+                  onChange={handleStartDateChange}
+                  size="sm"
+                />
+              </FormControl>
+              
+              <FormControl>
+                <FormLabel fontSize="sm">End Date</FormLabel>
+                <Input
+                  type="datetime-local"
+                  value={endDate || ""}
+                  onChange={handleEndDateChange}
+                  size="sm"
+                />
+              </FormControl>
+              
+              {(customerId || orderStatus || sortOrder || startDate || endDate) && (
+                <Button alignSelf="flex-end" size="sm" onClick={clearFilters}>
+                  Clear
+                </Button>
+              )}
+            </HStack>
+          </VStack>
 
           <HStack spacing={4} justify="flex-end">
             <Text fontSize="sm" color="gray.600">
