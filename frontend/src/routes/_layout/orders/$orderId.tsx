@@ -9,6 +9,9 @@ import {
   VStack,
   Box,
   SimpleGrid,
+  Button,
+  Icon,
+  Flex,
 } from "@chakra-ui/react"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
@@ -16,6 +19,7 @@ import { OrdersService, CustomersService } from "../../../client"
 import useCustomToast from "../../../hooks/useCustomToast"
 import { modalScrollbarStyles } from "../../../styles/orders.styles"
 import { useEffect, useState } from "react"
+import { FaExternalLinkAlt } from "react-icons/fa"
 
 export const Route = createFileRoute('/_layout/orders/$orderId')({
   component: OrderDetail,
@@ -69,9 +73,28 @@ function OrderDetail() {
       items: [
         { 
           label: "Customer", 
-          value: customerCompany,
-          onClick: handleCustomerClick,
-          isLink: true 
+          value: (
+            <Flex align="center" gap={3}>
+              <Text as="span" fontWeight="medium">
+                {customerCompany}
+              </Text>
+              {order?.customer_id && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  colorScheme="blue"
+                  rightIcon={<Icon as={FaExternalLinkAlt} boxSize="12px" />}
+                  onClick={handleCustomerClick}
+                  _hover={{
+                    textDecoration: 'none',
+                    bg: 'blue.50'
+                  }}
+                >
+                  View Customer
+                </Button>
+              )}
+            </Flex>
+          ),
         },
         { label: "Order Items", value: order?.order_items },
         { label: "Order Quantity", value: order?.order_quantity },
@@ -130,7 +153,7 @@ function OrderDetail() {
                     {section.section}
                   </Text>
                   <VStack spacing={4} align="stretch">
-                    {section.items.map(({ label, value, onClick, isLink }) => (
+                    {section.items.map(({ label, value }) => (
                       <Box 
                         key={label} 
                         p={3}
@@ -145,18 +168,19 @@ function OrderDetail() {
                         >
                           {label}
                         </Text>
-                        <Text 
-                          fontSize="md"
-                          fontWeight={value ? "medium" : "normal"}
-                          color={isLink ? "blue.500" : value ? "black" : "gray.400"}
-                          whiteSpace="pre-wrap"
-                          wordBreak="break-word"
-                          cursor={isLink ? "pointer" : "default"}
-                          _hover={isLink ? { textDecoration: "underline" } : undefined}
-                          onClick={onClick}
-                        >
-                          {value || 'N/A'}
-                        </Text>
+                        {typeof value === 'string' ? (
+                          <Text 
+                            fontSize="md"
+                            fontWeight={value ? "medium" : "normal"}
+                            color={value ? "black" : "gray.400"}
+                            whiteSpace="pre-wrap"
+                            wordBreak="break-word"
+                          >
+                            {value || 'N/A'}
+                          </Text>
+                        ) : (
+                          value
+                        )}
                       </Box>
                     ))}
                   </VStack>

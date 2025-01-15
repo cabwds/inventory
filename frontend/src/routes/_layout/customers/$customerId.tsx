@@ -11,12 +11,15 @@ import {
   SimpleGrid,
   Button,
   Flex,
+  Link,
+  Icon,
 } from "@chakra-ui/react"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
 import { CustomersService, OrdersService } from "../../../client"
 import useCustomToast from "../../../hooks/useCustomToast"
 import { modalScrollbarStyles, customerDetailsStyles } from "../../../styles/customers.styles"
+import { FaExternalLinkAlt } from "react-icons/fa"
 
 export const Route = createFileRoute('/_layout/customers/$customerId')({
   component: CustomerDetail,
@@ -63,7 +66,36 @@ function CustomerDetail() {
       section: "Additional Information",
       items: [
         { label: "Description", value: customer?.description },
-        { label: "Total Orders", value: orderCount?.count ?? 'N/A' }
+        { 
+          label: "Total Orders", 
+          value: (
+            <Flex align="center" gap={3}>
+              <Text as="span" fontWeight="medium">
+                {orderCount?.count ?? 'N/A'}
+              </Text>
+              {orderCount?.count != null && orderCount.count > 0 && (
+                <Button
+                  as={Link}
+                  size="sm"
+                  variant="ghost"
+                  colorScheme="blue"
+                  rightIcon={<Icon as={FaExternalLinkAlt} boxSize="12px" />}
+                  href={`/orders?customerId=${customerId}`}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    navigate({ to: '/orders', search: { customerId } })
+                  }}
+                  _hover={{
+                    textDecoration: 'none',
+                    bg: 'blue.50'
+                  }}
+                >
+                  View Orders
+                </Button>
+              )}
+            </Flex>
+          )
+        }
       ]
     }
   ]
