@@ -13,6 +13,47 @@ from pydantic import BaseModel
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
+@router.get("/order_count", response_model=OrdersCount)
+def read_customer_orders_count(
+    session: SessionDep, current_user: CurrentUser, 
+    display_invalid: bool = False, customer_id: str = None, order_status: str = None,
+    start_date: str = None,
+    end_date: str = None 
+) -> Any:
+    """
+    Retrieve orders only for the count.
+    Args:
+        start_date: Optional start date in format "YYYY-MM-DD HH:MM:SS"
+        end_date: Optional end date in format "YYYY-MM-DD HH:MM:SS"
+    """
+    if current_user.is_superuser:
+        # Build base query
+        count_query = select(func.count()).select_from(Order)
+
+        # Add filters
+        if not display_invalid:
+            count_query = count_query.where(Order.is_valid == True)
+
+        if customer_id:
+            count_query = count_query.where(Order.customer_id == customer_id)
+
+        if order_status:
+            count_query = count_query.where(Order.order_status == order_status)
+
+        # Add date range filter
+        if start_date or end_date:
+            date_filters = []
+            if start_date:
+                date_filters.append(cast(Order.order_date, DateTime) >= cast(start_date, DateTime))
+            if end_date:
+                date_filters.append(cast(Order.order_date, DateTime) <= cast(end_date, DateTime))
+            
+            count_query = count_query.where(and_(*date_filters))
+            
+        count = session.exec(count_query).one()
+
+    return OrdersCount(count=count)
+
 @router.get("/{id}", response_model=Order)
 def read_order(session: SessionDep, current_user: CurrentUser, id: str) -> Any:
     """

@@ -47,6 +47,9 @@ class OrdersPublic(SQLModel):
     data: list[OrderPublic]
     count: int
 
+class OrdersCount(SQLModel):
+    count: int
+
 # Properties to receive on order creation
 class OrderCreate(OrderBase):
     pass

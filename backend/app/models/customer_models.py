@@ -17,7 +17,6 @@ class CustomerBase(SQLModel):
     gender: str | None  = Field(default=None)
     preferred_language: str | None = Field(default=None)
     address: str | None  = Field(default=None) 
-    order_ids: str | None = Field(default="[]")  # Store as serialized JSON
 
     def get_address(self) -> dict:
         return json.loads(self.address)
@@ -25,11 +24,6 @@ class CustomerBase(SQLModel):
     def set_address(self, address: dict):
         self.address = json.dumps(address)
 
-    def get_order_ids(self) -> list:
-        return json.loads(self.order_ids)
-
-    def set_order_ids(self, order_ids: list):
-        self.order_ids = json.dumps(order_ids)
 
 
 # Database model, database table inferred from class name

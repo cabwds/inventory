@@ -18,7 +18,6 @@ export type Customer = {
   gender?: string | null
   preferred_language?: string | null
   address?: string | null
-  order_ids?: string | null
   id?: string
 }
 
@@ -31,7 +30,6 @@ export type CustomerCreate = {
   gender?: string | null
   preferred_language?: string | null
   address?: string | null
-  order_ids?: string | null
 }
 
 export type CustomerPublic = {
@@ -43,7 +41,6 @@ export type CustomerPublic = {
   gender?: string | null
   preferred_language?: string | null
   address?: string | null
-  order_ids?: string | null
   id: string
 }
 
@@ -61,7 +58,6 @@ export type CustomerUpdate = {
   gender?: string | null
   preferred_language?: string | null
   address?: string | null
-  order_ids?: string | null
 }
 
 export type HTTPValidationError = {
@@ -138,6 +134,10 @@ export type OrderPublic = {
   total_price?: number | null
   is_valid?: boolean | null
   id?: string
+}
+
+export type OrdersCount = {
+  count: number
 }
 
 export type OrdersPublic = {
@@ -316,6 +316,16 @@ export type LoginRecoverPasswordHtmlContentData = {
 }
 
 export type LoginRecoverPasswordHtmlContentResponse = string
+
+export type OrdersReadCustomerOrdersCountData = {
+  customerId?: string
+  displayInvalid?: boolean
+  endDate?: string
+  orderStatus?: string
+  startDate?: string
+}
+
+export type OrdersReadCustomerOrdersCountResponse = OrdersCount
 
 export type OrdersReadOrderData = {
   id: string

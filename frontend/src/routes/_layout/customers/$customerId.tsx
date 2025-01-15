@@ -14,7 +14,7 @@ import {
 } from "@chakra-ui/react"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
-import { CustomersService } from "../../../client"
+import { CustomersService, OrdersService } from "../../../client"
 import useCustomToast from "../../../hooks/useCustomToast"
 import { modalScrollbarStyles, customerDetailsStyles } from "../../../styles/customers.styles"
 
@@ -30,6 +30,11 @@ function CustomerDetail() {
   const { data: customer, isError } = useQuery({
     queryKey: ['customer', customerId],
     queryFn: () => CustomersService.readCustomer({ id: customerId }),
+  })
+
+  const { data: orderCount } = useQuery({
+    queryKey: ['customerOrderCount', customerId],
+    queryFn: () => OrdersService.readCustomerOrdersCount({ customerId }),
   })
 
   if (isError) {
@@ -58,7 +63,7 @@ function CustomerDetail() {
       section: "Additional Information",
       items: [
         { label: "Description", value: customer?.description },
-        { label: "Order List", value: customer?.order_ids }
+        { label: "Total Orders", value: orderCount?.count ?? 'N/A' }
       ]
     }
   ]

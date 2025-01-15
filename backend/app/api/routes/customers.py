@@ -47,12 +47,6 @@ def create_customer(
     Create new customer.
     """
     new_uuid = uuid.uuid4()
-    #customer_in.description = "123"
-    #customer_in.full_name = "123"
-    #customer_in.gender= "123"
-    #customer_in.preferred_language= "123"
-    #customer_in.set_address({})
-    #customer_in.set_order_ids({})
     customer = Customer.model_validate(customer_in, update={"id": new_uuid})
     session.add(customer)
     session.commit()
