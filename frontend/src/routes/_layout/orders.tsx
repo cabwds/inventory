@@ -301,71 +301,73 @@ function OrdersTable() {
   return (
     <>
       <Box mb={4}>
-        <HStack spacing={8} justify="space-between" align="flex-start" mb={4}>
-          <VStack spacing={4} align="stretch" flex="1" maxW="800px">
-            <HStack spacing={2}>
-              <Select
-                placeholder="Filter by customer"
-                value={customerId || ""}
-                onChange={handleCustomerChange}
-                isDisabled={isLoadingCustomers}
-              >
-                {customers?.data.map((customer) => (
-                  <option key={customer.id} value={customer.id}>
-                    {customer.company}
-                  </option>
-                ))}
-              </Select>
-              <Select
-                placeholder="Filter by status"
-                value={orderStatus || ""}
-                onChange={handleStatusChange}
-                maxW="200px"
-              >
-                {ORDER_STATUS_OPTIONS.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </Select>
-            </HStack>
-            
-            <HStack spacing={4}>
-              <FormControl>
-                <FormLabel fontSize="sm">Start Date</FormLabel>
+        <VStack spacing={4} align="stretch">
+          {/* First row: Customer and Status filters */}
+          <HStack spacing={4}>
+            <Select
+              placeholder="Filter by customer"
+              value={customerId || ""}
+              onChange={handleCustomerChange}
+              isDisabled={isLoadingCustomers}
+              maxW="300px"
+            >
+              {customers?.data.map((customer) => (
+                <option key={customer.id} value={customer.id}>
+                  {customer.company}
+                </option>
+              ))}
+            </Select>
+            <Select
+              placeholder="Filter by status"
+              value={orderStatus || ""}
+              onChange={handleStatusChange}
+              maxW="200px"
+            >
+              {ORDER_STATUS_OPTIONS.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </Select>
+            {(customerId || orderStatus || sortOrder || startDate || endDate) && (
+              <Button size="md" onClick={clearFilters}>
+                Clear Filters
+              </Button>
+            )}
+          </HStack>
+
+          {/* Second row: Date filters and pagination info */}
+          <HStack spacing={4} justify="space-between">
+            <HStack spacing={4} flex="1">
+              <FormControl maxW="200px">
+                <FormLabel fontSize="sm" mb={1}>Start Date</FormLabel>
                 <Input
                   type="datetime-local"
                   value={startDate || ""}
                   onChange={handleStartDateChange}
-                  size="sm"
+                  size="md"
                 />
               </FormControl>
               
-              <FormControl>
-                <FormLabel fontSize="sm">End Date</FormLabel>
+              <FormControl maxW="200px">
+                <FormLabel fontSize="sm" mb={1}>End Date</FormLabel>
                 <Input
                   type="datetime-local"
                   value={endDate || ""}
                   onChange={handleEndDateChange}
-                  size="sm"
+                  size="md"
                 />
               </FormControl>
-              
-              {(customerId || orderStatus || sortOrder || startDate || endDate) && (
-                <Button alignSelf="flex-end" size="sm" onClick={clearFilters}>
-                  Clear
-                </Button>
-              )}
             </HStack>
-          </VStack>
 
-          <HStack spacing={4} justify="flex-end">
-            <Text fontSize="sm" color="gray.600">
-              Showing {((page - 1) * pageSize) + 1} - {Math.min(page * pageSize, (orders?.count || 0))} of {orders?.count || 0}
-            </Text>
-            <PageSizeSelector pageSize={pageSize} onChange={setPageSize} />
+            <HStack spacing={4} justify="flex-end">
+              <Text fontSize="sm" color="gray.600" whiteSpace="nowrap">
+                Showing {((page - 1) * pageSize) + 1} - {Math.min(page * pageSize, (orders?.count || 0))} of {orders?.count || 0}
+              </Text>
+              <PageSizeSelector pageSize={pageSize} onChange={setPageSize} />
+            </HStack>
           </HStack>
-        </HStack>
+        </VStack>
       </Box>
 
       <TableContainer {...customerDetailsStyles.tableContainer}>
