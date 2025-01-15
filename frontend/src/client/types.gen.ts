@@ -339,9 +339,12 @@ export type OrdersDeleteOrderResponse = Message
 export type OrdersReadOrdersData = {
   customerId?: string
   displayInvalid?: boolean
+  endDate?: string
   limit?: number
   orderStatus?: string
   skip?: number
+  sortOrder?: string
+  startDate?: string
 }
 
 export type OrdersReadOrdersResponse = OrdersPublic

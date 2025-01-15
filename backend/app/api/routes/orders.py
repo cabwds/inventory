@@ -3,7 +3,8 @@ from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from sqlmodel import func, select
+from sqlmodel import func, select, cast, DateTime, and_
+#from sqlalchemy import func, cast, DateTime  
 
 from app.api.deps import CurrentUser, SessionDep
 from app.models.order_models import *
@@ -27,11 +28,17 @@ def read_order(session: SessionDep, current_user: CurrentUser, id: str) -> Any:
 @router.get("/", response_model=OrdersPublic)
 def read_orders(
     session: SessionDep, current_user: CurrentUser, 
-    skip: int = 0, limit: int = 100,
-    display_invalid: bool = False, customer_id: str = None, order_status: str = None
+    skip: int = 0, limit: int = 100, sort_order: str = "desc", 
+    display_invalid: bool = False, customer_id: str = None, order_status: str = None,
+    start_date: str = None,
+    end_date: str = None 
 ) -> Any:
     """
     Retrieve orders.
+    Args:
+        sort_order: "asc" for ascending, "desc" for descending order by created date
+        start_date: Optional start date in format "YYYY-MM-DD HH:MM:SS"
+        end_date: Optional end date in format "YYYY-MM-DD HH:MM:SS"
     """
     if current_user.is_superuser:
         # Build base query
@@ -51,9 +58,25 @@ def read_orders(
             query = query.where(Order.order_status == order_status)
             count_query = count_query.where(Order.order_status == order_status)
 
+        # Add date range filter
+        if start_date or end_date:
+            date_filters = []
+            if start_date:
+                date_filters.append(cast(Order.order_date, DateTime) >= cast(start_date, DateTime))
+            if end_date:
+                date_filters.append(cast(Order.order_date, DateTime) <= cast(end_date, DateTime))
+            
+            query = query.where(and_(*date_filters))
+            count_query = count_query.where(and_(*date_filters))
+
+        # Add sorting with string to timestamp casting
+        if sort_order.lower() == "asc":
+            query = query.order_by(cast(Order.order_date, DateTime).asc())
+        else:
+            query = query.order_by(cast(Order.order_date, DateTime).desc())
+
         # Add pagination
         query = query.offset(skip).limit(limit)
-        
             
         count = session.exec(count_query).one()
         orders = session.exec(query).all()

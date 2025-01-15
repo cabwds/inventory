@@ -532,12 +532,19 @@ export class OrdersService {
   /**
    * Read Orders
    * Retrieve orders.
+   * Args:
+   * sort_order: "asc" for ascending, "desc" for descending order by created date
+   * start_date: Optional start date in format "YYYY-MM-DD HH:MM:SS"
+   * end_date: Optional end date in format "YYYY-MM-DD HH:MM:SS"
    * @param data The data for the request.
    * @param data.skip
    * @param data.limit
+   * @param data.sortOrder
    * @param data.displayInvalid
    * @param data.customerId
    * @param data.orderStatus
+   * @param data.startDate
+   * @param data.endDate
    * @returns OrdersPublic Successful Response
    * @throws ApiError
    */
@@ -550,9 +557,12 @@ export class OrdersService {
       query: {
         skip: data.skip,
         limit: data.limit,
+        sort_order: data.sortOrder,
         display_invalid: data.displayInvalid,
         customer_id: data.customerId,
         order_status: data.orderStatus,
+        start_date: data.startDate,
+        end_date: data.endDate,
       },
       errors: {
         422: "Validation Error",
