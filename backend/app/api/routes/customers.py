@@ -1,7 +1,8 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 from sqlmodel import func, select
 
 from app.api.deps import CurrentUser, SessionDep
@@ -10,6 +11,41 @@ from app.models.user_models import Message
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/customers", tags=["customers"])
+
+# Route to get an image
+@router.get("/get-profile-image/{customer_id}")
+def get_profile_image(session: SessionDep, current_user: CurrentUser, customer_id: uuid.UUID):
+    
+    profile = session.get(CustomerProfile, customer_id)
+
+    if not profile or not profile.profile_image:
+        raise HTTPException(status_code=404, detail="Profile image not found.")
+    
+    # Save the image to a temporary file to serve
+    temp_file = f"temp_{customer_id}.jpg"
+    with open(temp_file, "wb") as f:
+        f.write(profile.profile_image)
+    
+    return FileResponse(temp_file, media_type="image/jpeg")
+
+# Route to upload an image for customer profile
+@router.post("/upload-profile-image/{customer_id}")
+async def upload_profile_image(session: SessionDep, current_user: CurrentUser,
+                                customer_id: uuid.UUID, file: UploadFile) -> Any:
+    
+    if file.content_type not in ["image/jpeg", "image/png"]:
+        raise HTTPException(status_code=400, detail="Only JPEG and PNG files are allowed.")
+    
+    profile = session.get(CustomerProfile, customer_id)
+    if not profile:
+        profile = CustomerProfile(id=uuid.UUID(customer_id))
+    
+    # Read file content as bytes
+    profile.profile_image = await file.read()
+    session.add(profile)
+    session.commit()
+    return {"message": "Profile image uploaded successfully."}
+
 
 @router.get("/{id}", response_model=Customer)
 def read_customer(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) -> Any:

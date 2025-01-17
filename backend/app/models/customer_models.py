@@ -24,7 +24,9 @@ class CustomerBase(SQLModel):
     def set_address(self, address: dict):
         self.address = json.dumps(address)
 
-
+class CustomerProfile(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    profile_image: bytes | None = Field(default=None)
 
 # Database model, database table inferred from class name
 class Customer(CustomerBase, table=True):

@@ -7,6 +7,10 @@ import type {
   AuthGoogleLoginResponse,
   AuthGoogleCallbackResponse,
   AuthHealthCheckResponse,
+  CustomersGetProfileImageData,
+  CustomersGetProfileImageResponse,
+  CustomersUploadProfileImageData,
+  CustomersUploadProfileImageResponse,
   CustomersReadCustomerData,
   CustomersReadCustomerResponse,
   CustomersUpdateCustomerData,
@@ -112,6 +116,53 @@ export class AuthService {
 }
 
 export class CustomersService {
+  /**
+   * Get Profile Image
+   * @param data The data for the request.
+   * @param data.customerId
+   * @returns unknown Successful Response
+   * @throws ApiError
+   */
+  public static getProfileImage(
+    data: CustomersGetProfileImageData,
+  ): CancelablePromise<CustomersGetProfileImageResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/customers/get-profile-image/{customer_id}",
+      path: {
+        customer_id: data.customerId,
+      },
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Upload Profile Image
+   * @param data The data for the request.
+   * @param data.customerId
+   * @param data.formData
+   * @returns unknown Successful Response
+   * @throws ApiError
+   */
+  public static uploadProfileImage(
+    data: CustomersUploadProfileImageData,
+  ): CancelablePromise<CustomersUploadProfileImageResponse> {
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/api/v1/customers/upload-profile-image/{customer_id}",
+      path: {
+        customer_id: data.customerId,
+      },
+      formData: data.formData,
+      mediaType: "multipart/form-data",
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
   /**
    * Read Customer
    * Get customer by ID.
