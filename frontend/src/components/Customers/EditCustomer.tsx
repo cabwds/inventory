@@ -19,8 +19,11 @@ import {
   Select,
   Image,
   IconButton,
+  Flex,
+  Avatar,
+  Spinner,
 } from "@chakra-ui/react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"
 import { type SubmitHandler, useForm } from "react-hook-form"
 import { FiUpload } from "react-icons/fi"
 
@@ -85,7 +88,12 @@ const ProfileImageUpload = ({ customerId, onSuccess }: ProfileImageUploadProps) 
   const showToast = useCustomToast()
   const fileInputRef = React.useRef<HTMLInputElement>(null)
   const [isUploading, setIsUploading] = React.useState(false)
-  const [imageUrl, setImageUrl] = React.useState<string>(`/api/v1/customers/get-profile-image/${customerId}`)
+
+  const { data: profileImage, isLoading: isLoadingImage } = useQuery({
+    queryKey: ['customerProfileImage', customerId],
+    queryFn: () => CustomersService.getProfileImage({ customerId }),
+    enabled: !!customerId,
+  })
 
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -103,7 +111,6 @@ const ProfileImageUpload = ({ customerId, onSuccess }: ProfileImageUploadProps) 
         formData: {file: file}
       })
       showToast('Success', 'Profile image uploaded successfully.', 'success')
-      setImageUrl(`/api/v1/customers/get-profile-image/${customerId}?t=${Date.now()}`)
       onSuccess()
     } catch (error) {
       if (error instanceof Error) {
@@ -117,34 +124,35 @@ const ProfileImageUpload = ({ customerId, onSuccess }: ProfileImageUploadProps) 
   }
 
   return (
-    <Box position="relative" width="150px" height="150px">
-      <Image
-        src={imageUrl}
-        fallbackSrc="https://via.placeholder.com/150"
-        alt="Profile"
-        width="100%"
-        height="100%"
-        objectFit="cover"
-        borderRadius="md"
-      />
-      <IconButton
-        aria-label="Upload profile image"
-        icon={<FiUpload />}
-        position="absolute"
-        bottom="2"
-        right="2"
-        size="sm"
-        colorScheme="blue"
-        isLoading={isUploading}
-        onClick={() => fileInputRef.current?.click()}
-      />
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleUpload}
-        accept="image/jpeg,image/png"
-        style={{ display: 'none' }}
-      />
+    <Box position="relative">
+      {isLoadingImage ? (
+        <Spinner size="xl" thickness="4px" />
+      ) : (
+        <>
+          <Avatar
+            size="2xl"
+            src={profileImage ? `data:image/jpeg;base64,${profileImage}` : undefined}
+          />
+          <IconButton
+            aria-label="Upload profile image"
+            icon={<FiUpload />}
+            position="absolute"
+            bottom="2"
+            right="2"
+            size="sm"
+            colorScheme="blue"
+            isLoading={isUploading}
+            onClick={() => fileInputRef.current?.click()}
+          />
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleUpload}
+            accept="image/jpeg,image/png"
+            style={{ display: 'none' }}
+          />
+        </>
+      )}
     </Box>
   )
 }
@@ -195,18 +203,6 @@ const EditCustomer = ({ customer, isOpen, onClose }: EditCustomerProps) => {
     {
       section: "Basic Information",
       fields: [
-        {
-          id: "profile_image",
-          label: "Profile Image",
-          placeholder: "",
-          type: "custom",
-          component: (
-            <ProfileImageUpload 
-              customerId={customer.id} 
-              onSuccess={handleImageUploadSuccess}
-            />
-          )
-        },
         {
           id: "company",
           label: "Company",
@@ -294,64 +290,83 @@ const EditCustomer = ({ customer, isOpen, onClose }: EditCustomerProps) => {
           css={modalScrollbarStyles}
         >
           <form id="edit-customer-form" onSubmit={handleSubmit(onSubmit)}>
-            <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={8}>
-              {formSections.map((section) => (
-                <Box key={section.section}>
-                  <Text {...editCustomerStyles.sectionTitle}>
-                    {section.section}
+            <VStack spacing={8} align="stretch">
+              <Flex justify="center" pt={2} pb={6}>
+                <Box>
+                  <ProfileImageUpload 
+                    customerId={customer.id} 
+                    onSuccess={handleImageUploadSuccess}
+                  />
+                  <Text 
+                    textAlign="center" 
+                    mt={2} 
+                    fontSize="lg" 
+                    fontWeight="medium"
+                  >
+                    {customer.full_name}
                   </Text>
-                  <VStack spacing={4} align="stretch">
-                    {section.fields.map((field) => (
-                      <FormControl 
-                        key={field.id} 
-                        isInvalid={!!errors[field.id as keyof CustomerUpdate]}
-                      >
-                        <Box {...editCustomerStyles.formBox}>
-                          <FormLabel 
-                            htmlFor={field.id}
-                            {...editCustomerStyles.formLabel}
-                          >
-                            {field.label}
-                            {field.required && 
-                              <Text as="span" color="red.500" ml={1}>*</Text>
-                            }
-                          </FormLabel>
-                          {field.type === "custom" ? (
-                            field.component
-                          ) : field.type === "select" ? (
-                            <Select
-                              id={field.id}
-                              {...register(field.id as keyof CustomerUpdate, field.validation)}
-                              placeholder={field.placeholder}
-                              {...editCustomerStyles.input}
-                            >
-                              {field.options?.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </Select>
-                          ) : (
-                            <Input
-                              id={field.id}
-                              {...register(field.id as keyof CustomerUpdate, field.validation)}
-                              placeholder={field.placeholder}
-                              type={field.type || "text"}
-                              {...editCustomerStyles.input}
-                            />
-                          )}
-                          {errors[field.id as keyof CustomerUpdate] && (
-                            <FormErrorMessage>
-                              {errors[field.id as keyof CustomerUpdate]?.message}
-                            </FormErrorMessage>
-                          )}
-                        </Box>
-                      </FormControl>
-                    ))}
-                  </VStack>
                 </Box>
-              ))}
-            </SimpleGrid>
+              </Flex>
+
+              <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={8}>
+                {formSections.map((section) => (
+                  <Box key={section.section}>
+                    <Text {...editCustomerStyles.sectionTitle}>
+                      {section.section}
+                    </Text>
+                    <VStack spacing={4} align="stretch">
+                      {section.fields.map((field) => (
+                        <FormControl 
+                          key={field.id} 
+                          isInvalid={!!errors[field.id as keyof CustomerUpdate]}
+                        >
+                          <Box {...editCustomerStyles.formBox}>
+                            <FormLabel 
+                              htmlFor={field.id}
+                              {...editCustomerStyles.formLabel}
+                            >
+                              {field.label}
+                              {field.required && 
+                                <Text as="span" color="red.500" ml={1}>*</Text>
+                              }
+                            </FormLabel>
+                            {field.type === "custom" ? (
+                              field.component
+                            ) : field.type === "select" ? (
+                              <Select
+                                id={field.id}
+                                {...register(field.id as keyof CustomerUpdate, field.validation)}
+                                placeholder={field.placeholder}
+                                {...editCustomerStyles.input}
+                              >
+                                {field.options?.map((option) => (
+                                  <option key={option.value} value={option.value}>
+                                    {option.label}
+                                  </option>
+                                ))}
+                              </Select>
+                            ) : (
+                              <Input
+                                id={field.id}
+                                {...register(field.id as keyof CustomerUpdate, field.validation)}
+                                placeholder={field.placeholder}
+                                type={field.type || "text"}
+                                {...editCustomerStyles.input}
+                              />
+                            )}
+                            {errors[field.id as keyof CustomerUpdate] && (
+                              <FormErrorMessage>
+                                {errors[field.id as keyof CustomerUpdate]?.message}
+                              </FormErrorMessage>
+                            )}
+                          </Box>
+                        </FormControl>
+                      ))}
+                    </VStack>
+                  </Box>
+                ))}
+              </SimpleGrid>
+            </VStack>
           </form>
         </ModalBody>
         <ModalFooter {...editCustomerStyles.modalFooter}>
