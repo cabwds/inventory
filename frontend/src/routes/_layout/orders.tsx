@@ -429,17 +429,18 @@ function OrdersTable() {
 function Orders() {
   return (
     <Container maxW="full" py={8}>
-      <Box mb={8}>
+      <Box mb={2} display="flex" alignItems="center">
         <Heading 
           size="lg" 
           textAlign={{ base: "center", md: "left" }}
           color="gray.700"
+          mr="auto"
         >
           Orders Management
         </Heading>
-      </Box>
-      <Box mb={6}>
-        <Navbar type="Order" addModalAs={AddOrder} />
+        <Box mr={32}>
+          <Navbar type="Order" addModalAs={AddOrder} />
+        </Box>
       </Box>
       
       <OrdersTable />

@@ -158,19 +158,19 @@ function CustomersTable() {
 function Customers() {
   return (
     <Container maxW="full" py={8}>
-      <Box mb={8}>
+      <Box mb={2} display="flex" alignItems="center">
         <Heading 
           size="lg" 
           textAlign={{ base: "center", md: "left" }}
           color="gray.700"
+          mr="auto"
         >
           Customers Management
         </Heading>
+        <Box mr={32}>
+          <Navbar type="Customer" addModalAs={AddCustomer} />
+        </Box>
       </Box>
-      <Box mb={6}>
-        <Navbar type="Customer" addModalAs={AddCustomer} />
-      </Box>
-      
       <CustomersTable />
       <Outlet />
     </Container>
