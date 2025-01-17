@@ -13,9 +13,24 @@ from pydantic import BaseModel
 
 router = APIRouter(prefix="/customers", tags=["customers"])
 
+@router.get("/customer_count", response_model=CustomerCount)
+def read_customer_count(
+    session: SessionDep, current_user: CurrentUser
+) -> Any:
+    """
+    Retrieve customers only for the count.
+    """
+    if current_user.is_superuser:
+        # Build base query
+        count_query = select(func.count()).select_from(Customer)
+            
+        count = session.exec(count_query).one()
+
+    return CustomerCount(count=count)
+
 # Route to get an image
 @router.get("/get-profile-image/{customer_id}")
-def get_profile_image(session: SessionDep, customer_id: uuid.UUID):
+def get_profile_image(session: SessionDep, current_user: CurrentUser, customer_id: uuid.UUID):
     
     profile = session.get(CustomerProfile, customer_id)
 

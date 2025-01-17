@@ -7,6 +7,7 @@ import type {
   AuthGoogleLoginResponse,
   AuthGoogleCallbackResponse,
   AuthHealthCheckResponse,
+  CustomersReadCustomerCountResponse,
   CustomersGetProfileImageData,
   CustomersGetProfileImageResponse,
   CustomersUploadProfileImageData,
@@ -116,6 +117,19 @@ export class AuthService {
 }
 
 export class CustomersService {
+  /**
+   * Read Customer Count
+   * Retrieve customers only for the count.
+   * @returns CustomerCount Successful Response
+   * @throws ApiError
+   */
+  public static readCustomerCount(): CancelablePromise<CustomersReadCustomerCountResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/customers/customer_count",
+    })
+  }
+
   /**
    * Get Profile Image
    * @param data The data for the request.

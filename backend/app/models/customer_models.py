@@ -42,6 +42,9 @@ class CustomerUpdate(CustomerBase):
 class CustomerPublic(CustomerBase):
     id: uuid.UUID
 
+class CustomerCount(SQLModel):
+    count: int
+
 class CustomersPublic(SQLModel):
     data: list[CustomerPublic]
     count: int

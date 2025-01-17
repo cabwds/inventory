@@ -25,6 +25,10 @@ export type Customer = {
   id?: string
 }
 
+export type CustomerCount = {
+  count: number
+}
+
 export type CustomerCreate = {
   company?: string
   description?: string | null
@@ -230,6 +234,8 @@ export type AuthGoogleLoginResponse = unknown
 export type AuthGoogleCallbackResponse = unknown
 
 export type AuthHealthCheckResponse = boolean
+
+export type CustomersReadCustomerCountResponse = CustomerCount
 
 export type CustomersGetProfileImageData = {
   customerId: string
