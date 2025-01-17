@@ -38,7 +38,7 @@ async def upload_profile_image(session: SessionDep, current_user: CurrentUser,
     
     profile = session.get(CustomerProfile, customer_id)
     if not profile:
-        profile = CustomerProfile(id=uuid.UUID(customer_id))
+        profile = CustomerProfile(id=customer_id)
     
     # Read file content as bytes
     profile.profile_image = await file.read()

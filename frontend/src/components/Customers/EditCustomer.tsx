@@ -1,3 +1,4 @@
+import React from "react"
 import {
   Button,
   FormControl,
@@ -16,9 +17,12 @@ import {
   Box,
   VStack,
   Select,
+  Image,
+  IconButton,
 } from "@chakra-ui/react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { type SubmitHandler, useForm } from "react-hook-form"
+import { FiUpload } from "react-icons/fi"
 
 import {
   type ApiError,
@@ -54,11 +58,17 @@ interface FormField {
     };
   };
   options?: Array<{ value: string; label: string }>;
+  component?: React.ReactNode;
 }
 
 interface FormSection {
   section: string;
   fields: FormField[];
+}
+
+interface ProfileImageUploadProps {
+  customerId: string;
+  onSuccess: () => void;
 }
 
 const GENDER_OPTIONS = [
@@ -70,6 +80,74 @@ const LANGUAGE_OPTIONS = [
   { value: "English", label: "English" },
   { value: "Chinese", label: "Chinese" },
 ]
+
+const ProfileImageUpload = ({ customerId, onSuccess }: ProfileImageUploadProps) => {
+  const showToast = useCustomToast()
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
+  const [isUploading, setIsUploading] = React.useState(false)
+  const [imageUrl, setImageUrl] = React.useState<string>(`/api/v1/customers/get-profile-image/${customerId}`)
+
+  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+      showToast('Error', 'Only JPEG and PNG files are allowed.', 'error')
+      return
+    }
+
+    setIsUploading(true)
+    try {
+      await CustomersService.uploadProfileImage({
+        customerId: customerId,
+        formData: {file: file}
+      })
+      showToast('Success', 'Profile image uploaded successfully.', 'success')
+      setImageUrl(`/api/v1/customers/get-profile-image/${customerId}?t=${Date.now()}`)
+      onSuccess()
+    } catch (error) {
+      if (error instanceof Error) {
+        handleError(error as ApiError, showToast)
+      } else {
+        showToast('Error', 'An unexpected error occurred', 'error')
+      }
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  return (
+    <Box position="relative" width="150px" height="150px">
+      <Image
+        src={imageUrl}
+        fallbackSrc="https://via.placeholder.com/150"
+        alt="Profile"
+        width="100%"
+        height="100%"
+        objectFit="cover"
+        borderRadius="md"
+      />
+      <IconButton
+        aria-label="Upload profile image"
+        icon={<FiUpload />}
+        position="absolute"
+        bottom="2"
+        right="2"
+        size="sm"
+        colorScheme="blue"
+        isLoading={isUploading}
+        onClick={() => fileInputRef.current?.click()}
+      />
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleUpload}
+        accept="image/jpeg,image/png"
+        style={{ display: 'none' }}
+      />
+    </Box>
+  )
+}
 
 const EditCustomer = ({ customer, isOpen, onClose }: EditCustomerProps) => {
   const queryClient = useQueryClient()
@@ -109,10 +187,26 @@ const EditCustomer = ({ customer, isOpen, onClose }: EditCustomerProps) => {
     onClose()
   }
 
+  const handleImageUploadSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ["customers"] })
+  }
+
   const formSections: FormSection[] = [
     {
       section: "Basic Information",
       fields: [
+        {
+          id: "profile_image",
+          label: "Profile Image",
+          placeholder: "",
+          type: "custom",
+          component: (
+            <ProfileImageUpload 
+              customerId={customer.id} 
+              onSuccess={handleImageUploadSuccess}
+            />
+          )
+        },
         {
           id: "company",
           label: "Company",
@@ -222,7 +316,9 @@ const EditCustomer = ({ customer, isOpen, onClose }: EditCustomerProps) => {
                               <Text as="span" color="red.500" ml={1}>*</Text>
                             }
                           </FormLabel>
-                          {field.type === "select" ? (
+                          {field.type === "custom" ? (
+                            field.component
+                          ) : field.type === "select" ? (
                             <Select
                               id={field.id}
                               {...register(field.id as keyof CustomerUpdate, field.validation)}
