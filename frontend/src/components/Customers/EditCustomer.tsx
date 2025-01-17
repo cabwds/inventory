@@ -25,7 +25,7 @@ import {
 } from "@chakra-ui/react"
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"
 import { type SubmitHandler, useForm } from "react-hook-form"
-import { FiUpload } from "react-icons/fi"
+import { FiUpload, FiUser } from "react-icons/fi"
 
 import {
   type ApiError,
@@ -86,14 +86,18 @@ const LANGUAGE_OPTIONS = [
 
 const ProfileImageUpload = ({ customerId, onSuccess }: ProfileImageUploadProps) => {
   const showToast = useCustomToast()
+  const queryClient = useQueryClient()
   const fileInputRef = React.useRef<HTMLInputElement>(null)
   const [isUploading, setIsUploading] = React.useState(false)
 
-  const { data: profileImage, isLoading: isLoadingImage } = useQuery({
+  const { data: profileImage, isLoading: isLoadingImage, isError } = useQuery({
     queryKey: ['customerProfileImage', customerId],
     queryFn: () => CustomersService.getProfileImage({ customerId }),
     enabled: !!customerId,
   })
+
+  // Add default image URL
+  const defaultImageUrl = "https://bit.ly/broken-link"
 
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -111,6 +115,7 @@ const ProfileImageUpload = ({ customerId, onSuccess }: ProfileImageUploadProps) 
         formData: {file: file}
       })
       showToast('Success', 'Profile image uploaded successfully.', 'success')
+      queryClient.invalidateQueries({ queryKey: ['customerProfileImage', customerId] })
       onSuccess()
     } catch (error) {
       if (error instanceof Error) {
@@ -131,7 +136,9 @@ const ProfileImageUpload = ({ customerId, onSuccess }: ProfileImageUploadProps) 
         <>
           <Avatar
             size="2xl"
-            src={profileImage ? `data:image/jpeg;base64,${profileImage}` : undefined}
+            src={!isError && profileImage ? `data:image/jpeg;base64,${profileImage}` : defaultImageUrl}
+            bg="gray.200"
+            icon={<FiUser size="60%" />}
           />
           <IconButton
             aria-label="Upload profile image"

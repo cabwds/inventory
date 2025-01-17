@@ -22,6 +22,7 @@ import { CustomersService, OrdersService } from "../../../client"
 import useCustomToast from "../../../hooks/useCustomToast"
 import { modalScrollbarStyles, customerDetailsStyles } from "../../../styles/customers.styles"
 import { FaExternalLinkAlt } from "react-icons/fa"
+import { FiUser } from "react-icons/fi"
 
 export const Route = createFileRoute('/_layout/customers/$customerId')({
   component: CustomerDetail,
@@ -144,7 +145,9 @@ function CustomerDetail() {
                   <Box>
                     <Avatar 
                       size="2xl"
-                      src={profileImage ? `data:image/jpeg;base64,${profileImage}` : undefined}
+                      src={!isError && profileImage ? `data:image/jpeg;base64,${profileImage}` : undefined}
+                      bg="gray.200"
+                      icon={<FiUser size="60%" />}
                     />
                     <Text 
                       textAlign="center" 

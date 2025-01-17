@@ -22,14 +22,7 @@ def get_profile_image(session: SessionDep, customer_id: uuid.UUID):
     if not profile or not profile.profile_image:
         raise HTTPException(status_code=404, detail="Profile image not found.")
     
-    # Save the image to a temporary file to serve
-    temp_file = f"temp_{customer_id}.jpg"
-    with open(temp_file, "wb") as f:
-        f.write(profile.profile_image)
-    
-    with open(temp_file, 'rb') as f:
-        base64image = base64.b64encode(f.read())
-
+    base64image = base64.b64encode(profile.profile_image)
     # to return the image file but in base64 encoded form
     return base64image
 
