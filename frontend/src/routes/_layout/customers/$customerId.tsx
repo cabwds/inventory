@@ -13,6 +13,8 @@ import {
   Flex,
   Link,
   Icon,
+  Avatar,
+  Spinner,
 } from "@chakra-ui/react"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
@@ -38,6 +40,12 @@ function CustomerDetail() {
   const { data: orderCount } = useQuery({
     queryKey: ['customerOrderCount', customerId],
     queryFn: () => OrdersService.readCustomerOrdersCount({ customerId }),
+  })
+
+  const { data: profileImage, isLoading: isLoadingImage } = useQuery({
+    queryKey: ['customerProfileImage', customerId],
+    queryFn: () => CustomersService.getProfileImage({ customerId }),
+    enabled: !!customerId,
   })
 
   if (isError) {
@@ -128,41 +136,64 @@ function CustomerDetail() {
           css={modalScrollbarStyles}
         >
           {customer && (
-            <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={8}>
-              {customerDetails.map((section) => (
-                <Box key={section.section}>
-                  <Text {...customerDetailsStyles.sectionTitle}>
-                    {section.section}
-                  </Text>
-                  <VStack spacing={4} align="stretch">
-                    {section.items.map(({ label, value }) => (
-                      <Box 
-                        key={label} 
-                        {...customerDetailsStyles.detailBox}
-                      >
-                        <Text 
-                          fontSize="sm" 
-                          color="gray.600" 
-                          mb={1}
-                          fontWeight="medium"
+            <VStack spacing={8} align="stretch">
+              <Flex justify="center" pt={2} pb={6}>
+                {isLoadingImage ? (
+                  <Spinner size="xl" thickness="4px" />
+                ) : (
+                  <Box>
+                    <Avatar 
+                      size="2xl"
+                      src={profileImage ? `data:image/jpeg;base64,${profileImage}` : undefined}
+                    />
+                    <Text 
+                      textAlign="center" 
+                      mt={2} 
+                      fontSize="lg" 
+                      fontWeight="medium"
+                    >
+                      {customer.full_name}
+                    </Text>
+                  </Box>
+                )}
+              </Flex>
+
+              <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={8}>
+                {customerDetails.map((section) => (
+                  <Box key={section.section}>
+                    <Text {...customerDetailsStyles.sectionTitle}>
+                      {section.section}
+                    </Text>
+                    <VStack spacing={4} align="stretch">
+                      {section.items.map(({ label, value }) => (
+                        <Box 
+                          key={label} 
+                          {...customerDetailsStyles.detailBox}
                         >
-                          {label}
-                        </Text>
-                        <Text 
-                          fontSize="md"
-                          fontWeight={value ? "medium" : "normal"}
-                          color={value ? "black" : "gray.400"}
-                          whiteSpace="pre-wrap"
-                          wordBreak="break-word"
-                        >
-                          {value || 'N/A'}
-                        </Text>
-                      </Box>
-                    ))}
-                  </VStack>
-                </Box>
-              ))}
-            </SimpleGrid>
+                          <Text 
+                            fontSize="sm" 
+                            color="gray.600" 
+                            mb={1}
+                            fontWeight="medium"
+                          >
+                            {label}
+                          </Text>
+                          <Text 
+                            fontSize="md"
+                            fontWeight={value ? "medium" : "normal"}
+                            color={value ? "black" : "gray.400"}
+                            whiteSpace="pre-wrap"
+                            wordBreak="break-word"
+                          >
+                            {value || 'N/A'}
+                          </Text>
+                        </Box>
+                      ))}
+                    </VStack>
+                  </Box>
+                ))}
+              </SimpleGrid>
+            </VStack>
           )}
         </ModalBody>
       </ModalContent>

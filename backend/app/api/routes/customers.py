@@ -1,5 +1,6 @@
 import uuid
 from typing import Any
+import base64
 
 from fastapi import APIRouter, HTTPException, UploadFile
 from fastapi.responses import FileResponse
@@ -14,7 +15,7 @@ router = APIRouter(prefix="/customers", tags=["customers"])
 
 # Route to get an image
 @router.get("/get-profile-image/{customer_id}")
-def get_profile_image(session: SessionDep, current_user: CurrentUser, customer_id: uuid.UUID):
+def get_profile_image(session: SessionDep, customer_id: uuid.UUID):
     
     profile = session.get(CustomerProfile, customer_id)
 
@@ -26,7 +27,11 @@ def get_profile_image(session: SessionDep, current_user: CurrentUser, customer_i
     with open(temp_file, "wb") as f:
         f.write(profile.profile_image)
     
-    return FileResponse(temp_file, media_type="image/jpeg")
+    with open(temp_file, 'rb') as f:
+        base64image = base64.b64encode(f.read())
+
+    # to return the image file but in base64 encoded form
+    return base64image
 
 # Route to upload an image for customer profile
 @router.post("/upload-profile-image/{customer_id}")
