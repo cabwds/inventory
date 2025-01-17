@@ -46,6 +46,7 @@ export const getStatCardStyles = (
     pl: 2,
   } as const,
   label: {
+    fontSize: "xl",
     fontWeight: "medium",
     isTruncated: true,
     color: textColor,
