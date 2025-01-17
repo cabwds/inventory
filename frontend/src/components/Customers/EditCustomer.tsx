@@ -94,6 +94,12 @@ const ProfileImageUpload = ({ customerId, onSuccess }: ProfileImageUploadProps) 
     queryKey: ['customerProfileImage', customerId],
     queryFn: () => CustomersService.getProfileImage({ customerId }),
     enabled: !!customerId,
+    retry: (failureCount, error: any) => {
+      // Don't retry if we get a 404 error
+      if (error?.status === 404) return false
+      // Otherwise retry up to 3 times
+      return failureCount < 3
+    }
   })
 
   // Add default image URL

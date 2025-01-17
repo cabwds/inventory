@@ -43,10 +43,14 @@ function CustomerDetail() {
     queryFn: () => OrdersService.readCustomerOrdersCount({ customerId }),
   })
 
-  const { data: profileImage, isLoading: isLoadingImage } = useQuery({
+  const { data: profileImage, isLoading: isLoadingImage, isError: isErrorLoadingImage } = useQuery({
     queryKey: ['customerProfileImage', customerId],
     queryFn: () => CustomersService.getProfileImage({ customerId }),
     enabled: !!customerId,
+    retry: (failureCount, error: any) => {
+      if (error?.status === 404) return false
+      return failureCount < 3
+    }
   })
 
   if (isError) {
@@ -145,7 +149,7 @@ function CustomerDetail() {
                   <Box>
                     <Avatar 
                       size="2xl"
-                      src={!isError && profileImage ? `data:image/jpeg;base64,${profileImage}` : undefined}
+                      src={!isErrorLoadingImage && profileImage ? `data:image/jpeg;base64,${profileImage}` : undefined}
                       bg="gray.200"
                       icon={<FiUser size="60%" />}
                     />
