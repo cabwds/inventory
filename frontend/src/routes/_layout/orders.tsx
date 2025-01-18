@@ -45,6 +45,7 @@ const ordersSearchSchema = z.object({
   sortOrder: z.enum(["asc", "desc"]).optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
+  displayInvalid: z.boolean().optional(),
 })
 
 export const Route = createFileRoute("/_layout/orders")({
@@ -59,7 +60,8 @@ function getOrdersQueryOptions({
   orderStatus,
   sortOrder,
   startDate,
-  endDate
+  endDate,
+  displayInvalid
 }: { 
   page: number; 
   pageSize: number;
@@ -68,6 +70,7 @@ function getOrdersQueryOptions({
   sortOrder?: SortOrder;
   startDate?: string;
   endDate?: string;
+  displayInvalid?: boolean;
 }) {
   return {
     queryFn: () => OrdersService.readOrders({ 
@@ -76,10 +79,11 @@ function getOrdersQueryOptions({
       ...(sortOrder && { sortOrder }),
       ...(startDate && { startDate }),
       ...(endDate && { endDate }),
+      ...(displayInvalid !== undefined && { displayInvalid }),
       skip: (page - 1) * pageSize, 
       limit: pageSize 
     }),
-    queryKey: ["orders", { page, pageSize, customerId, orderStatus, sortOrder, startDate, endDate }],
+    queryKey: ["orders", { page, pageSize, customerId, orderStatus, sortOrder, startDate, endDate, displayInvalid }],
   }
 }
 
@@ -125,9 +129,10 @@ function OrderRow({
     <Tr 
       key={order.id} 
       opacity={isPlaceholderData ? 0.5 : 1}
-      _hover={{ bg: isValid ? "gray.50" : "gray.100" }}
+      _hover={{ bg: "gray.50" }}
       transition="background-color 0.2s"
-      bg={!isValid ? "gray.50" : undefined}
+      bg={!order.is_valid ? "red.50" : undefined}
+      position="relative"
     >
       <Td 
         {...customerDetailsStyles.customerIdCell} 
@@ -136,6 +141,15 @@ function OrderRow({
         cursor="pointer"
       >
         {(page - 1) * pageSize + index + 1}
+        {!order.is_valid && (
+          <Tooltip label="This order has been marked as invalid">
+            <InfoIcon 
+              color="red.500" 
+              boxSize="14px"
+              ml={2}
+            />
+          </Tooltip>
+        )}
       </Td>
       <Td>
         <HStack spacing={2}>
@@ -152,9 +166,9 @@ function OrderRow({
             maxWidth="150px" 
             fontWeight="medium"
             cursor="pointer"
-            color={!isValid ? "gray.600" : undefined}
+            color={!order.is_valid ? "red.600" : !isValid ? "gray.600" : undefined}
             _hover={{ 
-              color: !isValid ? "orange.500" : "blue.500", 
+              color: !order.is_valid ? "red.500" : !isValid ? "orange.500" : "blue.500", 
               textDecoration: "underline", 
               transform: "scale(1.05)"
             }}
@@ -164,9 +178,15 @@ function OrderRow({
           </Text>
         </HStack>
       </Td>
-      <Td color={!isValid ? "gray.600" : undefined}>{order.order_status}</Td>
-      <Td color={!isValid ? "gray.600" : undefined}>${order.total_price}</Td>
-      <Td color={!isValid ? "gray.600" : undefined}>{order.order_date}</Td>
+      <Td color={!order.is_valid ? "red.600" : !isValid ? "gray.600" : undefined}>
+        {order.order_status}
+      </Td>
+      <Td color={!order.is_valid ? "red.600" : !isValid ? "gray.600" : undefined}>
+        ${order.total_price}
+      </Td>
+      <Td color={!order.is_valid ? "red.600" : !isValid ? "gray.600" : undefined}>
+        {order.order_date}
+      </Td>
       <Td>
         <ActionsMenu type="Order" value={order} />
       </Td>
@@ -210,7 +230,7 @@ function SortableHeader({ sortOrder, onToggle }: { sortOrder?: SortOrder; onTogg
 
 function OrdersTable() {
   const queryClient = useQueryClient()
-  const { page, pageSize, customerId, orderStatus, sortOrder, startDate, endDate } = Route.useSearch()
+  const { page, pageSize, customerId, orderStatus, sortOrder, startDate, endDate, displayInvalid } = Route.useSearch()
   const showToast = useCustomToast()
   const navigate = useNavigate({ from: Route.fullPath })
   const setPage = (newPage: number) =>
@@ -224,7 +244,16 @@ function OrdersTable() {
     isPending,
     isPlaceholderData,
   } = useQuery({
-    ...getOrdersQueryOptions({ page, pageSize, customerId, orderStatus, sortOrder, startDate, endDate }),
+    ...getOrdersQueryOptions({ 
+      page, 
+      pageSize, 
+      customerId, 
+      orderStatus, 
+      sortOrder, 
+      startDate, 
+      endDate,
+      displayInvalid
+    }),
     placeholderData: (prevData) => prevData,
   })
 
@@ -287,6 +316,16 @@ function OrdersTable() {
     })
   }
 
+  const handleDisplayInvalidToggle = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    navigate({ 
+      search: (prev: Record<string, unknown>) => ({ 
+        ...prev, 
+        displayInvalid: e.target.value === 'all',
+        page: 1
+      })
+    })
+  }
+
   const clearFilters = () => {
     navigate({ 
       search: (prev: Record<string, unknown>) => ({ 
@@ -296,6 +335,7 @@ function OrdersTable() {
         sortOrder: undefined,
         startDate: undefined,
         endDate: undefined,
+        displayInvalid: undefined,
         page: 1 
       })
     })
@@ -313,10 +353,11 @@ function OrdersTable() {
         orderStatus,
         sortOrder,
         startDate,
-        endDate
+        endDate,
+        displayInvalid
       }))
     }
-  }, [page, pageSize, customerId, orderStatus, sortOrder, queryClient, hasNextPage])
+  }, [page, pageSize, customerId, orderStatus, sortOrder, displayInvalid, queryClient, hasNextPage])
 
   return (
     <>
@@ -349,7 +390,15 @@ function OrdersTable() {
                 </option>
               ))}
             </Select>
-            {(customerId || orderStatus || sortOrder || startDate || endDate) && (
+            <Select
+              value={displayInvalid ? 'all' : 'valid'}
+              onChange={handleDisplayInvalidToggle}
+              maxW="200px"
+            >
+              <option value="valid">Valid Orders Only</option>
+              <option value="all">All Orders</option>
+            </Select>
+            {(customerId || orderStatus || sortOrder || startDate || endDate || displayInvalid) && (
               <Button size="md" onClick={clearFilters}>
                 Clear Filters
               </Button>
