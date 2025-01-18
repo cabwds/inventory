@@ -15,6 +15,10 @@ import {
   Icon,
   Avatar,
   Spinner,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
 } from "@chakra-ui/react"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
@@ -122,11 +126,26 @@ function CustomerDetail() {
       motionPreset="slideInBottom"
     >
       <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(5px)" />
-      <ModalContent maxH="85vh">
+      <ModalContent 
+        maxH="85vh"
+        bg={customer?.is_valid === false ? "gray.50" : "white"}
+      >
         <ModalHeader {...customerDetailsStyles.modalHeader}>
           <Flex justify="space-between" align="center" width="100%">
             <Box>
-              <Text fontSize="xl">Customer Details</Text>
+              <Text fontSize="xl">
+                Customer Details
+                {customer?.is_valid === false && (
+                  <Text
+                    as="span"
+                    color="red.500"
+                    fontSize="md"
+                    ml={2}
+                  >
+                    (DELETED)
+                  </Text>
+                )}
+              </Text>
               <Text fontSize="sm" color="gray.600" mt={1}>
                 ID: {customer?.id}
               </Text>
@@ -142,6 +161,22 @@ function CustomerDetail() {
         >
           {customer && (
             <VStack spacing={8} align="stretch">
+              {customer.is_valid === false && (
+                <Alert 
+                  status="warning"
+                  variant="subtle"
+                  borderRadius="md"
+                >
+                  <AlertIcon />
+                  <Box>
+                    <AlertTitle>Deleted Customer Record</AlertTitle>
+                    <AlertDescription>
+                      This customer has been deleted. The information shown may be outdated or incorrect.
+                    </AlertDescription>
+                  </Box>
+                </Alert>
+              )}
+
               <Flex justify="center" pt={2} pb={6}>
                 {isLoadingImage ? (
                   <Spinner size="xl" thickness="4px" />
@@ -150,14 +185,16 @@ function CustomerDetail() {
                     <Avatar 
                       size="2xl"
                       src={!isErrorLoadingImage && profileImage ? `data:image/jpeg;base64,${profileImage}` : undefined}
-                      bg="gray.200"
+                      bg={customer.is_valid === false ? "gray.300" : "gray.200"}
                       icon={<FiUser size="60%" />}
+                      opacity={customer.is_valid === false ? 0.8 : 1}
                     />
                     <Text 
                       textAlign="center" 
                       mt={2} 
                       fontSize="lg" 
                       fontWeight="medium"
+                      color={customer.is_valid === false ? "gray.600" : "inherit"}
                     >
                       {customer.full_name}
                     </Text>
@@ -167,7 +204,10 @@ function CustomerDetail() {
 
               <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={8}>
                 {customerDetails.map((section) => (
-                  <Box key={section.section}>
+                  <Box 
+                    key={section.section}
+                    opacity={customer.is_valid === false ? 0.9 : 1}
+                  >
                     <Text {...customerDetailsStyles.sectionTitle}>
                       {section.section}
                     </Text>
@@ -176,6 +216,7 @@ function CustomerDetail() {
                         <Box 
                           key={label} 
                           {...customerDetailsStyles.detailBox}
+                          bg={customer.is_valid === false ? "white" : "inherit"}
                         >
                           <Text 
                             fontSize="sm" 
@@ -188,7 +229,9 @@ function CustomerDetail() {
                           <Text 
                             fontSize="md"
                             fontWeight={value ? "medium" : "normal"}
-                            color={value ? "black" : "gray.400"}
+                            color={customer.is_valid === false 
+                              ? (value ? "gray.700" : "gray.400")
+                              : (value ? "black" : "gray.400")}
                             whiteSpace="pre-wrap"
                             wordBreak="break-word"
                           >
