@@ -17,12 +17,7 @@ class CustomerBase(SQLModel):
     gender: str | None  = Field(default=None)
     preferred_language: str | None = Field(default=None)
     address: str | None  = Field(default=None) 
-
-    def get_address(self) -> dict:
-        return json.loads(self.address)
-
-    def set_address(self, address: dict):
-        self.address = json.dumps(address)
+    is_valid: bool | None = Field(default=True)
 
 class CustomerProfile(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
@@ -31,6 +26,11 @@ class CustomerProfile(SQLModel, table=True):
 # Database model, database table inferred from class name
 class Customer(CustomerBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    is_valid: bool | None = Field(
+        default=True,
+        index=True,
+        sa_column_kwargs={"index": True}
+    )
     #payment_method: str | None = Field(default=None)
     #preferences: str | None = Field(default=None)
     #orders: list[str]

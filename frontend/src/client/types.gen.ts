@@ -22,6 +22,7 @@ export type Customer = {
   gender?: string | null
   preferred_language?: string | null
   address?: string | null
+  is_valid?: boolean | null
   id?: string
 }
 
@@ -38,6 +39,7 @@ export type CustomerCreate = {
   gender?: string | null
   preferred_language?: string | null
   address?: string | null
+  is_valid?: boolean | null
 }
 
 export type CustomerPublic = {
@@ -49,6 +51,7 @@ export type CustomerPublic = {
   gender?: string | null
   preferred_language?: string | null
   address?: string | null
+  is_valid?: boolean | null
   id: string
 }
 
@@ -66,6 +69,7 @@ export type CustomerUpdate = {
   gender?: string | null
   preferred_language?: string | null
   address?: string | null
+  is_valid?: boolean | null
 }
 
 export type HTTPValidationError = {
@@ -270,6 +274,7 @@ export type CustomersDeleteCustomerData = {
 export type CustomersDeleteCustomerResponse = Message
 
 export type CustomersReadCustomersData = {
+  displayInvalid?: boolean
   limit?: number
   skip?: number
 }

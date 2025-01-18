@@ -72,17 +72,27 @@ def read_customer(session: SessionDep, current_user: CurrentUser, id: uuid.UUID)
     
 @router.get("/", response_model=CustomersPublic)
 def read_customers(
-    session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100
+    session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100,
+    display_invalid: bool = False,
 ) -> Any:
     """
     Retrieve customers.
     """
 
     if current_user.is_superuser:
-        count_statement = select(func.count()).select_from(Customer)
-        count = session.exec(count_statement).one()
-        statement = select(Customer).offset(skip).limit(limit)
-        customers = session.exec(statement).all()
+        query = select(Customer)
+        count_query = select(func.count()).select_from(Customer)
+
+        # Add filters
+        if not display_invalid:
+            query = query.where(Customer.is_valid == True)
+            count_query = count_query.where(Customer.is_valid == True)
+
+        # Add pagination
+        query = query.offset(skip).limit(limit)
+            
+        count = session.exec(count_query).one()
+        customers = session.exec(query).all()
 
     return CustomersPublic(data=customers, count=count)
 
@@ -131,10 +141,16 @@ def delete_customer(
     Delete a customer.
     """
     customer = session.get(Customer, id)
+    
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
-    #if not current_user.is_superuser:
-    #    raise HTTPException(status_code=400, detail="Not enough permissions")
-    session.delete(customer)
+    
+    customer_in = CustomerUpdate(is_valid=False, customer_id=customer.id, description="Marked as Deleted")
+
+    update_dict = customer_in.model_dump(exclude_unset=True)
+    #update_dict = order.model_dump(exclude_unset=True, update={"is_valid": False} )
+    customer.sqlmodel_update(update_dict)
+    session.add(customer)
     session.commit()
-    return Message(message="Customer deleted successfully")
+    session.refresh(customer)
+    return Message(message="Customer deleted successfully, mark as invalid")

@@ -255,6 +255,7 @@ export class CustomersService {
    * @param data The data for the request.
    * @param data.skip
    * @param data.limit
+   * @param data.displayInvalid
    * @returns CustomersPublic Successful Response
    * @throws ApiError
    */
@@ -267,6 +268,7 @@ export class CustomersService {
       query: {
         skip: data.skip,
         limit: data.limit,
+        display_invalid: data.displayInvalid,
       },
       errors: {
         422: "Validation Error",
