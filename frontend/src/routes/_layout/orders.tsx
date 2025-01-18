@@ -18,12 +18,13 @@ import {
   FormControl,
   FormLabel,
   VStack,
+  Tooltip,
 } from "@chakra-ui/react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate, Outlet } from "@tanstack/react-router"
 import { useEffect } from "react"
 import { z } from "zod"
-import { ChevronUpIcon, ChevronDownIcon } from "@chakra-ui/icons"
+import { ChevronUpIcon, ChevronDownIcon, InfoIcon } from "@chakra-ui/icons"
 
 import { OrdersService, CustomersService } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
@@ -82,14 +83,17 @@ function getOrdersQueryOptions({
   }
 }
 
-function useCustomerCompany(customerId: string | null | undefined) {
+function useCustomerDetails(customerId: string | null | undefined) {
   const { data: customer } = useQuery({
     queryKey: ['customer', customerId],
     queryFn: () => customerId ? CustomersService.readCustomer({ id: customerId }) : null,
     enabled: !!customerId,
   })
 
-  return customer?.company || 'N/A'
+  return {
+    company: customer?.company || 'N/A',
+    isValid: customer?.is_valid ?? true
+  }
 }
 
 function OrderRow({ 
@@ -107,7 +111,7 @@ function OrderRow({
   isPlaceholderData: boolean,
   onOrderClick: (orderId: string) => void
 }) {
-  const customerCompany = useCustomerCompany(order.customer_id)
+  const { company, isValid } = useCustomerDetails(order.customer_id)
   const navigate = useNavigate()
 
   const handleCustomerClick = (e: React.MouseEvent) => {
@@ -121,8 +125,9 @@ function OrderRow({
     <Tr 
       key={order.id} 
       opacity={isPlaceholderData ? 0.5 : 1}
-      _hover={{ bg: "gray.50" }}
+      _hover={{ bg: isValid ? "gray.50" : "gray.100" }}
       transition="background-color 0.2s"
+      bg={!isValid ? "gray.50" : undefined}
     >
       <Td 
         {...customerDetailsStyles.customerIdCell} 
@@ -132,21 +137,36 @@ function OrderRow({
       >
         {(page - 1) * pageSize + index + 1}
       </Td>
-      <Td 
-        isTruncated 
-        maxWidth="150px" 
-        fontWeight="medium"
-        cursor="pointer"
-        _hover={{ color: "blue.500", textDecoration: "underline", transform: "scale(1.05)"}}
-        onClick={handleCustomerClick}
-      >
-        <Text>
-          {customerCompany}
-        </Text>
+      <Td>
+        <HStack spacing={2}>
+          {!isValid && (
+            <Tooltip label="Customer record has been deleted">
+              <InfoIcon 
+                color="orange.500" 
+                boxSize="14px"
+              />
+            </Tooltip>
+          )}
+          <Text
+            isTruncated 
+            maxWidth="150px" 
+            fontWeight="medium"
+            cursor="pointer"
+            color={!isValid ? "gray.600" : undefined}
+            _hover={{ 
+              color: !isValid ? "orange.500" : "blue.500", 
+              textDecoration: "underline", 
+              transform: "scale(1.05)"
+            }}
+            onClick={handleCustomerClick}
+          >
+            {company}
+          </Text>
+        </HStack>
       </Td>
-      <Td>{order.order_status}</Td>
-      <Td>${order.total_price}</Td>
-      <Td>{order.order_date}</Td>
+      <Td color={!isValid ? "gray.600" : undefined}>{order.order_status}</Td>
+      <Td color={!isValid ? "gray.600" : undefined}>${order.total_price}</Td>
+      <Td color={!isValid ? "gray.600" : undefined}>{order.order_date}</Td>
       <Td>
         <ActionsMenu type="Order" value={order} />
       </Td>
