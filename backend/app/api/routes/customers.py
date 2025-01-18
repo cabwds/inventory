@@ -3,13 +3,11 @@ from typing import Any
 import base64
 
 from fastapi import APIRouter, HTTPException, UploadFile
-from fastapi.responses import FileResponse
 from sqlmodel import func, select
 
 from app.api.deps import CurrentUser, SessionDep
 from app.models.customer_models import *
 from app.models.user_models import Message
-from pydantic import BaseModel
 
 router = APIRouter(prefix="/customers", tags=["customers"])
 

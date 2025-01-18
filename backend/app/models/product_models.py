@@ -11,13 +11,35 @@ class ProductType(str, Enum):
     VINYL_WRAP = 'Vinyl Wrap'
     WALL_DECALS = 'Wall Decals'
 
-class Product(SQLModel):
-    id: str = Field(min_length=1, primary_key=True)
-    serial_number: str = Field(min_length=1)
-    brand: str = Field(min_length=1)
-    type: ProductType
-    unit_price: float = Field(default=0)
-    unit_cost: float = Field(default=0)
-    width: float  # Width of the film (e.g., 1.5 meters)
-    length: float  # Length of the film (e.g., 10 meters)
-    thickness: float  # Thickness of the film (e.g., 0.014 meters)
+class ProductBase(SQLModel):
+    brand: str | None = Field(default=None)
+    type: str | None = Field(default=None)
+    unit_price: float | None = Field(default=None)
+    price_currency: str | None = Field(default="SGD")
+    unit_cost: float | None = Field(default=None)
+    cost_currency: str | None = Field(default="CNY")
+    width: float | None = Field(default=None) # Width of the film (e.g., 1.5 meters)
+    length: float | None = Field(default=None) # Length of the film (e.g., 10 meters)
+    thickness: float | None = Field(default=None) # Thickness of the film (e.g., 0.014 meters)
+
+# Database model, database table inferred from class name
+class Product(ProductBase, table=True):
+    id: str = Field(default=None, primary_key=True)
+
+# Properties to receive on Product update
+class ProductUpdate(ProductBase):
+    pass
+
+class ProductPublic(ProductBase):
+    id: str = Field(default=None)
+
+class ProductsPublic(SQLModel):
+    data: list[ProductPublic]
+    count: int
+
+class ProductsCount(SQLModel):
+    count: int
+
+# Properties to receive on Product creation
+class ProductCreate(ProductBase):
+    id: str = Field(default=None)
