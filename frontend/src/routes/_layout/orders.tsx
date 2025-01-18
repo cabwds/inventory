@@ -25,7 +25,7 @@ import { createFileRoute, useNavigate, Outlet } from "@tanstack/react-router"
 import { useEffect } from "react"
 import { z } from "zod"
 import { ChevronUpIcon, ChevronDownIcon, InfoIcon } from "@chakra-ui/icons"
-
+import type { UserPublic } from "../../client"
 import { OrdersService, CustomersService } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
 import ActionsMenu from "../../components/Common/ActionsMenu"
@@ -188,7 +188,11 @@ function OrderRow({
         {order.order_date}
       </Td>
       <Td>
-        <ActionsMenu type="Order" value={order} />
+        <ActionsMenu 
+          type="Order" 
+          value={order} 
+          disabled={!order.is_valid}
+        />
       </Td>
     </Tr>
   )
@@ -230,6 +234,7 @@ function SortableHeader({ sortOrder, onToggle }: { sortOrder?: SortOrder; onTogg
 
 function OrdersTable() {
   const queryClient = useQueryClient()
+  const currentUser = queryClient.getQueryData<UserPublic>(["currentUser"])
   const { page, pageSize, customerId, orderStatus, sortOrder, startDate, endDate, displayInvalid } = Route.useSearch()
   const showToast = useCustomToast()
   const navigate = useNavigate({ from: Route.fullPath })
@@ -390,15 +395,17 @@ function OrdersTable() {
                 </option>
               ))}
             </Select>
-            <Select
-              value={displayInvalid ? 'all' : 'valid'}
-              onChange={handleDisplayInvalidToggle}
-              maxW="200px"
-            >
-              <option value="valid">Valid Orders Only</option>
-              <option value="all">All Orders</option>
-            </Select>
-            {(customerId || orderStatus || sortOrder || startDate || endDate || displayInvalid) && (
+            {currentUser?.is_superuser && (
+              <Select
+                value={displayInvalid ? 'all' : 'valid'}
+                onChange={handleDisplayInvalidToggle}
+                maxW="200px"
+              >
+                <option value="valid">Valid Orders Only</option>
+                <option value="all">All Orders</option>
+              </Select>
+            )}
+            {(customerId || orderStatus || sortOrder || startDate || endDate || (currentUser?.is_superuser && displayInvalid)) && (
               <Button size="md" onClick={clearFilters}>
                 Clear Filters
               </Button>
