@@ -12,6 +12,10 @@ import {
   Button,
   Icon,
   Flex,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
 } from "@chakra-ui/react"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
@@ -126,9 +130,24 @@ function OrderDetail() {
       motionPreset="slideInBottom"
     >
       <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(5px)" />
-      <ModalContent maxH="85vh">
+      <ModalContent 
+        maxH="85vh"
+        bg={order?.is_valid === false ? "red.50" : "white"}
+      >
         <ModalHeader>
-          <Text fontSize="xl">Order Details</Text>
+          <Text fontSize="xl">
+            Order Details
+            {order?.is_valid === false && (
+              <Text
+                as="span"
+                color="red.500"
+                fontSize="md"
+                ml={2}
+              >
+                (INVALID)
+              </Text>
+            )}
+          </Text>
           <Box display="flex" gap={4}>
             <Text fontSize="sm" color="gray.600">
               ID: {order?.id}
@@ -146,47 +165,69 @@ function OrderDetail() {
           css={modalScrollbarStyles}
         >
           {order && (
-            <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={8}>
-              {orderDetails.map((section) => (
-                <Box key={section.section}>
-                  <Text fontWeight="semibold" fontSize="lg" mb={4} color="gray.700">
-                    {section.section}
-                  </Text>
-                  <VStack spacing={4} align="stretch">
-                    {section.items.map(({ label, value }) => (
-                      <Box 
-                        key={label} 
-                        p={3}
-                        bg="gray.50"
-                        borderRadius="md"
-                      >
-                        <Text 
-                          fontSize="sm" 
-                          color="gray.600" 
-                          mb={1}
-                          fontWeight="medium"
+            <VStack spacing={8} align="stretch">
+              {order.is_valid === false && (
+                <Alert 
+                  status="error"
+                  variant="subtle"
+                  borderRadius="md"
+                >
+                  <AlertIcon />
+                  <Box>
+                    <AlertTitle>Invalid Order Record</AlertTitle>
+                    <AlertDescription>
+                      This order has been marked as invalid. Some information may be unavailable.
+                    </AlertDescription>
+                  </Box>
+                </Alert>
+              )}
+              <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={8}>
+                {orderDetails.map((section) => (
+                  <Box 
+                    key={section.section}
+                    opacity={order.is_valid === false ? 0.9 : 1}
+                  >
+                    <Text fontWeight="semibold" fontSize="lg" mb={4} color="gray.700">
+                      {section.section}
+                    </Text>
+                    <VStack spacing={4} align="stretch">
+                      {section.items.map(({ label, value }) => (
+                        <Box 
+                          key={label} 
+                          p={3}
+                          bg={order.is_valid === false ? "white" : "gray.50"}
+                          borderRadius="md"
                         >
-                          {label}
-                        </Text>
-                        {typeof value === 'string' ? (
                           <Text 
-                            fontSize="md"
-                            fontWeight={value ? "medium" : "normal"}
-                            color={value ? "black" : "gray.400"}
-                            whiteSpace="pre-wrap"
-                            wordBreak="break-word"
+                            fontSize="sm" 
+                            color="gray.600" 
+                            mb={1}
+                            fontWeight="medium"
                           >
-                            {value || 'N/A'}
+                            {label}
                           </Text>
-                        ) : (
-                          value
-                        )}
-                      </Box>
-                    ))}
-                  </VStack>
-                </Box>
-              ))}
-            </SimpleGrid>
+                          {typeof value === 'string' ? (
+                            <Text 
+                              fontSize="md"
+                              fontWeight={value ? "medium" : "normal"}
+                              color={order.is_valid === false 
+                                ? (value ? "gray.700" : "gray.400")
+                                : (value ? "black" : "gray.400")}
+                              whiteSpace="pre-wrap"
+                              wordBreak="break-word"
+                            >
+                              {value || 'N/A'}
+                            </Text>
+                          ) : (
+                            value
+                          )}
+                        </Box>
+                      ))}
+                    </VStack>
+                  </Box>
+                ))}
+              </SimpleGrid>
+            </VStack>
           )}
         </ModalBody>
       </ModalContent>

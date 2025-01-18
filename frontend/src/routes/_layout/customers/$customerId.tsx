@@ -128,7 +128,7 @@ function CustomerDetail() {
       <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(5px)" />
       <ModalContent 
         maxH="85vh"
-        bg={customer?.is_valid === false ? "gray.50" : "white"}
+        bg={customer?.is_valid === false ? "red.50" : "white"}
       >
         <ModalHeader {...customerDetailsStyles.modalHeader}>
           <Flex justify="space-between" align="center" width="100%">
@@ -142,7 +142,7 @@ function CustomerDetail() {
                     fontSize="md"
                     ml={2}
                   >
-                    (DELETED)
+                    (INVALID)
                   </Text>
                 )}
               </Text>
@@ -163,15 +163,15 @@ function CustomerDetail() {
             <VStack spacing={8} align="stretch">
               {customer.is_valid === false && (
                 <Alert 
-                  status="warning"
+                  status="error"
                   variant="subtle"
                   borderRadius="md"
                 >
                   <AlertIcon />
                   <Box>
-                    <AlertTitle>Deleted Customer Record</AlertTitle>
+                    <AlertTitle>Invalid Customer Record</AlertTitle>
                     <AlertDescription>
-                      This customer has been deleted. The information shown may be outdated or incorrect.
+                      This customer has been marked as invalid. Some information may be unavailable.
                     </AlertDescription>
                   </Box>
                 </Alert>
