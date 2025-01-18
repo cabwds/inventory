@@ -26,31 +26,30 @@ def read_customer_orders_count(
         start_date: Optional start date in format "YYYY-MM-DD HH:MM:SS"
         end_date: Optional end date in format "YYYY-MM-DD HH:MM:SS"
     """
-    if current_user.is_superuser:
-        # Build base query
-        count_query = select(func.count()).select_from(Order)
+    # Build base query
+    count_query = select(func.count()).select_from(Order)
 
-        # Add filters
-        if not display_invalid:
-            count_query = count_query.where(Order.is_valid == True)
+    # Add filters
+    if not display_invalid:
+        count_query = count_query.where(Order.is_valid == True)
 
-        if customer_id:
-            count_query = count_query.where(Order.customer_id == customer_id)
+    if customer_id:
+        count_query = count_query.where(Order.customer_id == customer_id)
 
-        if order_status:
-            count_query = count_query.where(Order.order_status == order_status)
+    if order_status:
+        count_query = count_query.where(Order.order_status == order_status)
 
-        # Add date range filter
-        if start_date or end_date:
-            date_filters = []
-            if start_date:
-                date_filters.append(cast(Order.order_date, DateTime) >= cast(start_date, DateTime))
-            if end_date:
-                date_filters.append(cast(Order.order_date, DateTime) <= cast(end_date, DateTime))
-            
-            count_query = count_query.where(and_(*date_filters))
-            
-        count = session.exec(count_query).one()
+    # Add date range filter
+    if start_date or end_date:
+        date_filters = []
+        if start_date:
+            date_filters.append(cast(Order.order_date, DateTime) >= cast(start_date, DateTime))
+        if end_date:
+            date_filters.append(cast(Order.order_date, DateTime) <= cast(end_date, DateTime))
+        
+        count_query = count_query.where(and_(*date_filters))
+        
+    count = session.exec(count_query).one()
 
     return OrdersCount(count=count)
 
@@ -81,46 +80,46 @@ def read_orders(
         start_date: Optional start date in format "YYYY-MM-DD HH:MM:SS"
         end_date: Optional end date in format "YYYY-MM-DD HH:MM:SS"
     """
-    if current_user.is_superuser:
-        # Build base query
-        query = select(Order)
-        count_query = select(func.count()).select_from(Order)
 
-        # Add filters
-        if not display_invalid:
-            query = query.where(Order.is_valid == True)
-            count_query = count_query.where(Order.is_valid == True)
+    # Build base query
+    query = select(Order)
+    count_query = select(func.count()).select_from(Order)
 
-        if customer_id:
-            query = query.where(Order.customer_id == customer_id)
-            count_query = count_query.where(Order.customer_id == customer_id)
+    # Add filters
+    if not display_invalid:
+        query = query.where(Order.is_valid == True)
+        count_query = count_query.where(Order.is_valid == True)
 
-        if order_status:
-            query = query.where(Order.order_status == order_status)
-            count_query = count_query.where(Order.order_status == order_status)
+    if customer_id:
+        query = query.where(Order.customer_id == customer_id)
+        count_query = count_query.where(Order.customer_id == customer_id)
 
-        # Add date range filter
-        if start_date or end_date:
-            date_filters = []
-            if start_date:
-                date_filters.append(cast(Order.order_date, DateTime) >= cast(start_date, DateTime))
-            if end_date:
-                date_filters.append(cast(Order.order_date, DateTime) <= cast(end_date, DateTime))
-            
-            query = query.where(and_(*date_filters))
-            count_query = count_query.where(and_(*date_filters))
+    if order_status:
+        query = query.where(Order.order_status == order_status)
+        count_query = count_query.where(Order.order_status == order_status)
 
-        # Add sorting with string to timestamp casting
-        if sort_order.lower() == "asc":
-            query = query.order_by(cast(Order.order_date, DateTime).asc())
-        else:
-            query = query.order_by(cast(Order.order_date, DateTime).desc())
+    # Add date range filter
+    if start_date or end_date:
+        date_filters = []
+        if start_date:
+            date_filters.append(cast(Order.order_date, DateTime) >= cast(start_date, DateTime))
+        if end_date:
+            date_filters.append(cast(Order.order_date, DateTime) <= cast(end_date, DateTime))
+        
+        query = query.where(and_(*date_filters))
+        count_query = count_query.where(and_(*date_filters))
 
-        # Add pagination
-        query = query.offset(skip).limit(limit)
-            
-        count = session.exec(count_query).one()
-        orders = session.exec(query).all()
+    # Add sorting with string to timestamp casting
+    if sort_order.lower() == "asc":
+        query = query.order_by(cast(Order.order_date, DateTime).asc())
+    else:
+        query = query.order_by(cast(Order.order_date, DateTime).desc())
+
+    # Add pagination
+    query = query.offset(skip).limit(limit)
+        
+    count = session.exec(count_query).one()
+    orders = session.exec(query).all()
 
     return OrdersPublic(data=orders, count=count)
 
@@ -191,8 +190,8 @@ def delete_order(
     order = session.get(Order, id)
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
-    #if not current_user.is_superuser:
-    #    raise HTTPException(status_code=400, detail="Not enough permissions")
+    if not current_user.is_superuser:
+        raise HTTPException(status_code=400, detail="Not enough permissions")
     order_in = OrderUpdate(is_valid=False, customer_id=order.customer_id)
     update_dict = order_in.model_dump(exclude_unset=True)
     #update_dict = order.model_dump(exclude_unset=True, update={"is_valid": False} )

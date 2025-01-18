@@ -239,6 +239,10 @@ export type AuthGoogleCallbackResponse = unknown
 
 export type AuthHealthCheckResponse = boolean
 
+export type CustomersReadCustomerCountData = {
+  displayInvalid?: boolean
+}
+
 export type CustomersReadCustomerCountResponse = CustomerCount
 
 export type CustomersGetProfileImageData = {

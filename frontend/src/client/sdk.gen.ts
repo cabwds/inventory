@@ -7,6 +7,7 @@ import type {
   AuthGoogleLoginResponse,
   AuthGoogleCallbackResponse,
   AuthHealthCheckResponse,
+  CustomersReadCustomerCountData,
   CustomersReadCustomerCountResponse,
   CustomersGetProfileImageData,
   CustomersGetProfileImageResponse,
@@ -120,13 +121,23 @@ export class CustomersService {
   /**
    * Read Customer Count
    * Retrieve customers only for the count.
+   * @param data The data for the request.
+   * @param data.displayInvalid
    * @returns CustomerCount Successful Response
    * @throws ApiError
    */
-  public static readCustomerCount(): CancelablePromise<CustomersReadCustomerCountResponse> {
+  public static readCustomerCount(
+    data: CustomersReadCustomerCountData = {},
+  ): CancelablePromise<CustomersReadCustomerCountResponse> {
     return __request(OpenAPI, {
       method: "GET",
       url: "/api/v1/customers/customer_count",
+      query: {
+        display_invalid: data.displayInvalid,
+      },
+      errors: {
+        422: "Validation Error",
+      },
     })
   }
 

@@ -13,16 +13,19 @@ router = APIRouter(prefix="/customers", tags=["customers"])
 
 @router.get("/customer_count", response_model=CustomerCount)
 def read_customer_count(
-    session: SessionDep, current_user: CurrentUser
+    session: SessionDep, current_user: CurrentUser, display_invalid: bool = False,
 ) -> Any:
     """
     Retrieve customers only for the count.
     """
-    if current_user.is_superuser:
-        # Build base query
-        count_query = select(func.count()).select_from(Customer)
-            
-        count = session.exec(count_query).one()
+
+    # Build base query
+    count_query = select(func.count()).select_from(Customer)
+    # Add filters
+    if not display_invalid:
+        count_query = count_query.where(Customer.is_valid == True)
+
+    count = session.exec(count_query).one()
 
     return CustomerCount(count=count)
 
@@ -79,20 +82,19 @@ def read_customers(
     Retrieve customers.
     """
 
-    if current_user.is_superuser:
-        query = select(Customer)
-        count_query = select(func.count()).select_from(Customer)
+    query = select(Customer)
+    count_query = select(func.count()).select_from(Customer)
 
-        # Add filters
-        if not display_invalid:
-            query = query.where(Customer.is_valid == True)
-            count_query = count_query.where(Customer.is_valid == True)
+    # Add filters
+    if not display_invalid:
+        query = query.where(Customer.is_valid == True)
+        count_query = count_query.where(Customer.is_valid == True)
 
-        # Add pagination
-        query = query.offset(skip).limit(limit)
-            
-        count = session.exec(count_query).one()
-        customers = session.exec(query).all()
+    # Add pagination
+    query = query.offset(skip).limit(limit)
+        
+    count = session.exec(count_query).one()
+    customers = session.exec(query).all()
 
     return CustomersPublic(data=customers, count=count)
 
@@ -141,7 +143,8 @@ def delete_customer(
     Delete a customer.
     """
     customer = session.get(Customer, id)
-    
+    if not current_user.is_superuser:
+        raise HTTPException(status_code=400, detail="Not enough permissions")
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
     
