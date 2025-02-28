@@ -42,6 +42,8 @@ import type {
   LoginResetPasswordResponse,
   LoginRecoverPasswordHtmlContentData,
   LoginRecoverPasswordHtmlContentResponse,
+  OrdersGetOrderInvoiceData,
+  OrdersGetOrderInvoiceResponse,
   OrdersReadCustomerOrdersCountData,
   OrdersReadCustomerOrdersCountResponse,
   OrdersReadOrderData,
@@ -537,6 +539,28 @@ export class LoginService {
 }
 
 export class OrdersService {
+  /**
+   * Get Order Invoice
+   * @param data The data for the request.
+   * @param data.orderId
+   * @returns unknown Successful Response
+   * @throws ApiError
+   */
+  public static getOrderInvoice(
+    data: OrdersGetOrderInvoiceData,
+  ): CancelablePromise<OrdersGetOrderInvoiceResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/orders/get-order-invoice/{order_id}",
+      path: {
+        order_id: data.orderId,
+      },
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
   /**
    * Read Customer Orders Count
    * Retrieve orders only for the count.

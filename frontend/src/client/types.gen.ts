@@ -349,6 +349,12 @@ export type LoginRecoverPasswordHtmlContentData = {
 
 export type LoginRecoverPasswordHtmlContentResponse = string
 
+export type OrdersGetOrderInvoiceData = {
+  orderId: string
+}
+
+export type OrdersGetOrderInvoiceResponse = unknown
+
 export type OrdersReadCustomerOrdersCountData = {
   customerId?: string
   displayInvalid?: boolean

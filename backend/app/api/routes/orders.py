@@ -8,10 +8,61 @@ from sqlmodel import func, select, cast, DateTime, and_
 
 from app.api.deps import CurrentUser, SessionDep
 from app.models.order_models import *
+from app.models.customer_models import *
 from app.models.user_models import Message
 from pydantic import BaseModel
+from fastapi.responses import FileResponse
+from openpyxl import load_workbook
+from pathlib import Path
 
 router = APIRouter(prefix="/orders", tags=["orders"])
+BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent  # Adjust if needed
+
+# Route to get an order invoice
+@router.get("/get-order-invoice/{order_id}")
+def get_order_invoice(session: SessionDep, order_id: str):
+    
+    order = session.get(Order, order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    customer = session.get(Customer, order.customer_id)
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    
+    current_date = datetime.now().strftime("%d-%m-%Y")
+
+    template_path = BASE_DIR / "Invoice Template.xlsx"
+    output_dir = BASE_DIR / "temp"
+    output_dir.mkdir(parents=True, exist_ok=True)  # Ensure 'temp' directory exists
+    output_path = output_dir / f"Invoice_{order_id}_{current_date}.xlsx"
+
+    # Load the workbook (this preserves formatting)
+    wb = load_workbook(template_path)
+
+    # Select the correct sheet
+    sheet = wb["Invoice"]  # Ensure this sheet exists in your template
+
+    # General Info - Modify the required cell (example: setting Order ID)
+    sheet["G2"] = current_date # Adjust to the current date
+    sheet["G3"] = order_id # Adjust to the order id
+    sheet["B7"] = customer.company # Adjust to the customer company name
+    sheet["C11"] = customer.phone # Adjust to the customer contact number 
+
+    # Product - Write with order product list
+    sheet["B15"] = 1
+    sheet["C15"] = "XFG 1001" 
+    sheet["E15"] = 2
+    sheet["F15"] = 220
+    sheet["G15"] = 2 * 220
+
+
+    # Save the modified file
+    wb.save(output_path)
+
+
+    # Return file as response
+    return FileResponse(output_path, filename=f"Invoice_{order_id}_{current_date}.xlsx", media_type="application/vnd.ms-excel")
 
 @router.get("/order_count", response_model=OrdersCount)
 def read_customer_orders_count(
@@ -200,3 +251,4 @@ def delete_order(
     session.commit()
     session.refresh(order)
     return Message(message="Order deleted successfully, mark as invalid")
+
