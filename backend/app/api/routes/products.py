@@ -22,7 +22,7 @@ def read_product(session: SessionDep, current_user: CurrentUser, id: str) -> Any
 
     return product
 
-@router.get("/", response_model=ProductPublic)
+@router.get("/", response_model=ProductsPublic)
 def read_products(
     session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100
 ) -> Any:
@@ -36,12 +36,12 @@ def read_products(
         statement = select(Product).offset(skip).limit(limit)
         products = session.exec(statement).all()
 
-    return ProductPublic(data=products, count=count)
+    return ProductsPublic(data=products, count=count)
 
 
 @router.post("/", response_model=Product)
 def create_product(
-    *, session: SessionDep, current_user: CurrentUser, product_in: ProductCreate
+    *, session: SessionDep, product_in: ProductCreate
 ) -> Any:
     """
     Create new product.

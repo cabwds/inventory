@@ -9,16 +9,17 @@ import {
 import { BsThreeDotsVertical } from "react-icons/bs"
 import { FiEdit, FiTrash } from "react-icons/fi"
 
-import type { ItemPublic, UserPublic, CustomerPublic, OrderPublic} from "../../client"
+import type { ItemPublic, UserPublic, CustomerPublic, OrderPublic, ProductPublic} from "../../client"
 import EditUser from "../Admin/EditUser"
 import EditItem from "../Items/EditItem"
 import EditCustomer from "../Customers/EditCustomer"
 import EditOrder from "../Orders/EditOrder"
+import EditProduct from "../Products/EditProduct"
 import Delete from "./DeleteAlert"
 
 interface ActionsMenuProps {
   type: string
-  value: ItemPublic | UserPublic | CustomerPublic | OrderPublic
+  value: ItemPublic | UserPublic | CustomerPublic | OrderPublic | ProductPublic
   disabled?: boolean
 }
 
@@ -71,6 +72,12 @@ const ActionsMenu = ({ type, value, disabled }: ActionsMenuProps) => {
         ) :  type === "Order" ?(
           <EditOrder
             order={value as OrderPublic}
+            isOpen={editModal.isOpen}
+            onClose={editModal.onClose}
+          />
+        ): type === "Product" ? (
+          <EditProduct
+            product={value as ProductPublic}
             isOpen={editModal.isOpen}
             onClose={editModal.onClose}
           />

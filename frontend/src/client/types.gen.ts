@@ -177,6 +177,63 @@ export type PrivateUserCreate = {
   is_verified?: boolean
 }
 
+export type Product = {
+  brand?: string | null
+  type?: string | null
+  unit_price?: number | null
+  price_currency?: string | null
+  unit_cost?: number | null
+  cost_currency?: string | null
+  width?: number | null
+  length?: number | null
+  thickness?: number | null
+  id?: string
+  is_valid?: boolean | null
+}
+
+export type ProductCreate = {
+  brand?: string | null
+  type?: string | null
+  unit_price?: number | null
+  price_currency?: string | null
+  unit_cost?: number | null
+  cost_currency?: string | null
+  width?: number | null
+  length?: number | null
+  thickness?: number | null
+  id?: string
+}
+
+export type ProductPublic = {
+  brand?: string | null
+  type?: string | null
+  unit_price?: number | null
+  price_currency?: string | null
+  unit_cost?: number | null
+  cost_currency?: string | null
+  width?: number | null
+  length?: number | null
+  thickness?: number | null
+  id?: string
+}
+
+export type ProductsPublic = {
+  data: Array<ProductPublic>
+  count: number
+}
+
+export type ProductUpdate = {
+  brand?: string | null
+  type?: string | null
+  unit_price?: number | null
+  price_currency?: string | null
+  unit_cost?: number | null
+  cost_currency?: string | null
+  width?: number | null
+  length?: number | null
+  thickness?: number | null
+}
+
 export type Token = {
   access_token: string
   token_type?: string
@@ -408,6 +465,38 @@ export type PrivateCreateUserData = {
 }
 
 export type PrivateCreateUserResponse = UserPublic
+
+export type ProductsReadProductData = {
+  id: string
+}
+
+export type ProductsReadProductResponse = Product
+
+export type ProductsUpdateProductData = {
+  id: string
+  requestBody: ProductUpdate
+}
+
+export type ProductsUpdateProductResponse = ProductPublic
+
+export type ProductsDeleteProductData = {
+  id: string
+}
+
+export type ProductsDeleteProductResponse = Message
+
+export type ProductsReadProductsData = {
+  limit?: number
+  skip?: number
+}
+
+export type ProductsReadProductsResponse = ProductsPublic
+
+export type ProductsCreateProductData = {
+  requestBody: ProductCreate
+}
+
+export type ProductsCreateProductResponse = Product
 
 export type UsersReadUsersData = {
   limit?: number
