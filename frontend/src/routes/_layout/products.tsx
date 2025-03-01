@@ -99,6 +99,12 @@ function ProductRow({
   pageSize: number, 
   isPlaceholderData: boolean
 }) {
+  const navigate = useNavigate({ from: Route.fullPath })
+
+  const handleProductClick = (productId: string) => {
+    navigate({ to: '/products/$productId', params: { productId } })
+  }
+
   return (
     <Tr 
       key={product.id} 
@@ -106,6 +112,8 @@ function ProductRow({
       _hover={{ bg: "gray.50" }}
       transition="background-color 0.2s"
       bg={!product.is_valid ? "red.50" : undefined}
+      onClick={() => handleProductClick(product.id)}
+      cursor="pointer"
     >
       <Td width="80px">
         {(page - 1) * pageSize + index + 1}
@@ -146,7 +154,7 @@ function ProductRow({
           : "N/A"
         }
       </Td>
-      <Td>
+      <Td onClick={(e) => e.stopPropagation()}>
         <ActionsMenu 
           type="Product" 
           value={product} 
@@ -262,6 +270,10 @@ function ProductsTable() {
       }))
     }
   }, [page, pageSize, brand, type, displayInvalid, queryClient, hasNextPage])
+
+  const handleProductClick = (productId: string) => {
+    navigate({ to: '/products/$productId', params: { productId } })
+  }
 
   return (
     <>
