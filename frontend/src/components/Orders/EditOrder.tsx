@@ -17,9 +17,14 @@ import {
   VStack,
   Select,
   Textarea,
+  IconButton,
+  Flex,
+  GridItem,
 } from "@chakra-ui/react"
+import { AddIcon, DeleteIcon } from "@chakra-ui/icons"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { type SubmitHandler, useForm } from "react-hook-form"
+import { type SubmitHandler, useForm, useFieldArray } from "react-hook-form"
+import { useEffect } from "react"
 
 import {
   type ApiError,
@@ -27,6 +32,7 @@ import {
   type OrderUpdate,
   OrdersService,
   CustomersService,
+  ProductsService,
 } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
 import { handleError } from "../../utils"
@@ -56,6 +62,15 @@ interface FormSection {
   fields: FormField[];
 }
 
+interface OrderItemInput {
+  product_id: string;
+  quantity: number;
+}
+
+interface OrderFormData extends OrderUpdate {
+  orderItemInputs: OrderItemInput[];
+}
+
 const ORDER_STATUS_OPTIONS = [
   { value: "Pending", label: "Pending" },
   { value: "Processing", label: "Processing" },
@@ -74,20 +89,59 @@ const PAYMENT_STATUS_OPTIONS = [
 const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
   const queryClient = useQueryClient()
   const showToast = useCustomToast()
+  
+  // Parse order items from JSON string to object for form initialization
+  const parseOrderItems = () => {
+    try {
+      if (!order.order_items) return [{ product_id: "", quantity: 1 }];
+      
+      const orderItemsObj = JSON.parse(order.order_items);
+      return Object.entries(orderItemsObj).map(([product_id, quantity]) => ({
+        product_id,
+        quantity: Number(quantity)
+      }));
+    } catch (e) {
+      console.error("Error parsing order items:", e);
+      return [{ product_id: "", quantity: 1 }];
+    }
+  };
+  
   const {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { isSubmitting, errors, isDirty },
-  } = useForm<OrderUpdate>({
+  } = useForm<OrderFormData>({
     mode: "onBlur",
     criteriaMode: "all",
-    defaultValues: order,
+    defaultValues: {
+      ...order,
+      orderItemInputs: parseOrderItems()
+    },
   })
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "orderItemInputs",
+  });
+
+  // Reset the form when the order changes
+  useEffect(() => {
+    reset({
+      ...order,
+      orderItemInputs: parseOrderItems()
+    });
+  }, [order, reset]);
 
   const { data: customers } = useQuery({
     queryKey: ["customers"],
     queryFn: () => CustomersService.readCustomers({ limit: 100 }),
+  })
+
+  const { data: products } = useQuery({
+    queryKey: ["products"],
+    queryFn: () => ProductsService.readProducts({ limit: 100 }),
   })
 
   const mutation = useMutation({
@@ -105,9 +159,18 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
     },
   })
 
-  const onSubmit: SubmitHandler<OrderUpdate> = async (data) => {
+  const onSubmit: SubmitHandler<OrderFormData> = async (data) => {
+    // Convert orderItemInputs to order_items JSON string
+    const orderItemsObject: Record<string, number> = {};
+    data.orderItemInputs.forEach(item => {
+      if (item.product_id && item.quantity > 0) {
+        orderItemsObject[item.product_id] = item.quantity;
+      }
+    });
+
     mutation.mutate({
       ...data,
+      order_items: JSON.stringify(orderItemsObject),
       total_price: Number(data.total_price),
     })
   }
@@ -131,22 +194,6 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
             required: "Customer is required",
           }
         },
-        {
-          id: "order_items",
-          label: "Order Items",
-          placeholder: "Enter order items",
-          type: "textarea"
-        },
-        {
-          id: "order_quantity",
-          label: "Order Quantity",
-          placeholder: "Enter order quantity"
-        }
-      ]
-    },
-    {
-      section: "Order Details",
-      fields: [
         {
           id: "order_status",
           label: "Order Status",
@@ -187,6 +234,20 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
     }
   ]
 
+  // Filter out order_items and order_quantity fields from formSections
+  const updatedFormSections = formSections.map(section => {
+    if (section.section === "Basic Information") {
+      const updatedFields = section.fields.filter(
+        field => field.id !== "order_items" && field.id !== "order_quantity"
+      );
+      return {
+        ...section,
+        fields: updatedFields
+      };
+    }
+    return section;
+  });
+
   return (
     <Modal
       isOpen={isOpen}
@@ -212,81 +273,222 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
         >
           <form id="edit-order-form" onSubmit={handleSubmit(onSubmit)}>
             <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={8}>
-              {formSections.map((section) => (
-                <Box key={section.section}>
-                  <Text {...editCustomerStyles.sectionTitle}>
-                    {section.section}
-                  </Text>
-                  <VStack spacing={4} align="stretch">
-                    {section.fields.map((field) => (
-                      <FormControl 
-                        key={field.id} 
-                        isRequired={field.required}
-                        isInvalid={!!errors[field.id as keyof OrderUpdate]}
-                      >
-                        <Box {...editCustomerStyles.formBox}>
-                          <FormLabel 
-                            htmlFor={field.id}
-                            {...editCustomerStyles.formLabel}
+              {/* First column - Basic Information */}
+              <Box>
+                <Text {...editCustomerStyles.sectionTitle}>
+                  {updatedFormSections[0].section}
+                </Text>
+                <VStack spacing={4} align="stretch">
+                  {updatedFormSections[0].fields.map((field) => (
+                    <FormControl 
+                      key={field.id} 
+                      isRequired={field.required}
+                      isInvalid={!!errors[field.id as keyof OrderUpdate]}
+                    >
+                      <Box {...editCustomerStyles.formBox}>
+                        <FormLabel 
+                          htmlFor={field.id}
+                          {...editCustomerStyles.formLabel}
+                        >
+                          {field.label}
+                          {field.required && 
+                            <Text as="span" color="red.500" ml={1}></Text>
+                          }
+                        </FormLabel>
+                        {field.id === "customer_id" ? (
+                          <Select
+                            id={field.id}
+                            {...register(field.id as keyof OrderUpdate, field.validation)}
+                            placeholder={field.placeholder}
+                            {...editCustomerStyles.input}
                           >
-                            {field.label}
-                            {field.required && 
-                              <Text as="span" color="red.500" ml={1}></Text>
-                            }
-                          </FormLabel>
-                          {field.id === "customer_id" ? (
+                            {customers?.data.map((customer) => (
+                              <option key={customer.id} value={customer.id}>
+                                {customer.company}
+                              </option>
+                            ))}
+                          </Select>
+                        ) : field.type === "select" ? (
+                          <Select
+                            id={field.id}
+                            {...register(field.id as keyof OrderUpdate, field.validation)}
+                            placeholder={field.placeholder}
+                            {...editCustomerStyles.input}
+                          >
+                            {field.options?.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </Select>
+                        ) : field.type === "textarea" ? (
+                          <Textarea
+                            id={field.id}
+                            {...register(field.id as keyof OrderUpdate, field.validation)}
+                            placeholder={field.placeholder}
+                            {...editCustomerStyles.input}
+                          />
+                        ) : (
+                          <Input
+                            id={field.id}
+                            {...register(field.id as keyof OrderUpdate, field.validation)}
+                            placeholder={field.placeholder}
+                            type={field.type || "text"}
+                            {...editCustomerStyles.input}
+                          />
+                        )}
+                        {errors[field.id as keyof OrderUpdate] && (
+                          <FormErrorMessage>
+                            {errors[field.id as keyof OrderUpdate]?.message}
+                          </FormErrorMessage>
+                        )}
+                      </Box>
+                    </FormControl>
+                  ))}
+                </VStack>
+              </Box>
+
+              {/* Second column - Order Items */}
+              <Box>
+                <Text {...editCustomerStyles.sectionTitle}>
+                  Order Items
+                </Text>
+                <VStack spacing={3} align="stretch">
+                  {fields.map((field, index) => (
+                    <Box 
+                      key={field.id} 
+                      border="1px solid" 
+                      borderColor="gray.200" 
+                      p={2} 
+                      borderRadius="md"
+                      _hover={{ borderColor: "blue.200", boxShadow: "xs" }}
+                    >
+                      <Flex justify="space-between" align="center" mb={1}>
+                        <Text fontSize="sm" fontWeight="medium" color="gray.600">Item {index + 1}</Text>
+                        {index > 0 && (
+                          <IconButton
+                            size="xs"
+                            aria-label="Remove item"
+                            icon={<DeleteIcon />}
+                            onClick={() => remove(index)}
+                            colorScheme="red"
+                            variant="ghost"
+                          />
+                        )}
+                      </Flex>
+                      <SimpleGrid columns={{ base: 1, md: 5 }} spacing={2} alignItems="flex-end">
+                        <GridItem colSpan={{ base: 1, md: 3 }}>
+                          <FormControl isInvalid={!!errors.orderItemInputs?.[index]?.product_id} size="sm">
+                            <FormLabel htmlFor={`orderItemInputs.${index}.product_id`} fontSize="xs" mb={1}>Product</FormLabel>
                             <Select
-                              id={field.id}
-                              {...register(field.id as keyof OrderUpdate, field.validation)}
-                              placeholder={field.placeholder}
+                              id={`orderItemInputs.${index}.product_id`}
+                              {...register(`orderItemInputs.${index}.product_id` as const, {
+                                required: "Product is required"
+                              })}
+                              placeholder="Select product"
+                              size="sm"
                               {...editCustomerStyles.input}
                             >
-                              {customers?.data.map((customer) => (
-                                <option key={customer.id} value={customer.id}>
-                                  {customer.company}
+                              {products?.data.map((product) => (
+                                <option key={product.id} value={product.id}>
+                                  {product.id}
                                 </option>
                               ))}
                             </Select>
-                          ) : field.type === "select" ? (
-                            <Select
-                              id={field.id}
-                              {...register(field.id as keyof OrderUpdate, field.validation)}
-                              placeholder={field.placeholder}
-                              {...editCustomerStyles.input}
-                            >
-                              {field.options?.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </Select>
-                          ) : field.type === "textarea" ? (
-                            <Textarea
-                              id={field.id}
-                              {...register(field.id as keyof OrderUpdate, field.validation)}
-                              placeholder={field.placeholder}
-                              {...editCustomerStyles.input}
-                            />
-                          ) : (
+                            {errors.orderItemInputs?.[index]?.product_id && (
+                              <FormErrorMessage fontSize="xs">
+                                {errors.orderItemInputs[index]?.product_id?.message}
+                              </FormErrorMessage>
+                            )}
+                          </FormControl>
+                        </GridItem>
+                        <GridItem colSpan={{ base: 1, md: 2 }}>
+                          <FormControl isInvalid={!!errors.orderItemInputs?.[index]?.quantity} size="sm">
+                            <FormLabel htmlFor={`orderItemInputs.${index}.quantity`} fontSize="xs" mb={1}>Quantity</FormLabel>
                             <Input
-                              id={field.id}
-                              {...register(field.id as keyof OrderUpdate, field.validation)}
-                              placeholder={field.placeholder}
-                              type={field.type || "text"}
+                              id={`orderItemInputs.${index}.quantity`}
+                              {...register(`orderItemInputs.${index}.quantity` as const, {
+                                required: "Required",
+                                min: { value: 1, message: "Min 1" },
+                                valueAsNumber: true
+                              })}
+                              type="number"
+                              placeholder="Qty"
+                              size="sm"
                               {...editCustomerStyles.input}
                             />
-                          )}
-                          {errors[field.id as keyof OrderUpdate] && (
-                            <FormErrorMessage>
-                              {errors[field.id as keyof OrderUpdate]?.message}
-                            </FormErrorMessage>
-                          )}
-                        </Box>
-                      </FormControl>
-                    ))}
-                  </VStack>
-                </Box>
-              ))}
+                            {errors.orderItemInputs?.[index]?.quantity && (
+                              <FormErrorMessage fontSize="xs">
+                                {errors.orderItemInputs[index]?.quantity?.message}
+                              </FormErrorMessage>
+                            )}
+                          </FormControl>
+                        </GridItem>
+                      </SimpleGrid>
+                    </Box>
+                  ))}
+                  <Button
+                    leftIcon={<AddIcon />}
+                    onClick={() => append({ product_id: "", quantity: 1 })}
+                    size="sm"
+                    colorScheme="blue"
+                    variant="ghost"
+                    width="auto"
+                    alignSelf="flex-start"
+                  >
+                    Add Product
+                  </Button>
+                </VStack>
+              </Box>
+
+              {/* Third column - Additional Information */}
+              <Box>
+                <Text {...editCustomerStyles.sectionTitle}>
+                  {updatedFormSections[1].section}
+                </Text>
+                <VStack spacing={4} align="stretch">
+                  {updatedFormSections[1].fields.map((field) => (
+                    <FormControl 
+                      key={field.id} 
+                      isRequired={field.required}
+                      isInvalid={!!errors[field.id as keyof OrderUpdate]}
+                    >
+                      <Box {...editCustomerStyles.formBox}>
+                        <FormLabel 
+                          htmlFor={field.id}
+                          {...editCustomerStyles.formLabel}
+                        >
+                          {field.label}
+                          {field.required && 
+                            <Text as="span" color="red.500" ml={1}></Text>
+                          }
+                        </FormLabel>
+                        {field.type === "textarea" ? (
+                          <Textarea
+                            id={field.id}
+                            {...register(field.id as keyof OrderUpdate, field.validation)}
+                            placeholder={field.placeholder}
+                            {...editCustomerStyles.input}
+                          />
+                        ) : (
+                          <Input
+                            id={field.id}
+                            {...register(field.id as keyof OrderUpdate, field.validation)}
+                            placeholder={field.placeholder}
+                            type={field.type || "text"}
+                            {...editCustomerStyles.input}
+                          />
+                        )}
+                        {errors[field.id as keyof OrderUpdate] && (
+                          <FormErrorMessage>
+                            {errors[field.id as keyof OrderUpdate]?.message}
+                          </FormErrorMessage>
+                        )}
+                      </Box>
+                    </FormControl>
+                  ))}
+                </VStack>
+              </Box>
             </SimpleGrid>
           </form>
         </ModalBody>
