@@ -187,8 +187,8 @@ export type Product = {
   width?: number | null
   length?: number | null
   thickness?: number | null
-  id?: string
   is_valid?: boolean | null
+  id?: string
 }
 
 export type ProductCreate = {
@@ -201,6 +201,7 @@ export type ProductCreate = {
   width?: number | null
   length?: number | null
   thickness?: number | null
+  is_valid?: boolean | null
   id?: string
 }
 
@@ -214,6 +215,7 @@ export type ProductPublic = {
   width?: number | null
   length?: number | null
   thickness?: number | null
+  is_valid?: boolean | null
   id?: string
 }
 
@@ -232,6 +234,7 @@ export type ProductUpdate = {
   width?: number | null
   length?: number | null
   thickness?: number | null
+  is_valid?: boolean | null
 }
 
 export type Token = {

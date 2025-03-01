@@ -21,6 +21,7 @@ class ProductBase(SQLModel):
     width: float | None = Field(default=None) # Width of the film (e.g., 1.5 meters)
     length: float | None = Field(default=None) # Length of the film (e.g., 10 meters)
     thickness: float | None = Field(default=None) # Thickness of the film (e.g., 0.014 meters)
+    is_valid: bool | None = Field(default=True)
 
 # Database model, database table inferred from class name
 class Product(ProductBase, table=True):
