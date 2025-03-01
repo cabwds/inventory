@@ -23,7 +23,7 @@ import { createFileRoute, useNavigate, Outlet } from "@tanstack/react-router"
 import { useEffect } from "react"
 import { z } from "zod"
 import { ChevronUpIcon, ChevronDownIcon, InfoIcon } from "@chakra-ui/icons"
-import { ProductsService } from "../../client/index.ts"
+import { ProductsService, UserPublic } from "../../client/index.ts"
 import ActionsMenu from "../../components/Common/ActionsMenu.tsx"
 import Navbar from "../../components/Common/Navbar.tsx"
 import AddProduct from "../../components/Products/AddProduct.tsx"
@@ -198,7 +198,7 @@ function ProductsTable() {
   const queryClient = useQueryClient()
   const { page, pageSize, brand, type, sortOrder, sortField, displayInvalid } = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
-  const currentUser = queryClient.getQueryData(["currentUser"])
+  const currentUser = queryClient.getQueryData<UserPublic>(["currentUser"])
   
   const setPage = (newPage: number) =>
     navigate({ search: (prev: Record<string, unknown>) => ({ ...prev, page: newPage }) })
@@ -231,7 +231,7 @@ function ProductsTable() {
         ?.data?.map((p: any) => p.brand)
         .filter(Boolean) || []
     )
-  )
+  ) as string[];
 
   const uniqueTypes = Array.from(
     new Set(
@@ -240,7 +240,7 @@ function ProductsTable() {
         ?.data?.map((p: any) => p.type)
         .filter(Boolean) || []
     )
-  )
+  ) as string[];
 
   const handleBrandChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedBrand = e.target.value
