@@ -130,12 +130,6 @@ function OrderRow({
   const handleDownloadInvoice = async (e: React.MouseEvent) => {
     e.stopPropagation() // Prevent row click
     try {
-      // Show loading toast
-      const loadingToastId = showToast(
-        "Loading", 
-        "Generating invoice...", 
-        "loading"
-      )
       
       // Get the base URL from the OpenAPI configuration
       const baseUrl = import.meta.env.VITE_API_URL || '';
