@@ -52,28 +52,23 @@ function getProductsQueryOptions({
   pageSize, 
   brand, 
   type,
-  sortOrder,
-  sortField,
   displayInvalid
 }: { 
   page: number; 
   pageSize: number;
   brand?: string;
   type?: string;
-  sortOrder?: SortOrder;
-  sortField?: string;
   displayInvalid?: boolean;
 }) {
   return {
     queryFn: () => ProductsService.readProducts({ 
       ...(brand && { brand }),
       ...(type && { type }),
-      ...(sortOrder && sortField && { sortOrder, sortField }),
       ...(displayInvalid !== undefined && { displayInvalid }),
       skip: (page - 1) * pageSize, 
       limit: pageSize 
     }),
-    queryKey: ["products", { page, pageSize, brand, type, sortOrder, sortField, displayInvalid }],
+    queryKey: ["products", { page, pageSize, brand, type, displayInvalid }],
   }
 }
 
@@ -89,38 +84,6 @@ const getCurrencySymbol = (currency: string | null | undefined): string => {
     case 'CNY': return '¥';
     default: return 'S$';
   }
-}
-
-function SortableHeader({ 
-  label, 
-  field, 
-  currentSortField, 
-  currentSortOrder, 
-  onSort 
-}: { 
-  label: string; 
-  field: string; 
-  currentSortField?: string; 
-  currentSortOrder?: SortOrder; 
-  onSort: (field: string) => void 
-}) {
-  const isActive = currentSortField === field;
-
-  return (
-    <HStack 
-      spacing={1} 
-      cursor="pointer" 
-      onClick={() => onSort(field)}
-      _hover={{ color: "blue.500" }}
-      transition="color 0.2s"
-    >
-      <Text>{label}</Text>
-      <Box color={isActive ? "blue.500" : "gray.400"}>
-        {isActive && (currentSortOrder === "desc" ? <ChevronDownIcon /> : <ChevronUpIcon />)}
-        {!isActive && <ChevronUpIcon opacity={0.3} />}
-      </Box>
-    </HStack>
-  )
 }
 
 function ProductRow({ 
@@ -196,7 +159,7 @@ function ProductRow({
 
 function ProductsTable() {
   const queryClient = useQueryClient()
-  const { page, pageSize, brand, type, sortOrder, sortField, displayInvalid } = Route.useSearch()
+  const { page, pageSize, brand, type, displayInvalid } = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
   const currentUser = queryClient.getQueryData<UserPublic>(["currentUser"])
   
@@ -216,29 +179,28 @@ function ProductsTable() {
       pageSize, 
       brand, 
       type, 
-      sortOrder, 
-      sortField,
       displayInvalid
     }),
     placeholderData: (prevData) => prevData,
   })
 
-  // Get unique brands and types for filters
+  // Add this new query specifically for populating filter dropdowns
+  const { data: allProducts } = useQuery({
+    queryKey: ["products-options"],
+    queryFn: () => ProductsService.readProducts({ limit: 100 }), // Get a larger set for options
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  })
+
+  // Use allProducts instead of the current query cache for filter options
   const uniqueBrands = Array.from(
     new Set(
-      queryClient
-        .getQueryData<any>(["products"])
-        ?.data?.map((p: any) => p.brand)
-        .filter(Boolean) || []
+      allProducts?.data?.map(p => p.brand).filter(Boolean) || []
     )
   ) as string[];
 
   const uniqueTypes = Array.from(
     new Set(
-      queryClient
-        .getQueryData<any>(["products"])
-        ?.data?.map((p: any) => p.type)
-        .filter(Boolean) || []
+      allProducts?.data?.map(p => p.type).filter(Boolean) || []
     )
   ) as string[];
 
@@ -264,17 +226,6 @@ function ProductsTable() {
     })
   }
 
-  const handleSort = (field: string) => {
-    navigate({
-      search: (prev: Record<string, unknown>) => ({
-        ...prev,
-        sortField: field,
-        sortOrder: sortField === field && sortOrder === "asc" ? "desc" : "asc",
-        page: 1
-      })
-    })
-  }
-
   const handleDisplayInvalidToggle = (e: React.ChangeEvent<HTMLSelectElement>) => {
     navigate({ 
       search: (prev: Record<string, unknown>) => ({ 
@@ -291,8 +242,6 @@ function ProductsTable() {
         ...prev, 
         brand: undefined,
         type: undefined,
-        sortOrder: undefined,
-        sortField: undefined,
         displayInvalid: undefined,
         page: 1 
       })
@@ -309,12 +258,10 @@ function ProductsTable() {
         pageSize, 
         brand, 
         type,
-        sortOrder,
-        sortField,
         displayInvalid
       }))
     }
-  }, [page, pageSize, brand, type, sortOrder, sortField, displayInvalid, queryClient, hasNextPage])
+  }, [page, pageSize, brand, type, displayInvalid, queryClient, hasNextPage])
 
   return (
     <>
@@ -323,7 +270,7 @@ function ProductsTable() {
           {/* Filters */}
           <HStack spacing={4}>
             <Select
-              placeholder="Filter by brand"
+              placeholder="Filter by Brand"
               value={brand || ""}
               onChange={handleBrandChange}
               maxW="250px"
@@ -335,7 +282,7 @@ function ProductsTable() {
               ))}
             </Select>
             <Select
-              placeholder="Filter by type"
+              placeholder="Filter by Type"
               value={type || ""}
               onChange={handleTypeChange}
               maxW="250px"
@@ -356,7 +303,7 @@ function ProductsTable() {
                 <option value="all">All Products</option>
               </Select>
             )}
-            {(brand || type || sortOrder || (currentUser?.is_superuser && displayInvalid)) && (
+            {(brand || type || (currentUser?.is_superuser && displayInvalid)) && (
               <Button size="md" onClick={clearFilters}>
                 Clear Filters
               </Button>
@@ -379,25 +326,9 @@ function ProductsTable() {
             <Tr>
               <Th width="80px">No.</Th>
               <Th>Name</Th>
-              <Th>
-                <SortableHeader 
-                  label="Brand" 
-                  field="brand" 
-                  currentSortField={sortField} 
-                  currentSortOrder={sortOrder}
-                  onSort={handleSort}
-                />
-              </Th>
+              <Th>Brand</Th>
               <Th>Type</Th>
-              <Th>
-                <SortableHeader 
-                  label="Unit Price" 
-                  field="unit_price" 
-                  currentSortField={sortField} 
-                  currentSortOrder={sortOrder}
-                  onSort={handleSort}
-                />
-              </Th>
+              <Th>Unit Price</Th>
               <Th>Unit Cost</Th>
               <Th>Actions</Th>
             </Tr>

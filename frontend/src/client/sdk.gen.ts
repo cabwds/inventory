@@ -844,6 +844,9 @@ export class ProductsService {
    * @param data The data for the request.
    * @param data.skip
    * @param data.limit
+   * @param data.displayInvalid
+   * @param data.brand
+   * @param data.type
    * @returns ProductsPublic Successful Response
    * @throws ApiError
    */
@@ -856,6 +859,9 @@ export class ProductsService {
       query: {
         skip: data.skip,
         limit: data.limit,
+        display_invalid: data.displayInvalid,
+        brand: data.brand,
+        type: data.type,
       },
       errors: {
         422: "Validation Error",

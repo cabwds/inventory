@@ -489,8 +489,11 @@ export type ProductsDeleteProductData = {
 export type ProductsDeleteProductResponse = Message
 
 export type ProductsReadProductsData = {
+  brand?: string
+  displayInvalid?: boolean
   limit?: number
   skip?: number
+  type?: string
 }
 
 export type ProductsReadProductsResponse = ProductsPublic

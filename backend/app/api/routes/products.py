@@ -24,17 +24,35 @@ def read_product(session: SessionDep, current_user: CurrentUser, id: str) -> Any
 
 @router.get("/", response_model=ProductsPublic)
 def read_products(
-    session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100
+    session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100,
+    display_invalid: bool = False, brand: str = None, type: str = None
 ) -> Any:
     """
     Retrieve products.
     """
+    
+     # Build base query
+    query = select(Product)
+    count_query = select(func.count()).select_from(Product)
 
-    if current_user.is_superuser:
-        count_statement = select(func.count()).select_from(Product)
-        count = session.exec(count_statement).one()
-        statement = select(Product).offset(skip).limit(limit)
-        products = session.exec(statement).all()
+    # Add filters
+    if not display_invalid:
+        query = query.where(Product.is_valid == True)
+        count_query = count_query.where(Product.is_valid == True)
+
+    if brand:
+        query = query.where(Product.brand == brand)
+        count_query = count_query.where(Product.brand == brand)
+
+    if type:
+        query = query.where(Product.type == type)
+        count_query = count_query.where(Product.type == type)
+
+    # Add pagination
+    query = query.offset(skip).limit(limit)
+        
+    count = session.exec(count_query).one()
+    products = session.exec(query).all()
 
     return ProductsPublic(data=products, count=count)
 
