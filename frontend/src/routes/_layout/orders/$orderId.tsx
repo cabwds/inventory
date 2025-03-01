@@ -7,6 +7,7 @@ import {
   ModalCloseButton,
   Text,
   VStack,
+  HStack,
   Box,
   SimpleGrid,
   Button,
@@ -24,6 +25,18 @@ import {
   Td,
   Badge,
   Divider,
+  Stat,
+  StatLabel,
+  StatNumber,
+  StatHelpText,
+  Card,
+  CardHeader,
+  CardBody,
+  Progress,
+  Tooltip,
+  Grid,
+  GridItem,
+  Tag,
 } from "@chakra-ui/react"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
@@ -31,7 +44,7 @@ import { OrdersService, CustomersService, ProductsService } from "../../../clien
 import useCustomToast from "../../../hooks/useCustomToast"
 import { modalScrollbarStyles } from "../../../styles/orders.styles"
 import { useEffect, useState } from "react"
-import { FaExternalLinkAlt } from "react-icons/fa"
+import { FaExternalLinkAlt, FaTag, FaCheckCircle, FaTimesCircle, FaClock, FaShippingFast, FaDollarSign } from "react-icons/fa"
 
 export const Route = createFileRoute('/_layout/orders/$orderId')({
   component: OrderDetail,
@@ -41,7 +54,20 @@ export const Route = createFileRoute('/_layout/orders/$orderId')({
 interface OrderItem {
   product_id: string;
   quantity: number;
+  product_name?: string;  // Added to store name from products data
 }
+
+// Status color mapping for visual indicators
+const STATUS_COLORS = {
+  "Pending": "yellow",
+  "Processing": "blue",
+  "Shipped": "purple",
+  "Delivered": "green",
+  "Cancelled": "red",
+  "Paid": "green",
+  "Failed": "red",
+  "Refunded": "orange"
+};
 
 function OrderDetail() {
   const { orderId } = Route.useParams()
@@ -50,6 +76,7 @@ function OrderDetail() {
   const [customerCompany, setCustomerCompany] = useState<string>('')
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
   const [totalQuantity, setTotalQuantity] = useState<number>(0)
+  const [formattedDate, setFormattedDate] = useState<string>('N/A')
 
   const { data: order, isError } = useQuery({
     queryKey: ['order', orderId],
@@ -65,13 +92,18 @@ function OrderDetail() {
   
   // Parse order items when order data is available
   useEffect(() => {
-    if (order?.order_items) {
+    if (order?.order_items && products) {
       try {
         const orderItemsObj = JSON.parse(order.order_items);
-        const parsedItems = Object.entries(orderItemsObj).map(([product_id, quantity]) => ({
-          product_id,
-          quantity: Number(quantity)
-        }));
+        const parsedItems = Object.entries(orderItemsObj).map(([product_id, quantity]) => {
+          // Find product name from products data
+          const productData = products.data.find(p => p.id === product_id);
+          return {
+            product_id,
+            quantity: Number(quantity),
+            product_name: productData?.id || 'Unknown Product'
+          };
+        });
         setOrderItems(parsedItems);
         
         // Calculate total quantity
@@ -86,7 +118,25 @@ function OrderDetail() {
       setOrderItems([]);
       setTotalQuantity(0);
     }
-  }, [order?.order_items]);
+  }, [order?.order_items, products]);
+
+  // Format the order date for better display
+  useEffect(() => {
+    if (order?.order_date) {
+      try {
+        const date = new Date(order.order_date);
+        setFormattedDate(date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }));
+      } catch (e) {
+        setFormattedDate(order.order_date || 'N/A');
+      }
+    }
+  }, [order?.order_date]);
 
   useEffect(() => {
     const fetchCustomerDetails = async () => {
@@ -126,79 +176,125 @@ function OrderDetail() {
     })
   }
 
-  const orderDetails = [
-    {
-      section: "Basic Information",
-      items: [
-        { 
-          label: "Customer", 
-          value: (
-            <Flex align="center" gap={3}>
-              <Text as="span" fontWeight="medium">
-                {customerCompany}
-              </Text>
-              {order?.customer_id && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  colorScheme="blue"
-                  rightIcon={<Icon as={FaExternalLinkAlt} boxSize="12px" />}
-                  onClick={handleCustomerClick}
-                  _hover={{
-                    textDecoration: 'none',
-                    bg: 'blue.50'
-                  }}
-                >
-                  View Customer
-                </Button>
-              )}
-            </Flex>
-          ),
-        },
-        { label: "Order Date", value: order?.order_date }
-      ]
-    },
-    {
-      section: "Order Status",
-      items: [
-        { label: "Order Status", value: order?.order_status },
-        { label: "Payment Status", value: order?.payment_status },
-        { label: "Total Price", value: order?.total_price ? `$${order.total_price}` : null }
-      ]
-    },
-    {
-      section: "Additional Information",
-      items: [
-        { label: "Notes", value: order?.notes }
-      ]
-    }
-  ]
+  // Get the maximum quantity for progress bar scaling
+  const maxQuantity = Math.max(...orderItems.map(item => item.quantity), 1);
 
-  // Render the order items table
+  // Render the order summary cards
+  const renderOrderSummary = () => {
+    if (!order) return null;
+    
+    return (
+      <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mb={6}>
+        <Card variant="outline">
+          <CardBody>
+            <Stat>
+              <StatLabel display="flex" alignItems="center">
+                <Icon as={FaTag} mr={2} color="blue.500" />
+                Order Status
+              </StatLabel>
+              <Flex align="center" mt={2}>
+                <Badge 
+                  colorScheme={STATUS_COLORS[order.order_status as keyof typeof STATUS_COLORS] || "gray"}
+                  px={2} py={1} borderRadius="md"
+                  display="flex" alignItems="center"
+                >
+                  {order.order_status === "Delivered" && <Icon as={FaCheckCircle} mr={1} />}
+                  {order.order_status === "Cancelled" && <Icon as={FaTimesCircle} mr={1} />}
+                  {order.order_status === "Processing" && <Icon as={FaClock} mr={1} />}
+                  {order.order_status === "Shipped" && <Icon as={FaShippingFast} mr={1} />}
+                  {order.order_status}
+                </Badge>
+              </Flex>
+            </Stat>
+          </CardBody>
+        </Card>
+        
+        <Card variant="outline">
+          <CardBody>
+            <Stat>
+              <StatLabel display="flex" alignItems="center">
+                <Icon as={FaDollarSign} mr={2} color="green.500" />
+                Payment Status
+              </StatLabel>
+              <Flex align="center" mt={2}>
+                <Badge 
+                  colorScheme={STATUS_COLORS[order.payment_status as keyof typeof STATUS_COLORS] || "gray"}
+                  px={2} py={1} borderRadius="md"
+                >
+                  {order.payment_status}
+                </Badge>
+              </Flex>
+            </Stat>
+          </CardBody>
+        </Card>
+        
+        <Card variant="outline">
+          <CardBody>
+            <Stat>
+              <StatLabel>Total Amount</StatLabel>
+              <StatNumber>${order.total_price}</StatNumber>
+              <StatHelpText>
+                {orderItems.length} product{orderItems.length !== 1 ? 's' : ''} ({totalQuantity} unit{totalQuantity !== 1 ? 's' : ''})
+              </StatHelpText>
+            </Stat>
+          </CardBody>
+        </Card>
+      </SimpleGrid>
+    );
+  };
+
+  // Render the order items with improved visualization
   const renderOrderItems = () => {
     if (orderItems.length === 0) {
       return <Text color="gray.500">No items in this order</Text>;
     }
 
     return (
-      <Box>
-        <Table size="sm" variant="simple">
-          <Thead>
+      <Box overflowX="auto">
+        <Table size="sm" variant="simple" colorScheme="blue">
+          <Thead bg="blue.50">
             <Tr>
-              <Th>Product ID</Th>
-              <Th isNumeric>Quantity</Th>
-              <Th>Actions</Th>
+              <Th>Product</Th>
+              <Th>Quantity</Th>
+              <Th>Distribution</Th>
+              <Th width="100px">Actions</Th>
             </Tr>
           </Thead>
           <Tbody>
             {orderItems.map((item, index) => (
-              <Tr key={index}>
-                <Td fontWeight="medium">{item.product_id}</Td>
-                <Td isNumeric>{item.quantity}</Td>
+              <Tr 
+                key={index} 
+                _hover={{ bg: "gray.50" }}
+                transition="background-color 0.2s"
+              >
+                <Td>
+                  <VStack align="start" spacing={1}>
+                    <Text fontWeight="medium">{item.product_name}</Text>
+                    <Text fontSize="xs" color="gray.500">ID: {item.product_id}</Text>
+                  </VStack>
+                </Td>
+                <Td>
+                  <Tag size="md" colorScheme="blue" borderRadius="full">
+                    {item.quantity}
+                  </Tag>
+                </Td>
+                <Td>
+                  <Tooltip label={`${Math.round((item.quantity / totalQuantity) * 100)}% of total`}>
+                    <Box>
+                      <Progress 
+                        value={item.quantity} 
+                        max={maxQuantity} 
+                        size="sm" 
+                        colorScheme="blue" 
+                        borderRadius="full" 
+                      />
+                    </Box>
+                  </Tooltip>
+                </Td>
                 <Td>
                   <Button
                     size="xs"
-                    variant="ghost"
+                    variant="outline"
                     colorScheme="blue"
                     rightIcon={<Icon as={FaExternalLinkAlt} boxSize="10px" />}
                     onClick={() => handleProductClick(item.product_id)}
@@ -210,14 +306,63 @@ function OrderDetail() {
             ))}
           </Tbody>
         </Table>
-        <Divider my={3} />
-        <Flex justify="space-between" px={2}>
-          <Text fontSize="sm" fontWeight="medium">Total Items:</Text>
-          <Badge colorScheme="blue" fontSize="sm" px={2} py={1}>
-            {orderItems.length} product{orderItems.length !== 1 ? 's' : ''} ({totalQuantity} unit{totalQuantity !== 1 ? 's' : ''})
-          </Badge>
-        </Flex>
       </Box>
+    );
+  };
+
+  // Render customer information in a card
+  const renderCustomerInfo = () => {
+    if (!order) return null;
+    
+    return (
+      <Card variant="outline" mb={6}>
+        <CardHeader pb={0}>
+          <Flex justifyContent="space-between" alignItems="center">
+            <Text fontWeight="semibold" fontSize="md">Customer Information</Text>
+            {order?.customer_id && (
+              <Button
+                size="sm"
+                variant="outline"
+                colorScheme="blue"
+                rightIcon={<Icon as={FaExternalLinkAlt} boxSize="12px" />}
+                onClick={handleCustomerClick}
+              >
+                View Customer
+              </Button>
+            )}
+          </Flex>
+        </CardHeader>
+        <CardBody>
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+            <Box>
+              <Text fontSize="sm" color="gray.600">Company</Text>
+              <Text fontWeight="medium">{customerCompany}</Text>
+            </Box>
+            <Box>
+              <Text fontSize="sm" color="gray.600">Order Date</Text>
+              <Text fontWeight="medium">{formattedDate}</Text>
+            </Box>
+          </SimpleGrid>
+        </CardBody>
+      </Card>
+    );
+  };
+  
+  // Render notes in a card
+  const renderNotes = () => {
+    if (!order) return null;
+    
+    return (
+      <Card variant="outline" mt={6}>
+        <CardHeader pb={0}>
+          <Text fontWeight="semibold" fontSize="md">Notes</Text>
+        </CardHeader>
+        <CardBody>
+          <Text whiteSpace="pre-wrap">
+            {order.notes || 'No notes available for this order.'}
+          </Text>
+        </CardBody>
+      </Card>
     );
   };
 
@@ -235,27 +380,33 @@ function OrderDetail() {
         bg={order?.is_valid === false ? "red.50" : "white"}
       >
         <ModalHeader>
-          <Text fontSize="xl">
-            Order Details
-            {order?.is_valid === false && (
-              <Text
-                as="span"
-                color="red.500"
-                fontSize="md"
-                ml={2}
-              >
-                (INVALID)
+          <Flex justify="space-between" align="center">
+            <Box>
+              <Text fontSize="xl">
+                Order Details
+                {order?.is_valid === false && (
+                  <Text
+                    as="span"
+                    color="red.500"
+                    fontSize="md"
+                    ml={2}
+                  >
+                    (INVALID)
+                  </Text>
+                )}
               </Text>
-            )}
-          </Text>
-          <Box display="flex" gap={4}>
-            <Text fontSize="sm" color="gray.600">
-              ID: {order?.id}
-            </Text>
-            <Text fontSize="sm" color="gray.600">
-              Last Updated: {order?.order_update_date || 'N/A'}
-            </Text>
-          </Box>
+              <HStack spacing={4} mt={1}>
+                <Text fontSize="sm" color="gray.600">
+                  ID: {order?.id}
+                </Text>
+                <Text fontSize="sm" color="gray.600">
+                  Last Updated: {order?.order_update_date 
+                    ? new Date(order.order_update_date).toLocaleDateString() 
+                    : 'N/A'}
+                </Text>
+              </HStack>
+            </Box>
+          </Flex>
         </ModalHeader>
         <ModalCloseButton />
         <ModalBody 
@@ -265,7 +416,7 @@ function OrderDetail() {
           css={modalScrollbarStyles}
         >
           {order && (
-            <VStack spacing={8} align="stretch">
+            <VStack spacing={6} align="stretch">
               {order.is_valid === false && (
                 <Alert 
                   status="error"
@@ -281,68 +432,25 @@ function OrderDetail() {
                   </Box>
                 </Alert>
               )}
-              <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={8}>
-                {orderDetails.map((section) => (
-                  <Box 
-                    key={section.section}
-                    opacity={order.is_valid === false ? 0.9 : 1}
-                  >
-                    <Text fontWeight="semibold" fontSize="lg" mb={4} color="gray.700">
-                      {section.section}
-                    </Text>
-                    <VStack spacing={4} align="stretch">
-                      {section.items.map(({ label, value }) => (
-                        <Box 
-                          key={label} 
-                          p={3}
-                          bg={order.is_valid === false ? "white" : "gray.50"}
-                          borderRadius="md"
-                        >
-                          <Text 
-                            fontSize="sm" 
-                            color="gray.600" 
-                            mb={1}
-                            fontWeight="medium"
-                          >
-                            {label}
-                          </Text>
-                          {typeof value === 'string' ? (
-                            <Text 
-                              fontSize="md"
-                              fontWeight={value ? "medium" : "normal"}
-                              color={order.is_valid === false 
-                                ? (value ? "gray.700" : "gray.400")
-                                : (value ? "black" : "gray.400")}
-                              whiteSpace="pre-wrap"
-                              wordBreak="break-word"
-                            >
-                              {value || 'N/A'}
-                            </Text>
-                          ) : (
-                            value
-                          )}
-                        </Box>
-                      ))}
-                    </VStack>
-                  </Box>
-                ))}
-
-                {/* Order Items Section */}
-                <Box 
-                  opacity={order.is_valid === false ? 0.9 : 1}
-                >
-                  <Text fontWeight="semibold" fontSize="lg" mb={4} color="gray.700">
-                    Order Items
-                  </Text>
-                  <Box 
-                    p={3}
-                    bg={order.is_valid === false ? "white" : "gray.50"}
-                    borderRadius="md"
-                  >
-                    {renderOrderItems()}
-                  </Box>
-                </Box>
-              </SimpleGrid>
+              
+              {/* Order Summary Cards */}
+              {renderOrderSummary()}
+              
+              {/* Customer Information */}
+              {renderCustomerInfo()}
+              
+              {/* Order Items Card */}
+              <Card variant="outline">
+                <CardHeader pb={2}>
+                  <Text fontWeight="semibold" fontSize="md">Order Items</Text>
+                </CardHeader>
+                <CardBody pt={0}>
+                  {renderOrderItems()}
+                </CardBody>
+              </Card>
+              
+              {/* Notes Section */}
+              {renderNotes()}
             </VStack>
           )}
         </ModalBody>
