@@ -17,11 +17,18 @@ import {
   VStack,
   Select,
   Textarea,
+  HStack,
+  IconButton,
+  Flex,
+  Divider,
+  GridItem,
 } from "@chakra-ui/react"
+import { AddIcon, DeleteIcon } from "@chakra-ui/icons"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { type SubmitHandler, useForm } from "react-hook-form"
+import { type SubmitHandler, useForm, Controller, useFieldArray } from "react-hook-form"
+import { useState, useEffect } from "react"
 
-import { type ApiError, type OrderCreate, OrdersService, CustomersService } from "../../client"
+import { type ApiError, type OrderCreate, OrdersService, CustomersService, ProductsService } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
 import { handleError } from "../../utils"
 import { modalScrollbarStyles, editCustomerStyles } from "../../styles/customers.styles"
@@ -49,6 +56,15 @@ interface FormSection {
   fields: FormField[];
 }
 
+interface OrderItemInput {
+  product_id: string;
+  quantity: number;
+}
+
+interface OrderFormData extends OrderCreate {
+  orderItemInputs: OrderItemInput[];
+}
+
 const ORDER_STATUS_OPTIONS = [
   { value: "Pending", label: "Pending" },
   { value: "Processing", label: "Processing" },
@@ -71,8 +87,9 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors, isSubmitting },
-  } = useForm<OrderCreate>({
+  } = useForm<OrderFormData>({
     mode: "onBlur",
     criteriaMode: "all",
     defaultValues: {
@@ -81,12 +98,23 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
       payment_status: "Pending",
       total_price: 0,
       is_valid: true,
+      orderItemInputs: [{ product_id: "", quantity: 1 }]
     },
   })
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "orderItemInputs",
+  });
 
   const { data: customers } = useQuery({
     queryKey: ["customers"],
     queryFn: () => CustomersService.readCustomers({ limit: 100 }),
+  })
+
+  const { data: products } = useQuery({
+    queryKey: ["products"],
+    queryFn: () => ProductsService.readProducts({ limit: 100 }),
   })
 
   const mutation = useMutation({
@@ -105,9 +133,18 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
     },
   })
 
-  const onSubmit: SubmitHandler<OrderCreate> = (data) => {
+  const onSubmit: SubmitHandler<OrderFormData> = (data) => {
+    // Convert orderItemInputs to order_items JSON string
+    const orderItemsObject: Record<string, number> = {};
+    data.orderItemInputs.forEach(item => {
+      if (item.product_id && item.quantity > 0) {
+        orderItemsObject[item.product_id] = item.quantity;
+      }
+    });
+
     mutation.mutate({
       ...data,
+      order_items: JSON.stringify(orderItemsObject),
       total_price: Number(data.total_price),
       order_date: new Date().toISOString(),
     })
@@ -127,22 +164,6 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
             required: "Customer is required",
           }
         },
-        {
-          id: "order_items",
-          label: "Order Items",
-          placeholder: "Enter order items",
-          type: "textarea"
-        },
-        {
-          id: "order_quantity",
-          label: "Order Quantity",
-          placeholder: "Enter order quantity"
-        }
-      ]
-    },
-    {
-      section: "Order Details",
-      fields: [
         {
           id: "order_status",
           label: "Order Status",
@@ -183,6 +204,21 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
     }
   ]
 
+  // Replace the order_items field in the formSections
+  const updatedFormSections = formSections.map(section => {
+    if (section.section === "Basic Information") {
+      // Filter out order_items and order_quantity fields
+      const updatedFields = section.fields.filter(
+        field => field.id !== "order_items" && field.id !== "order_quantity"
+      );
+      return {
+        ...section,
+        fields: updatedFields
+      };
+    }
+    return section;
+  });
+
   return (
     <Modal
       isOpen={isOpen}
@@ -205,7 +241,7 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
         >
           <form id="add-order-form" onSubmit={handleSubmit(onSubmit)}>
             <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={8}>
-              {formSections.map((section) => (
+              {updatedFormSections.map((section) => (
                 <Box key={section.section}>
                   <Text {...editCustomerStyles.sectionTitle}>
                     {section.section}
@@ -280,6 +316,99 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
                   </VStack>
                 </Box>
               ))}
+
+              {/* Order Items Section */}
+              <Box>
+                <Text {...editCustomerStyles.sectionTitle}>
+                  Order Items
+                </Text>
+                <VStack spacing={3} align="stretch">
+                  {fields.map((field, index) => (
+                    <Box 
+                      key={field.id} 
+                      border="1px solid" 
+                      borderColor="gray.200" 
+                      p={2} 
+                      borderRadius="md"
+                      _hover={{ borderColor: "blue.200", boxShadow: "xs" }}
+                    >
+                      <Flex justify="space-between" align="center" mb={1}>
+                        <Text fontSize="sm" fontWeight="medium" color="gray.600">Item {index + 1}</Text>
+                        {index > 0 && (
+                          <IconButton
+                            size="xs"
+                            aria-label="Remove item"
+                            icon={<DeleteIcon />}
+                            onClick={() => remove(index)}
+                            colorScheme="red"
+                            variant="ghost"
+                          />
+                        )}
+                      </Flex>
+                      <SimpleGrid columns={{ base: 1, md: 5 }} spacing={2} alignItems="flex-end">
+                        <GridItem colSpan={{ base: 1, md: 3 }}>
+                          <FormControl isInvalid={!!errors.orderItemInputs?.[index]?.product_id} size="sm">
+                            <FormLabel htmlFor={`orderItemInputs.${index}.product_id`} fontSize="xs" mb={1}>Product</FormLabel>
+                            <Select
+                              id={`orderItemInputs.${index}.product_id`}
+                              {...register(`orderItemInputs.${index}.product_id` as const, {
+                                required: "Product is required"
+                              })}
+                              placeholder="Select product"
+                              size="sm"
+                              {...editCustomerStyles.input}
+                            >
+                              {products?.data.map((product) => (
+                                <option key={product.id} value={product.id}>
+                                  {product.id}
+                                </option>
+                              ))}
+                            </Select>
+                            {errors.orderItemInputs?.[index]?.product_id && (
+                              <FormErrorMessage fontSize="xs">
+                                {errors.orderItemInputs[index]?.product_id?.message}
+                              </FormErrorMessage>
+                            )}
+                          </FormControl>
+                        </GridItem>
+                        <GridItem colSpan={{ base: 1, md: 2 }}>
+                          <FormControl isInvalid={!!errors.orderItemInputs?.[index]?.quantity} size="sm">
+                            <FormLabel htmlFor={`orderItemInputs.${index}.quantity`} fontSize="xs" mb={1}>Quantity</FormLabel>
+                            <Input
+                              id={`orderItemInputs.${index}.quantity`}
+                              {...register(`orderItemInputs.${index}.quantity` as const, {
+                                required: "Required",
+                                min: { value: 1, message: "Min 1" },
+                                valueAsNumber: true
+                              })}
+                              type="number"
+                              placeholder="Qty"
+                              size="sm"
+                              {...editCustomerStyles.input}
+                            />
+                            {errors.orderItemInputs?.[index]?.quantity && (
+                              <FormErrorMessage fontSize="xs">
+                                {errors.orderItemInputs[index]?.quantity?.message}
+                              </FormErrorMessage>
+                            )}
+                          </FormControl>
+                        </GridItem>
+                      </SimpleGrid>
+                    </Box>
+                  ))}
+                  <Button
+                    leftIcon={<AddIcon />}
+                    onClick={() => append({ product_id: "", quantity: 1 })}
+                    size="sm"
+                    colorScheme="blue"
+                    variant="ghost"
+                    width="auto"
+                    alignSelf="flex-start"
+                  >
+                    Add Product
+                  </Button>
+                </VStack>
+              </Box>
             </SimpleGrid>
           </form>
         </ModalBody>
