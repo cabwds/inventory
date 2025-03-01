@@ -94,8 +94,8 @@ const AddProduct = ({ isOpen, onClose }: AddProductProps) => {
     defaultValues: {
       brand: "",
       type: "",
-      price_currency: "USD",
-      cost_currency: "USD",
+      price_currency: "SGD",
+      cost_currency: "SGD",
     },
   })
 

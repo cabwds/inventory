@@ -40,6 +40,20 @@ function getProductsQueryOptions({ page }: { page: number }) {
   }
 }
 
+// Add this helper function to map currency codes to symbols
+const getCurrencySymbol = (currency: string | null | undefined): string => {
+  if (!currency) return 'S$'; // Default to SGD (Singapore Dollar)
+  
+  switch (currency) {
+    case 'SGD': return 'S$';
+    case 'USD': return 'US$';
+    case 'EUR': return '€';
+    case 'GBP': return '£';
+    case 'CNY': return '¥';
+    default: return 'S$';
+  }
+}
+
 function ProductsTable() {
   const queryClient = useQueryClient()
   const { page } = Route.useSearch()
@@ -75,6 +89,7 @@ function ProductsTable() {
               <Th>Brand</Th>
               <Th>Type</Th>
               <Th>Unit Price</Th>
+              <Th>Unit Cost</Th>
               <Th>Actions</Th>
             </Tr>
           </Thead>
@@ -104,11 +119,22 @@ function ProductsTable() {
                     {product.type || "N/A"}
                   </Td>
                   <Td
-                    color={!product.type ? "ui.dim" : "inherit"}
                     isTruncated
                     maxWidth="150px"
                   >
-                    {product.unit_price != null ? product.unit_price : "N/A"}
+                    {product.unit_price != null 
+                      ? `${getCurrencySymbol(product.price_currency)} ${product.unit_price.toFixed(2)}`
+                      : "N/A"
+                    }
+                  </Td>
+                  <Td
+                    isTruncated
+                    maxWidth="150px"
+                  >
+                    {product.unit_cost != null 
+                      ? `${getCurrencySymbol(product.cost_currency)} ${product.unit_cost.toFixed(2)}`
+                      : "N/A"
+                    }
                   </Td>
                   <Td>
                     <ActionsMenu type={"Product"} value={product} />
