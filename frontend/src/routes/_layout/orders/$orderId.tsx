@@ -16,10 +16,18 @@ import {
   AlertIcon,
   AlertTitle,
   AlertDescription,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  Badge,
+  Divider,
 } from "@chakra-ui/react"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
-import { OrdersService, CustomersService } from "../../../client"
+import { OrdersService, CustomersService, ProductsService } from "../../../client"
 import useCustomToast from "../../../hooks/useCustomToast"
 import { modalScrollbarStyles } from "../../../styles/orders.styles"
 import { useEffect, useState } from "react"
@@ -29,16 +37,56 @@ export const Route = createFileRoute('/_layout/orders/$orderId')({
   component: OrderDetail,
 })
 
+// Define interface for parsed order items
+interface OrderItem {
+  product_id: string;
+  quantity: number;
+}
+
 function OrderDetail() {
   const { orderId } = Route.useParams()
   const navigate = useNavigate()
   const showToast = useCustomToast()
   const [customerCompany, setCustomerCompany] = useState<string>('')
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([])
+  const [totalQuantity, setTotalQuantity] = useState<number>(0)
 
   const { data: order, isError } = useQuery({
     queryKey: ['order', orderId],
     queryFn: () => OrdersService.readOrder({ id: orderId }),
   })
+
+  // Fetch products to get product details
+  const { data: products } = useQuery({
+    queryKey: ['products'],
+    queryFn: () => ProductsService.readProducts({ limit: 100 }),
+    enabled: !!order?.order_items, // Only fetch if order_items exists
+  })
+  
+  // Parse order items when order data is available
+  useEffect(() => {
+    if (order?.order_items) {
+      try {
+        const orderItemsObj = JSON.parse(order.order_items);
+        const parsedItems = Object.entries(orderItemsObj).map(([product_id, quantity]) => ({
+          product_id,
+          quantity: Number(quantity)
+        }));
+        setOrderItems(parsedItems);
+        
+        // Calculate total quantity
+        const totalQty = parsedItems.reduce((sum, item) => sum + item.quantity, 0);
+        setTotalQuantity(totalQty);
+      } catch (e) {
+        console.error("Error parsing order items:", e);
+        setOrderItems([]);
+        setTotalQuantity(0);
+      }
+    } else {
+      setOrderItems([]);
+      setTotalQuantity(0);
+    }
+  }, [order?.order_items]);
 
   useEffect(() => {
     const fetchCustomerDetails = async () => {
@@ -71,6 +119,13 @@ function OrderDetail() {
     }
   }
 
+  const handleProductClick = (productId: string) => {
+    navigate({ 
+      to: '/products/$productId', 
+      params: { productId: productId } 
+    })
+  }
+
   const orderDetails = [
     {
       section: "Basic Information",
@@ -100,8 +155,6 @@ function OrderDetail() {
             </Flex>
           ),
         },
-        { label: "Order Items", value: order?.order_items },
-        { label: "Order Quantity", value: order?.order_quantity },
         { label: "Order Date", value: order?.order_date }
       ]
     },
@@ -120,6 +173,53 @@ function OrderDetail() {
       ]
     }
   ]
+
+  // Render the order items table
+  const renderOrderItems = () => {
+    if (orderItems.length === 0) {
+      return <Text color="gray.500">No items in this order</Text>;
+    }
+
+    return (
+      <Box>
+        <Table size="sm" variant="simple">
+          <Thead>
+            <Tr>
+              <Th>Product ID</Th>
+              <Th isNumeric>Quantity</Th>
+              <Th>Actions</Th>
+            </Tr>
+          </Thead>
+          <Tbody>
+            {orderItems.map((item, index) => (
+              <Tr key={index}>
+                <Td fontWeight="medium">{item.product_id}</Td>
+                <Td isNumeric>{item.quantity}</Td>
+                <Td>
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    colorScheme="blue"
+                    rightIcon={<Icon as={FaExternalLinkAlt} boxSize="10px" />}
+                    onClick={() => handleProductClick(item.product_id)}
+                  >
+                    View
+                  </Button>
+                </Td>
+              </Tr>
+            ))}
+          </Tbody>
+        </Table>
+        <Divider my={3} />
+        <Flex justify="space-between" px={2}>
+          <Text fontSize="sm" fontWeight="medium">Total Items:</Text>
+          <Badge colorScheme="blue" fontSize="sm" px={2} py={1}>
+            {orderItems.length} product{orderItems.length !== 1 ? 's' : ''} ({totalQuantity} unit{totalQuantity !== 1 ? 's' : ''})
+          </Badge>
+        </Flex>
+      </Box>
+    );
+  };
 
   return (
     <Modal 
@@ -226,6 +326,22 @@ function OrderDetail() {
                     </VStack>
                   </Box>
                 ))}
+
+                {/* Order Items Section */}
+                <Box 
+                  opacity={order.is_valid === false ? 0.9 : 1}
+                >
+                  <Text fontWeight="semibold" fontSize="lg" mb={4} color="gray.700">
+                    Order Items
+                  </Text>
+                  <Box 
+                    p={3}
+                    bg={order.is_valid === false ? "white" : "gray.50"}
+                    borderRadius="md"
+                  >
+                    {renderOrderItems()}
+                  </Box>
+                </Box>
               </SimpleGrid>
             </VStack>
           )}
