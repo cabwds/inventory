@@ -63,15 +63,24 @@ interface FormSection {
 }
 
 const CURRENCY_OPTIONS = [
+  { value: "SGD", label: "SGD" },
   { value: "USD", label: "USD" },
   { value: "EUR", label: "EUR" },
   { value: "GBP", label: "GBP" },
 ]
 
 const PRODUCT_TYPE_OPTIONS = [
-  { value: "Standard", label: "Standard" },
-  { value: "Custom", label: "Custom" },
-  { value: "Prototype", label: "Prototype" },
+  { value: "Wood", label: "Wood" },
+  { value: "Stone", label: "Stone" },
+  { value: "Metal", label: "Metal" },
+  { value: "Pure", label: "Pure" },
+  { value: "Sensory", label: "Sensory" },
+]
+
+const BRAND_OPTIONS = [
+  { value: "XFG", label: "XFG" },
+  { value: "SuoLaiSi", label: "SuoLaiSi" },
+  { value: "Other", label: "Other" },
 ]
 
 const EditProduct = ({ product, isOpen, onClose }: EditProductProps) => {
@@ -117,13 +126,24 @@ const EditProduct = ({ product, isOpen, onClose }: EditProductProps) => {
       section: "Basic Information",
       fields: [
         {
+          id: "id",
+          label: "Product Name",
+          required: true,
+          placeholder: "Enter product name",
+          validation: {
+            required: "Product name is required",
+          }
+        },
+        {
           id: "brand",
           label: "Brand",
           required: true,
           placeholder: "Enter brand name",
           validation: {
             required: "Brand is required",
-          }
+          },
+          type: "select",
+          options: BRAND_OPTIONS
         },
         {
           id: "type",
@@ -140,6 +160,7 @@ const EditProduct = ({ product, isOpen, onClose }: EditProductProps) => {
         {
           id: "unit_price",
           label: "Unit Price",
+          required: true,
           placeholder: "Enter unit price",
           type: "number",
           validation: {
@@ -173,21 +194,39 @@ const EditProduct = ({ product, isOpen, onClose }: EditProductProps) => {
       fields: [
         {
           id: "width",
-          label: "Width",
-          placeholder: "Enter width",
-          type: "number"
+          label: "Width (m)",
+          placeholder: "1.2",
+          type: "number",
+          validation: {
+            min: {
+              value: 0,
+              message: "Width must be greater than 0"
+            }
+          }
         },
         {
           id: "length",
-          label: "Length",
-          placeholder: "Enter length",
-          type: "number"
+          label: "Length (m)",
+          placeholder: "50",
+          type: "number",
+          validation: {
+            min: {
+              value: 0,
+              message: "Length must be greater than 0"
+            }
+          }
         },
         {
           id: "thickness",
-          label: "Thickness",
-          placeholder: "Enter thickness",
-          type: "number"
+          label: "Thickness (mm)",
+          placeholder: "0.18",
+          type: "number",
+          validation: {
+            min: {
+              value: 0,
+              message: "Thickness must be greater than 0"
+            }
+          }
         }
       ]
     }
@@ -251,10 +290,17 @@ const EditProduct = ({ product, isOpen, onClose }: EditProductProps) => {
                             ))}
                           </Select>
                         ) : field.type === "number" ? (
-                          <NumberInput>
+                          <NumberInput
+                            precision={field.id === "thickness" ? 3 : 2}
+                            step={field.id === "thickness" ? 0.001 : 0.01}
+                            min={0}
+                          >
                             <NumberInputField
                               id={field.id}
-                              {...register(field.id, field.validation)}
+                              {...register(field.id, {
+                                ...field.validation,
+                                valueAsNumber: true
+                              })}
                               placeholder={field.placeholder}
                             />
                             <NumberInputStepper>
