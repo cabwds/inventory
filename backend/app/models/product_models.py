@@ -25,6 +25,21 @@ class ProductBase(SQLModel):
 # Database model, database table inferred from class name
 class Product(ProductBase, table=True):
     id: str = Field(default=None, primary_key=True)
+    is_valid: bool | None = Field(
+        default=True,
+        index=True,
+        sa_column_kwargs={"index": True}
+    )
+    brand: str | None = Field(
+        default=None,
+        index=True,
+        sa_column_kwargs={"index": True}
+    )
+    type: str | None = Field(
+        default=None,
+        index=True,
+        sa_column_kwargs={"index": True}
+    )
 
 # Properties to receive on Product update
 class ProductUpdate(ProductBase):

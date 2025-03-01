@@ -80,14 +80,22 @@ def update_product(
 def delete_product(
     session: SessionDep, current_user: CurrentUser, id: str
 ) -> Message:
+ 
     """
     Delete a product.
     """
     product = session.get(Product, id)
+    if not current_user.is_superuser:
+        raise HTTPException(status_code=400, detail="Not enough permissions")
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
-    #if not current_user.is_superuser:
-    #    raise HTTPException(status_code=400, detail="Not enough permissions")
-    session.delete(product)
+    
+    product_in = ProductUpdate(is_valid=False, product_id=product.id, description="Marked as Deleted")
+
+    update_dict = product_in.model_dump(exclude_unset=True)
+    #update_dict = order.model_dump(exclude_unset=True, update={"is_valid": False} )
+    product.sqlmodel_update(update_dict)
+    session.add(product)
     session.commit()
-    return Message(message="Product deleted successfully")
+    session.refresh(product)
+    return Message(message="Product deleted successfully, mark as invalid")
