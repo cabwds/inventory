@@ -254,14 +254,3 @@ def delete_order(
     session.refresh(order)
     return Message(message="Order deleted successfully, mark as invalid")
 
-def string2dict(input:str):
-    input = '{"XFG110": 10, "XFG220": 15}'
-    # Parsing JSON string to a Python dictionary
-    parsed_data = json.loads(input)
-    return parsed_data
-
-def dict2string(input:dict):
-    # Convert Python dict to JSON string
-    input = {"XFG110": 10, "XFG220": 15}
-    json_string = json.dumps(input)
-    return json_string

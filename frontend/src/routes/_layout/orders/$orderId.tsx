@@ -270,7 +270,6 @@ function OrderDetail() {
                 <Td>
                   <VStack align="start" spacing={1}>
                     <Text fontWeight="medium">{item.product_name}</Text>
-                    <Text fontSize="xs" color="gray.500">ID: {item.product_id}</Text>
                   </VStack>
                 </Td>
                 <Td>
@@ -279,11 +278,11 @@ function OrderDetail() {
                   </Tag>
                 </Td>
                 <Td>
-                  <Tooltip label={`${Math.round((item.quantity / totalQuantity) * 100)}% of total`}>
-                    <Box>
+                  <Tooltip label={`${Math.round((item.quantity / totalQuantity) * 100)}% of total order`}>
+                    <Box width="100%">
                       <Progress 
-                        value={item.quantity} 
-                        max={maxQuantity} 
+                        value={(item.quantity / totalQuantity) * 100} 
+                        max={100} 
                         size="sm" 
                         colorScheme="blue" 
                         borderRadius="full" 

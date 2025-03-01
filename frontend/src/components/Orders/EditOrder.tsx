@@ -111,6 +111,8 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
     handleSubmit,
     reset,
     control,
+    getValues,
+    setValue,
     formState: { isSubmitting, errors, isDirty },
   } = useForm<OrderFormData>({
     mode: "onBlur",
@@ -247,6 +249,15 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
     }
     return section;
   });
+
+  // Get the set of already selected product IDs
+  const getSelectedProductIds = (currentIndex: number) => {
+    return new Set(
+      fields
+        .map((field, idx) => idx !== currentIndex ? getValues(`orderItemInputs.${idx}.product_id`) : null)
+        .filter(id => id !== null && id !== "")
+    );
+  };
 
   return (
     <Modal
@@ -389,11 +400,18 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
                               size="sm"
                               {...editCustomerStyles.input}
                             >
-                              {products?.data.map((product) => (
-                                <option key={product.id} value={product.id}>
-                                  {product.id}
-                                </option>
-                              ))}
+                              {products?.data.map((product) => {
+                                const isSelected = getSelectedProductIds(index).has(product.id!);
+                                return (
+                                  <option 
+                                    key={product.id} 
+                                    value={product.id}
+                                    disabled={isSelected}
+                                  >
+                                    {product.id} {isSelected ? "(Already in order)" : ""}
+                                  </option>
+                                );
+                              })}
                             </Select>
                             {errors.orderItemInputs?.[index]?.product_id && (
                               <FormErrorMessage fontSize="xs">

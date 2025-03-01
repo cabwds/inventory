@@ -89,6 +89,8 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
     reset,
     control,
     formState: { errors, isSubmitting },
+    getValues,
+    setValue,
   } = useForm<OrderFormData>({
     mode: "onBlur",
     criteriaMode: "all",
@@ -218,6 +220,28 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
     }
     return section;
   });
+
+  // Get the set of already selected product IDs
+  const getSelectedProductIds = (currentIndex: number) => {
+    return new Set(
+      fields
+        .map((field, idx) => idx !== currentIndex ? getValues(`orderItemInputs.${idx}.product_id`) : null)
+        .filter(id => id !== null && id !== "")
+    );
+  };
+
+  // Filter out already selected products
+  const getAvailableProducts = (currentIndex: number) => {
+    if (!products?.data) return [];
+    
+    // Get all product_ids that are already selected in other items
+    const selectedProductIds = fields
+      .map((field, idx) => idx !== currentIndex ? getValues(`orderItemInputs.${idx}.product_id`) : null)
+      .filter(id => id !== null && id !== "");
+    
+    // Return only products that aren't already selected
+    return products.data.filter(product => !selectedProductIds.includes(product.id!));
+  };
 
   return (
     <Modal
@@ -358,11 +382,18 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
                               size="sm"
                               {...editCustomerStyles.input}
                             >
-                              {products?.data.map((product) => (
-                                <option key={product.id} value={product.id}>
-                                  {product.id}
-                                </option>
-                              ))}
+                              {products?.data.map((product) => {
+                                const isSelected = getSelectedProductIds(index).has(product.id!);
+                                return (
+                                  <option 
+                                    key={product.id} 
+                                    value={product.id}
+                                    disabled={isSelected}
+                                  >
+                                    {product.id} {isSelected ? "(Already in order)" : ""}
+                                  </option>
+                                );
+                              })}
                             </Select>
                             {errors.orderItemInputs?.[index]?.product_id && (
                               <FormErrorMessage fontSize="xs">
