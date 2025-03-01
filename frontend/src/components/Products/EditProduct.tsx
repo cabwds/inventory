@@ -75,6 +75,7 @@ const PRODUCT_TYPE_OPTIONS = [
   { value: "Metal", label: "Metal" },
   { value: "Pure", label: "Pure" },
   { value: "Sensory", label: "Sensory" },
+  { value: "Other", label: "Other" },
 ]
 
 const BRAND_OPTIONS = [
@@ -125,15 +126,6 @@ const EditProduct = ({ product, isOpen, onClose }: EditProductProps) => {
     {
       section: "Basic Information",
       fields: [
-        {
-          id: "id",
-          label: "Product Name",
-          required: true,
-          placeholder: "Enter product name",
-          validation: {
-            required: "Product name is required",
-          }
-        },
         {
           id: "brand",
           label: "Brand",
@@ -197,36 +189,18 @@ const EditProduct = ({ product, isOpen, onClose }: EditProductProps) => {
           label: "Width (m)",
           placeholder: "1.2",
           type: "number",
-          validation: {
-            min: {
-              value: 0,
-              message: "Width must be greater than 0"
-            }
-          }
         },
         {
           id: "length",
           label: "Length (m)",
           placeholder: "50",
           type: "number",
-          validation: {
-            min: {
-              value: 0,
-              message: "Length must be greater than 0"
-            }
-          }
         },
         {
           id: "thickness",
           label: "Thickness (mm)",
           placeholder: "0.18",
           type: "number",
-          validation: {
-            min: {
-              value: 0,
-              message: "Thickness must be greater than 0"
-            }
-          }
         }
       ]
     }
@@ -298,7 +272,6 @@ const EditProduct = ({ product, isOpen, onClose }: EditProductProps) => {
                             <NumberInputField
                               id={field.id}
                               {...register(field.id, {
-                                ...field.validation,
                                 valueAsNumber: true
                               })}
                               placeholder={field.placeholder}

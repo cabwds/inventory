@@ -293,7 +293,6 @@ const AddProduct = ({ isOpen, onClose }: AddProductProps) => {
                             <NumberInputField
                               id={field.id}
                               {...register(field.id, {
-                                ...field.validation,
                                 valueAsNumber: true
                               })}
                               placeholder={field.placeholder}

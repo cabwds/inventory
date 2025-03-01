@@ -74,6 +74,7 @@ function ProductsTable() {
               <Th>ID</Th>
               <Th>Brand</Th>
               <Th>Type</Th>
+              <Th>Unit Price</Th>
               <Th>Actions</Th>
             </Tr>
           </Thead>
@@ -101,6 +102,13 @@ function ProductsTable() {
                     maxWidth="150px"
                   >
                     {product.type || "N/A"}
+                  </Td>
+                  <Td
+                    color={!product.type ? "ui.dim" : "inherit"}
+                    isTruncated
+                    maxWidth="150px"
+                  >
+                    {product.unit_price != null ? product.unit_price : "N/A"}
                   </Td>
                   <Td>
                     <ActionsMenu type={"Product"} value={product} />
