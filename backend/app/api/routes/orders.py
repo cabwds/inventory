@@ -11,7 +11,7 @@ from app.models.order_models import *
 from app.models.customer_models import *
 from app.models.user_models import Message
 from pydantic import BaseModel
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from openpyxl import load_workbook
 from pathlib import Path
 
@@ -21,7 +21,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent  # Adjust if nee
 # Route to get an order invoice
 @router.get("/get-order-invoice/{order_id}")
 def get_order_invoice(session: SessionDep, order_id: str):
-    
     order = session.get(Order, order_id)
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -56,13 +55,15 @@ def get_order_invoice(session: SessionDep, order_id: str):
     sheet["F15"] = 220
     sheet["G15"] = 2 * 220
 
-
     # Save the modified file
     wb.save(output_path)
 
-
     # Return file as response
-    return FileResponse(output_path, filename=f"Invoice_{order_id}_{current_date}.xlsx", media_type="application/vnd.ms-excel")
+    return FileResponse(
+        path=output_path, 
+        filename=f"Invoice_{order_id}_{current_date}.xlsx", 
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
 @router.get("/order_count", response_model=OrdersCount)
 def read_customer_orders_count(

@@ -19,12 +19,13 @@ import {
   FormLabel,
   VStack,
   Tooltip,
+  IconButton,
 } from "@chakra-ui/react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate, Outlet } from "@tanstack/react-router"
 import { useEffect } from "react"
 import { z } from "zod"
-import { ChevronUpIcon, ChevronDownIcon, InfoIcon } from "@chakra-ui/icons"
+import { ChevronUpIcon, ChevronDownIcon, InfoIcon, DownloadIcon } from "@chakra-ui/icons"
 import type { UserPublic } from "../../client"
 import { OrdersService, CustomersService } from "../../client"
 import useCustomToast from "../../hooks/useCustomToast"
@@ -117,11 +118,75 @@ function OrderRow({
 }) {
   const { company, isValid } = useCustomerDetails(order.customer_id)
   const navigate = useNavigate()
+  const showToast = useCustomToast()
 
   const handleCustomerClick = (e: React.MouseEvent) => {
     e.stopPropagation()
     if (order.customer_id) {
       navigate({ to: '/customers/$customerId', params: { customerId: order.customer_id } })
+    }
+  }
+  
+  const handleDownloadInvoice = async (e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent row click
+    try {
+      // Show loading toast
+      const loadingToastId = showToast(
+        "Loading", 
+        "Generating invoice...", 
+        "loading"
+      )
+      
+      // Get the base URL from the OpenAPI configuration
+      const baseUrl = import.meta.env.VITE_API_URL || '';
+      
+      // Make the API call to get the invoice - use fetch directly for binary data
+      const response = await fetch(`${baseUrl}/api/v1/orders/get-order-invoice/${order.id}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to download invoice')
+      }
+      
+      // Get the blob from the response
+      const blob = await response.blob()
+      
+      // Get current date for filename
+      const currentDate = new Date().toISOString().split('T')[0]
+      
+      // Create a URL for the blob
+      const url = window.URL.createObjectURL(blob)
+      
+      // Create a temporary link element
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `Invoice_${order.id}_${currentDate}.xlsx`
+      
+      // Append to the document, click it, and remove it
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      // Release the URL object
+      window.URL.revokeObjectURL(url)
+      
+      // Close loading toast and show success
+      showToast(
+        "Success",
+        "Invoice downloaded successfully",
+        "success"
+      )
+    } catch (error) {
+      console.error("Error downloading invoice:", error)
+      showToast(
+        "Error",
+        "Failed to download invoice. Please try again later.",
+        "error"
+      )
     }
   }
   
@@ -188,11 +253,23 @@ function OrderRow({
         {order.order_date}
       </Td>
       <Td>
-        <ActionsMenu 
-          type="Order" 
-          value={order} 
-          disabled={!order.is_valid}
-        />
+        <HStack spacing={2}>
+          <IconButton
+            aria-label="Download Invoice"
+            icon={<DownloadIcon />}
+            size="sm"
+            colorScheme="blue"
+            variant="outline"
+            onClick={handleDownloadInvoice}
+            isDisabled={!order.is_valid}
+            title="Download Invoice"
+          />
+          <ActionsMenu 
+            type="Order" 
+            value={order} 
+            disabled={!order.is_valid}
+          />
+        </HStack>
       </Td>
     </Tr>
   )
