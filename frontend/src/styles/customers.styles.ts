@@ -62,7 +62,7 @@ export const customerDetailsStyles = {
     isTruncated: true,
     maxWidth: "50px",
     cursor: "pointer",
-    color: "blue.500",
+    color:  "black",
     _hover: { 
       color: "blue.600", 
       textDecoration: "underline",

@@ -11,6 +11,24 @@ from app.models.user_models import Message
 
 router = APIRouter(prefix="/products", tags=["products"])
 
+@router.get("/product_count", response_model=ProductsCount)
+def read_product_count(
+    session: SessionDep, current_user: CurrentUser, display_invalid: bool = False,
+) -> Any:
+    """
+    Retrieve customers only for the count.
+    """
+
+    # Build base query
+    count_query = select(func.count()).select_from(Product)
+    # Add filters
+    if not display_invalid:
+        count_query = count_query.where(Product.is_valid == True)
+
+    count = session.exec(count_query).one()
+
+    return ProductsCount(count=count)
+
 @router.get("/{id}", response_model=Product)
 def read_product(session: SessionDep, current_user: CurrentUser, id: str) -> Any:
     """
@@ -30,7 +48,7 @@ def read_products(
     """
     Retrieve products.
     """
-    
+
      # Build base query
     query = select(Product)
     count_query = select(func.count()).select_from(Product)

@@ -219,6 +219,10 @@ export type ProductPublic = {
   id?: string
 }
 
+export type ProductsCount = {
+  count: number
+}
+
 export type ProductsPublic = {
   data: Array<ProductPublic>
   count: number
@@ -468,6 +472,12 @@ export type PrivateCreateUserData = {
 }
 
 export type PrivateCreateUserResponse = UserPublic
+
+export type ProductsReadProductCountData = {
+  displayInvalid?: boolean
+}
+
+export type ProductsReadProductCountResponse = ProductsCount
 
 export type ProductsReadProductData = {
   id: string

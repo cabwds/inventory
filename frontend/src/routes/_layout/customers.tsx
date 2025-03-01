@@ -146,10 +146,11 @@ function CustomersTable() {
                   _hover={{ bg: "gray.50" }}
                   transition="background-color 0.2s"
                   bg={!customer.is_valid ? "red.50" : undefined}
+                  onClick={() => handleCustomerClick(customer.id)}
+                  cursor="pointer"
                 >
                   <Td 
                     {...customerDetailsStyles.customerIdCell} 
-                    onClick={() => handleCustomerClick(customer.id)}
                     width="80px"
                   >
                     {(page - 1) * pageSize + index + 1}
@@ -180,7 +181,7 @@ function CustomersTable() {
                   >
                     {customer.phone || "N/A"}
                   </Td>
-                  <Td>
+                  <Td onClick={(e) => e.stopPropagation()}>
                     <ActionsMenu type="Customer" value={customer} disabled={!customer.is_valid}/>
                   </Td>
                 </Tr>

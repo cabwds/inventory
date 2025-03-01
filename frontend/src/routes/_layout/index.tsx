@@ -13,10 +13,10 @@ import {
 } from "@chakra-ui/react"
 import { createFileRoute } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
-import { FiUsers, FiShoppingBag } from "react-icons/fi"
+import { FiUsers, FiShoppingBag, FiPackage } from "react-icons/fi"
 
 import useAuth from "../../hooks/useAuth"
-import { CustomersService, OrdersService } from "../../client/sdk.gen"
+import { CustomersService, OrdersService, ProductsService } from "../../client/sdk.gen"
 import { dashboardStyles, getStatCardStyles } from "../../styles/dashboard"
 
 export const Route = createFileRoute("/_layout/")({
@@ -75,13 +75,19 @@ function Dashboard() {
   // Fetch customer count
   const { data: customerCount } = useQuery({
     queryKey: ["customerCount"],
-    queryFn: () => CustomersService.readCustomerCount(),
+    queryFn: () => CustomersService.readCustomerCount({ displayInvalid: false }),
   })
 
   // Fetch order count (only valid orders)
   const { data: orderCount } = useQuery({
     queryKey: ["orderCount"],
     queryFn: () => OrdersService.readCustomerOrdersCount({ displayInvalid: false }),
+  })
+
+  // Fetch product count (only valid products)
+  const { data: productCount } = useQuery({
+    queryKey: ["productCount"],
+    queryFn: () => ProductsService.readProductCount({ displayInvalid: false }),
   })
 
   return (
@@ -108,6 +114,12 @@ function Dashboard() {
             value={orderCount?.count ?? "Loading..."}
             icon={FiShoppingBag}
             helpText="Total number of valid orders"
+          />
+          <StatCard
+            title="Product Inventory"
+            value={productCount?.count ?? "Loading..."}
+            icon={FiPackage}
+            helpText="Active products in your catalog"
           />
         </SimpleGrid>
       </Container>

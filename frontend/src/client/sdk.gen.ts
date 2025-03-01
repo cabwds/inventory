@@ -58,6 +58,8 @@ import type {
   OrdersCreateOrderResponse,
   PrivateCreateUserData,
   PrivateCreateUserResponse,
+  ProductsReadProductCountData,
+  ProductsReadProductCountResponse,
   ProductsReadProductData,
   ProductsReadProductResponse,
   ProductsUpdateProductData,
@@ -766,6 +768,29 @@ export class PrivateService {
 }
 
 export class ProductsService {
+  /**
+   * Read Product Count
+   * Retrieve customers only for the count.
+   * @param data The data for the request.
+   * @param data.displayInvalid
+   * @returns ProductsCount Successful Response
+   * @throws ApiError
+   */
+  public static readProductCount(
+    data: ProductsReadProductCountData = {},
+  ): CancelablePromise<ProductsReadProductCountResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/products/product_count",
+      query: {
+        display_invalid: data.displayInvalid,
+      },
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
   /**
    * Read Product
    * Get Product by ID.

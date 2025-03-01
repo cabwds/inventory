@@ -271,10 +271,6 @@ function ProductsTable() {
     }
   }, [page, pageSize, brand, type, displayInvalid, queryClient, hasNextPage])
 
-  const handleProductClick = (productId: string) => {
-    navigate({ to: '/products/$productId', params: { productId } })
-  }
-
   return (
     <>
       <Box mb={4}>
