@@ -17,12 +17,15 @@ import {
   VStack,
   Tooltip,
   IconButton,
+  Input,
+  InputGroup,
+  InputLeftElement,
 } from "@chakra-ui/react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate, Outlet } from "@tanstack/react-router"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { z } from "zod"
-import { ChevronUpIcon, ChevronDownIcon, InfoIcon } from "@chakra-ui/icons"
+import { ChevronUpIcon, ChevronDownIcon, InfoIcon, SearchIcon } from "@chakra-ui/icons"
 import { ProductsService, UserPublic } from "../../client/index.ts"
 import ActionsMenu from "../../components/Common/ActionsMenu.tsx"
 import Navbar from "../../components/Common/Navbar.tsx"
@@ -37,6 +40,7 @@ const productsSearchSchema = z.object({
   pageSize: z.number().catch(5),
   brand: z.string().optional(),
   type: z.string().optional(),
+  keyword: z.string().optional(),
   sortOrder: z.enum(["asc", "desc"]).optional(),
   sortField: z.string().optional(),
   displayInvalid: z.boolean().optional(),
@@ -167,9 +171,10 @@ function ProductRow({
 
 function ProductsTable() {
   const queryClient = useQueryClient()
-  const { page, pageSize, brand, type, displayInvalid } = Route.useSearch()
+  const { page, pageSize, brand, type, keyword, displayInvalid } = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
   const currentUser = queryClient.getQueryData<UserPublic>(["currentUser"])
+  const [searchTerm, setSearchTerm] = useState(keyword || "")
   
   const setPage = (newPage: number) =>
     navigate({ search: (prev: Record<string, unknown>) => ({ ...prev, page: newPage }) })
@@ -177,26 +182,39 @@ function ProductsTable() {
   const setPageSize = (newSize: number) =>
     navigate({ search: (prev: Record<string, unknown>) => ({ ...prev, pageSize: newSize, page: 1 }) })
 
-  const {
-    data: products,
-    isPending,
-    isPlaceholderData,
-  } = useQuery({
-    ...getProductsQueryOptions({ 
-      page, 
-      pageSize, 
-      brand, 
-      type, 
-      displayInvalid
-    }),
-    placeholderData: (prevData) => prevData,
+  // Get all products for client-side filtering
+  const { data: allProducts, isPending: isLoadingAllProducts } = useQuery({
+    queryKey: ["products-all"],
+    queryFn: () => ProductsService.readProducts({ limit: 1000 }), // Get a larger batch for client-side filtering
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   })
 
-  // Add this new query specifically for populating filter dropdowns
-  const { data: allProducts } = useQuery({
-    queryKey: ["products-options"],
-    queryFn: () => ProductsService.readProducts({ limit: 100 }), // Get a larger set for options
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  // Apply client-side filtering
+  const filteredProducts = allProducts?.data.filter(product => {
+    // Apply all filters
+    const matchesKeyword = !keyword || 
+      (product.id?.toLowerCase().includes(keyword.toLowerCase()));
+    const matchesBrand = !brand || product.brand === brand;
+    const matchesType = !type || product.type === type;
+    const matchesValidity = !displayInvalid ? product.is_valid !== false : true;
+    
+    return matchesKeyword && matchesBrand && matchesType && matchesValidity;
+  }) || [];
+
+  // Apply pagination
+  const paginatedProducts = filteredProducts.slice(
+    (page - 1) * pageSize,
+    page * pageSize
+  );
+
+  // Original server-side query remains for backward compatibility
+  const {
+    data: serverProducts,
+    isPending: isLoadingServerProducts,
+    isPlaceholderData,
+  } = useQuery({
+    ...getProductsQueryOptions({ page, pageSize, brand, type, displayInvalid }),
+    enabled: false, // Disable this query as we're using client-side filtering
   })
 
   // Use allProducts instead of the current query cache for filter options
@@ -234,6 +252,26 @@ function ProductsTable() {
     })
   }
 
+  const handleKeywordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setSearchTerm(value)
+  }
+
+  // Update URL with debounced keyword
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      navigate({ 
+        search: (prev: Record<string, unknown>) => ({ 
+          ...prev, 
+          keyword: searchTerm || undefined,
+          page: 1
+        })
+      })
+    }, 300)
+    
+    return () => clearTimeout(timer)
+  }, [searchTerm, navigate])
+
   const handleDisplayInvalidToggle = (e: React.ChangeEvent<HTMLSelectElement>) => {
     navigate({ 
       search: (prev: Record<string, unknown>) => ({ 
@@ -245,31 +283,22 @@ function ProductsTable() {
   }
 
   const clearFilters = () => {
+    setSearchTerm("")
     navigate({ 
       search: (prev: Record<string, unknown>) => ({ 
         ...prev, 
         brand: undefined,
         type: undefined,
+        keyword: undefined,
         displayInvalid: undefined,
         page: 1 
       })
     })
   }
 
-  const hasNextPage = !isPlaceholderData && products?.data.length === pageSize
+  const hasNextPage = filteredProducts.length > page * pageSize
   const hasPreviousPage = page > 1
-
-  useEffect(() => {
-    if (hasNextPage) {
-      queryClient.prefetchQuery(getProductsQueryOptions({ 
-        page: page + 1, 
-        pageSize, 
-        brand, 
-        type,
-        displayInvalid
-      }))
-    }
-  }, [page, pageSize, brand, type, displayInvalid, queryClient, hasNextPage])
+  const isPending = isLoadingAllProducts
 
   return (
     <>
@@ -277,6 +306,17 @@ function ProductsTable() {
         <VStack spacing={4} align="stretch">
           {/* Filters */}
           <HStack spacing={4}>
+            <InputGroup maxW="300px">
+              <InputLeftElement pointerEvents="none">
+                <SearchIcon color="gray.400" />
+              </InputLeftElement>
+              <Input
+                placeholder="Search products (e.g. FM-)"
+                value={searchTerm}
+                onChange={handleKeywordChange}
+                size="md"
+              />
+            </InputGroup>
             <Select
               placeholder="Filter by Brand"
               value={brand || ""}
@@ -311,7 +351,7 @@ function ProductsTable() {
                 <option value="all">All Products</option>
               </Select>
             )}
-            {(brand || type || (currentUser?.is_superuser && displayInvalid)) && (
+            {(searchTerm || brand || type || (currentUser?.is_superuser && displayInvalid)) && (
               <Button size="md" onClick={clearFilters}>
                 Clear Filters
               </Button>
@@ -321,7 +361,7 @@ function ProductsTable() {
           {/* Page size and count */}
           <HStack spacing={4} justify="flex-end">
             <Text fontSize="sm" color="gray.600" whiteSpace="nowrap">
-              Showing {((page - 1) * pageSize) + 1} - {Math.min(page * pageSize, (products?.count || 0))} of {products?.count || 0}
+              Showing {filteredProducts.length === 0 ? 0 : ((page - 1) * pageSize) + 1} - {Math.min(page * pageSize, filteredProducts.length)} of {filteredProducts.length}
             </Text>
             <PageSizeSelector pageSize={pageSize} onChange={setPageSize} />
           </HStack>
@@ -353,16 +393,23 @@ function ProductsTable() {
             </Tbody>
           ) : (
             <Tbody>
-              {products?.data.map((product, index) => (
+              {paginatedProducts.map((product, index) => (
                 <ProductRow
                   key={product.id}
                   product={product}
                   index={index}
                   page={page}
                   pageSize={pageSize}
-                  isPlaceholderData={isPlaceholderData}
+                  isPlaceholderData={false}
                 />
               ))}
+              {paginatedProducts.length === 0 && (
+                <Tr>
+                  <Td colSpan={7} textAlign="center" py={4}>
+                    No products found. Try adjusting your search criteria.
+                  </Td>
+                </Tr>
+              )}
             </Tbody>
           )}
         </Table>
