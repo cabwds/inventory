@@ -62,6 +62,7 @@ function OrderDetail() {
   const [customerCompany, setCustomerCompany] = useState<string>('')
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
   const [totalQuantity, setTotalQuantity] = useState<number>(0)
+  const [totalOrderPrice, setTotalOrderPrice] = useState<number>(0)
   const [formattedDate, setFormattedDate] = useState<string>('N/A')
 
   const { data: order, isError } = useQuery({
@@ -99,14 +100,23 @@ function OrderDetail() {
         // Calculate total quantity
         const totalQty = parsedItems.reduce((sum, item) => sum + item.quantity, 0);
         setTotalQuantity(totalQty);
+
+        // Calculate total price in SGD for percentage calculations
+        const totalPrice = parsedItems.reduce((sum, item) => {
+          const itemPriceSGD = convertToSGD(item.total_price ?? 0, item.price_currency);
+          return sum + itemPriceSGD;
+        }, 0);
+        setTotalOrderPrice(totalPrice);
       } catch (e) {
         console.error("Error processing order items:", e);
         setOrderItems([]);
         setTotalQuantity(0);
+        setTotalOrderPrice(0);
       }
     } else {
       setOrderItems([]);
       setTotalQuantity(0);
+      setTotalOrderPrice(0);
     }
   }, [order?.order_items, products]);
 
@@ -263,6 +273,11 @@ function OrderDetail() {
               const unitPriceSGD = convertToSGD(item.unit_price ?? 0, item.price_currency);
               const totalPriceSGD = convertToSGD(item.total_price ?? 0, item.price_currency);
               
+              // Calculate the percentage contribution to the total order price
+              const pricePercentage = totalOrderPrice > 0 
+                ? (totalPriceSGD / totalOrderPrice) * 100 
+                : 0;
+              
               return (
                 <Tr 
                   key={index} 
@@ -296,13 +311,13 @@ function OrderDetail() {
                     S${formatSGDPrice(totalPriceSGD)}
                   </Td>
                   <Td>
-                    <Tooltip label={`${Math.round((item.quantity / totalQuantity) * 100)}% of total order`}>
+                    <Tooltip label={`S$${formatSGDPrice(totalPriceSGD)} (${Math.round(pricePercentage)}% of total order value)`}>
                       <Box width="100%">
                         <Progress 
-                          value={(item.quantity / totalQuantity) * 100} 
+                          value={pricePercentage} 
                           max={100} 
                           size="sm" 
-                          colorScheme="blue" 
+                          colorScheme="green" 
                           borderRadius="full" 
                         />
                       </Box>
