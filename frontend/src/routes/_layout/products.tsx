@@ -184,8 +184,11 @@ function ProductsTable() {
 
   // Get all products for client-side filtering
   const { data: allProducts, isPending: isLoadingAllProducts } = useQuery({
-    queryKey: ["products"],
-    queryFn: () => ProductsService.readProducts({ limit: 1000 }),
+    queryKey: ["products", displayInvalid],
+    queryFn: () => ProductsService.readProducts({ 
+      limit: 1000,
+      displayInvalid: displayInvalid
+    }),
     staleTime: 5 * 60 * 1000,
     refetchInterval: 60 * 1000,
     refetchOnWindowFocus: true,
@@ -198,9 +201,8 @@ function ProductsTable() {
       (product.id?.toLowerCase().includes(keyword.toLowerCase()));
     const matchesBrand = !brand || product.brand === brand;
     const matchesType = !type || product.type === type;
-    const matchesValidity = !displayInvalid ? product.is_valid !== false : true;
     
-    return matchesKeyword && matchesBrand && matchesType && matchesValidity;
+    return matchesKeyword && matchesBrand && matchesType;
   }) || [];
 
   // Apply pagination
