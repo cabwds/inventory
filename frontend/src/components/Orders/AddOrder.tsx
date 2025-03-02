@@ -138,25 +138,36 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
 
   // Watch for changes to orderItemInputs to recalculate total price
   const orderItemInputs = watch("orderItemInputs");
+  // Also watch individual fields for better reactivity with single items
+  const formValues = watch();
   const [previousTotal, setPreviousTotal] = useState<number>(0);
   const [showTotalAnimation, setShowTotalAnimation] = useState<boolean>(false);
+  const [manuallyEditedTotal, setManuallyEditedTotal] = useState<boolean>(false);
 
   // Calculate total price based on selected products and quantities
   useEffect(() => {
-    if (!products?.data || !orderItemInputs) return;
+    if (!products?.data) return;
+    
+    // Skip auto-calculation if the user has manually edited the total
+    if (manuallyEditedTotal) return;
 
+    // Get the most current values directly from getValues
+    const currentItems = getValues("orderItemInputs");
+    
     let calculatedTotalPrice = 0;
     
-    orderItemInputs.forEach(item => {
-      if (item.product_id && item.quantity > 0) {
-        // Find the product in products data
-        const product = products.data.find(p => p.id === item.product_id);
-        if (product && product.unit_price) {
-          // Add the product's price * quantity to the total
-          calculatedTotalPrice += product.unit_price * item.quantity;
+    if (currentItems && currentItems.length > 0) {
+      currentItems.forEach(item => {
+        if (item.product_id && item.quantity > 0) {
+          // Find the product in products data
+          const product = products.data.find(p => p.id === item.product_id);
+          if (product && product.unit_price) {
+            // Add the product's price * quantity to the total
+            calculatedTotalPrice += product.unit_price * item.quantity;
+          }
         }
-      }
-    });
+      });
+    }
     
     // Always update the total_price field first
     setValue("total_price", calculatedTotalPrice);
@@ -173,7 +184,7 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
       
       return () => clearTimeout(timer);
     }
-  }, [orderItemInputs, products?.data, setValue, previousTotal]);
+  }, [formValues, products?.data, setValue, previousTotal, getValues, manuallyEditedTotal]);
 
   const onSubmit: SubmitHandler<OrderFormData> = (data) => {
     // Convert orderItemInputs to order_items JSON string
@@ -184,26 +195,35 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
       }
     });
 
-    // Recalculate total price to ensure accuracy
-    let recalculatedTotal = 0;
-    orderItemInputs.forEach(item => {
-      if (item.product_id && item.quantity > 0) {
-        const product = products?.data.find(p => p.id === item.product_id);
-        if (product?.unit_price) {
-          recalculatedTotal += product.unit_price * item.quantity;
-        }
-      }
-    });
+    // Get the final total price from the form data - this is what the user has entered
+    // or what was auto-calculated if they didn't manually edit
+    let finalTotal = data.total_price;
     
-    // Always ensure we're sending the correct total price
-    const finalTotal = Number(recalculatedTotal.toFixed(2));
+    // If we haven't manually edited, recalculate to ensure accuracy
+    if (!manuallyEditedTotal) {
+      let recalculatedTotal = 0;
+      data.orderItemInputs.forEach(item => {
+        if (item.product_id && item.quantity > 0) {
+          const product = products?.data.find(p => p.id === item.product_id);
+          if (product?.unit_price) {
+            recalculatedTotal += product.unit_price * item.quantity;
+          }
+        }
+      });
+      
+      finalTotal = Number(recalculatedTotal.toFixed(2));
+    }
     
     // For debugging only - can be removed in production
-    console.log('Submitting order with total price:', finalTotal);
+    console.log('Form total price value:', data.total_price);
+    console.log('Final total being submitted:', finalTotal);
+    console.log('Using manually edited price:', manuallyEditedTotal);
+    console.log('Order items:', data.orderItemInputs);
 
     mutation.mutate({
       ...data,
       order_items: JSON.stringify(orderItemsObject),
+      // Always use finalTotal which is either manually edited or recalculated
       total_price: finalTotal,
       order_date: new Date().toISOString(),
     })
@@ -411,25 +431,41 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
                                 {...register(field.id as keyof OrderCreate, field.validation)}
                                 placeholder={field.placeholder}
                                 type="number"
-                                readOnly={true}
+                                readOnly={false}
                                 style={{ 
-                                  backgroundColor: "#F7FAFC", 
-                                  cursor: "not-allowed",
+                                  backgroundColor: "#FFFFFF", 
                                   ...(showTotalAnimation ? {
                                     borderColor: "#48BB78",
                                     boxShadow: "0 0 0 1px #48BB78"
                                   } : {})
                                 }}
+                                onChange={(e) => {
+                                  // Set the flag to indicate manual edit
+                                  setManuallyEditedTotal(true);
+                                  // Log the new value for debugging
+                                  console.log("Manual price edit:", e.target.value);
+                                }}
+                                onBlur={(e) => {
+                                  // When focus leaves the field, update the previous total
+                                  const newTotal = parseFloat(e.target.value);
+                                  if (!isNaN(newTotal)) {
+                                    setPreviousTotal(newTotal);
+                                    // Ensure React Hook Form knows about the change
+                                    setValue("total_price", newTotal);
+                                  }
+                                }}
                                 {...editCustomerStyles.input}
                               />
                               <Text 
                                 fontSize="xs" 
-                                color={showTotalAnimation ? "green.500" : "gray.500"} 
-                                fontWeight={showTotalAnimation ? "medium" : "normal"}
+                                color={showTotalAnimation ? "green.500" : (manuallyEditedTotal ? "blue.500" : "gray.500")} 
+                                fontWeight={showTotalAnimation || manuallyEditedTotal ? "medium" : "normal"}
                                 transition="all 0.3s"
                                 mt={1}
                               >
-                                Automatically calculated from product prices and quantities
+                                {manuallyEditedTotal 
+                                  ? "Manually edited (automatic calculation paused)" 
+                                  : "Auto-calculated but can be manually edited if needed"}
                               </Text>
                             </>
                           ) : (
@@ -492,6 +528,36 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
                               })}
                               placeholder="Select product"
                               size="sm"
+                              onChange={(e) => {
+                                // This additional onChange handler helps ensure the calculation
+                                // is triggered immediately for single item cases
+                                const currentItems = getValues("orderItemInputs");
+                                const newProductId = e.target.value;
+                                
+                                if (currentItems && currentItems[index] && products?.data) {
+                                  // Find product and recalculate total
+                                  const product = products.data.find(p => p.id === newProductId);
+                                  if (product?.unit_price) {
+                                    let newTotal = 0;
+                                    
+                                    // Calculate total from all items
+                                    currentItems.forEach((item, i) => {
+                                      // Use new product for the current item
+                                      const productId = i === index ? newProductId : item.product_id;
+                                      
+                                      if (productId && item.quantity > 0) {
+                                        const itemProduct = products.data.find(p => p.id === productId);
+                                        if (itemProduct?.unit_price) {
+                                          newTotal += itemProduct.unit_price * item.quantity;
+                                        }
+                                      }
+                                    });
+                                    
+                                    // Update total price field
+                                    setValue("total_price", newTotal);
+                                  }
+                                }
+                              }}
                               {...editCustomerStyles.input}
                             >
                               {products?.data.map((product) => {
@@ -530,6 +596,39 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
                               type="number"
                               placeholder="Qty"
                               size="sm"
+                              onChange={(e) => {
+                                // This additional onChange handler helps ensure the calculation
+                                // is triggered immediately for single item cases
+                                const currentItems = getValues("orderItemInputs");
+                                const newQuantity = parseInt(e.target.value) || 0;
+                                
+                                if (currentItems && currentItems[index]) {
+                                  const productId = currentItems[index].product_id;
+                                  
+                                  if (productId && newQuantity > 0 && products?.data) {
+                                    // Find product and recalculate total
+                                    const product = products.data.find(p => p.id === productId);
+                                    if (product?.unit_price) {
+                                      let newTotal = 0;
+                                      
+                                      // Calculate total from all items
+                                      currentItems.forEach((item, i) => {
+                                        if (item.product_id && item.quantity > 0) {
+                                          const itemProduct = products.data.find(p => p.id === item.product_id);
+                                          // Use new quantity for the current item
+                                          const qty = i === index ? newQuantity : item.quantity;
+                                          if (itemProduct?.unit_price) {
+                                            newTotal += itemProduct.unit_price * qty;
+                                          }
+                                        }
+                                      });
+                                      
+                                      // Update total price field
+                                      setValue("total_price", newTotal);
+                                    }
+                                  }
+                                }
+                              }}
                               {...editCustomerStyles.input}
                             />
                             {errors.orderItemInputs?.[index]?.quantity && (
