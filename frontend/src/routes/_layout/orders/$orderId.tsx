@@ -292,11 +292,6 @@ function OrderDetail() {
                           {[item.product_brand, item.product_type].filter(Boolean).join(' - ')}
                         </Text>
                       )}
-                      {item.price_currency && item.price_currency !== 'SGD' && (
-                        <Text fontSize="xs" color="gray.500">
-                          (Original: {item.price_currency})
-                        </Text>
-                      )}
                     </VStack>
                   </Td>
                   <Td>
@@ -306,9 +301,19 @@ function OrderDetail() {
                   </Td>
                   <Td>
                     S${formatSGDPrice(unitPriceSGD)}
+                    {item.price_currency && item.price_currency !== 'SGD' && (
+                        <Text fontSize="xs" color="gray.500">
+                          (Original: {getCurrencySymbol(item.price_currency)}{item.unit_price})
+                        </Text>
+                    )}
                   </Td>
                   <Td fontWeight="medium" color="green.600">
                     S${formatSGDPrice(totalPriceSGD)}
+                    {item.price_currency && item.price_currency !== 'SGD' && (
+                        <Text fontSize="xs" color="gray.500">
+                          (Original: {getCurrencySymbol(item.price_currency)}{item.total_price})
+                        </Text>
+                    )}
                   </Td>
                   <Td>
                     <Tooltip label={`S$${formatSGDPrice(totalPriceSGD)} (${Math.round(pricePercentage)}% of total order value)`}>
