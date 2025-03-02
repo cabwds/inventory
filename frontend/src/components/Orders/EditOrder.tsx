@@ -20,11 +20,12 @@ import {
   IconButton,
   Flex,
   GridItem,
+  HStack,
 } from "@chakra-ui/react"
 import { AddIcon, DeleteIcon } from "@chakra-ui/icons"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { type SubmitHandler, useForm, useFieldArray } from "react-hook-form"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 
 import {
   type ApiError,
@@ -90,6 +91,11 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
   const queryClient = useQueryClient()
   const showToast = useCustomToast()
   
+  // State for total price animation and manual edit tracking
+  const [previousTotal, setPreviousTotal] = useState<number>(order.total_price || 0);
+  const [showTotalAnimation, setShowTotalAnimation] = useState<boolean>(false);
+  const [manuallyEditedTotal, setManuallyEditedTotal] = useState<boolean>(false);
+  
   // Parse order items from JSON string to object for form initialization
   const parseOrderItems = () => {
     try {
@@ -113,6 +119,7 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
     control,
     getValues,
     setValue,
+    watch,
     formState: { isSubmitting, errors, isDirty },
   } = useForm<OrderFormData>({
     mode: "onBlur",
@@ -122,6 +129,11 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
       orderItemInputs: parseOrderItems()
     },
   })
+
+  // Watch for changes to orderItemInputs to recalculate total price
+  const orderItemInputs = watch("orderItemInputs");
+  // Also watch all form values for better reactivity
+  const formValues = watch();
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -134,6 +146,9 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
       ...order,
       orderItemInputs: parseOrderItems()
     });
+    // Reset state variables when order changes
+    setPreviousTotal(order.total_price || 0);
+    setManuallyEditedTotal(false);
   }, [order, reset]);
 
   const { data: customers } = useQuery({
@@ -145,6 +160,48 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
     queryKey: ["products"],
     queryFn: () => ProductsService.readProducts({ limit: 100 }),
   })
+
+  // Calculate total price based on selected products and quantities
+  useEffect(() => {
+    if (!products?.data) return;
+    
+    // Skip auto-calculation if the user has manually edited the total
+    if (manuallyEditedTotal) return;
+
+    // Get the most current values directly from getValues
+    const currentItems = getValues("orderItemInputs");
+    
+    let calculatedTotalPrice = 0;
+    
+    if (currentItems && currentItems.length > 0) {
+      currentItems.forEach(item => {
+        if (item.product_id && item.quantity > 0) {
+          // Find the product in products data
+          const product = products.data.find(p => p.id === item.product_id);
+          if (product && product.unit_price) {
+            // Add the product's price * quantity to the total
+            calculatedTotalPrice += product.unit_price * item.quantity;
+          }
+        }
+      });
+    }
+    
+    // Update the total_price field - the {shouldDirty: true} option ensures the form is marked as dirty
+    setValue("total_price", calculatedTotalPrice, { shouldDirty: true });
+    
+    // If total changed, trigger animation
+    if (calculatedTotalPrice !== previousTotal) {
+      setPreviousTotal(calculatedTotalPrice);
+      setShowTotalAnimation(true);
+      
+      // Reset animation after a short delay
+      const timer = setTimeout(() => {
+        setShowTotalAnimation(false);
+      }, 1500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [formValues, products?.data, setValue, previousTotal, getValues, manuallyEditedTotal]);
 
   const mutation = useMutation({
     mutationFn: (data: OrderUpdate) =>
@@ -170,15 +227,41 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
       }
     });
 
+    // Get the final total price from the form data - this is what the user has entered
+    // or what was auto-calculated if they didn't manually edit
+    let finalTotal = data.total_price;
+    
+    // If we haven't manually edited, recalculate to ensure accuracy
+    if (!manuallyEditedTotal && products?.data) {
+      let recalculatedTotal = 0;
+      data.orderItemInputs.forEach(item => {
+        if (item.product_id && item.quantity > 0) {
+          const product = products.data.find(p => p.id === item.product_id);
+          if (product?.unit_price) {
+            recalculatedTotal += product.unit_price * item.quantity;
+          }
+        }
+      });
+      
+      finalTotal = Number(recalculatedTotal.toFixed(2));
+    }
+    
+    // For debugging only - can be removed in production
+    console.log('Form total price value:', data.total_price);
+    console.log('Final total being submitted:', finalTotal);
+    console.log('Using manually edited price:', manuallyEditedTotal);
+
     mutation.mutate({
       ...data,
       order_items: JSON.stringify(orderItemsObject),
-      total_price: Number(data.total_price),
+      // Always use finalTotal which is either manually edited or recalculated
+      total_price: finalTotal,
     })
   }
 
   const onCancel = () => {
     reset()
+    setManuallyEditedTotal(false)
     onClose()
   }
 
@@ -257,6 +340,18 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
         .map((field, idx) => idx !== currentIndex ? getValues(`orderItemInputs.${idx}.product_id`) : null)
         .filter(id => id !== null && id !== "")
     );
+  };
+
+  // Helper function to get currency symbol
+  const getCurrencySymbol = (currency?: string | null) => {
+    if (!currency) return '$';
+    
+    switch (currency.toUpperCase()) {
+      case 'EUR': return '€';
+      case 'GBP': return '£';
+      case 'JPY': return '¥';
+      default: return '$';
+    }
   };
 
   return (
@@ -339,6 +434,49 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
                             placeholder={field.placeholder}
                             {...editCustomerStyles.input}
                           />
+                        ) : field.id === "total_price" ? (
+                          <>
+                            <Input
+                              id={field.id}
+                              {...register(field.id as keyof OrderUpdate, field.validation)}
+                              placeholder={field.placeholder}
+                              type="number"
+                              style={{ 
+                                backgroundColor: "#FFFFFF", 
+                                ...(showTotalAnimation ? {
+                                  borderColor: "#48BB78",
+                                  boxShadow: "0 0 0 1px #48BB78"
+                                } : {})
+                              }}
+                              onChange={(e) => {
+                                // Set the flag to indicate manual edit
+                                setManuallyEditedTotal(true);
+                                // Log the new value for debugging
+                                console.log("Manual price edit:", e.target.value);
+                              }}
+                              onBlur={(e) => {
+                                // When focus leaves the field, update the previous total
+                                const newTotal = parseFloat(e.target.value);
+                                if (!isNaN(newTotal)) {
+                                  setPreviousTotal(newTotal);
+                                  // Ensure React Hook Form knows about the change
+                                  setValue("total_price", newTotal, { shouldDirty: true });
+                                }
+                              }}
+                              {...editCustomerStyles.input}
+                            />
+                            <Text 
+                              fontSize="xs" 
+                              color={showTotalAnimation ? "green.500" : (manuallyEditedTotal ? "blue.500" : "gray.500")} 
+                              fontWeight={showTotalAnimation || manuallyEditedTotal ? "medium" : "normal"}
+                              transition="all 0.3s"
+                              mt={1}
+                            >
+                              {manuallyEditedTotal 
+                                ? "Manually edited (automatic calculation paused)" 
+                                : "Auto-calculated but can be manually edited if needed"}
+                            </Text>
+                          </>
                         ) : (
                           <Input
                             id={field.id}
@@ -398,17 +536,52 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
                               })}
                               placeholder="Select product"
                               size="sm"
+                              onChange={(e) => {
+                                // This additional onChange handler helps ensure the calculation
+                                // is triggered immediately for single item cases
+                                const currentItems = getValues("orderItemInputs");
+                                const newProductId = e.target.value;
+                                
+                                if (currentItems && currentItems[index] && products?.data) {
+                                  // Find product and recalculate total
+                                  const product = products.data.find(p => p.id === newProductId);
+                                  if (product?.unit_price) {
+                                    let newTotal = 0;
+                                    
+                                    // Calculate total from all items
+                                    currentItems.forEach((item, i) => {
+                                      // Use new product for the current item
+                                      const productId = i === index ? newProductId : item.product_id;
+                                      
+                                      if (productId && item.quantity > 0) {
+                                        const itemProduct = products.data.find(p => p.id === productId);
+                                        if (itemProduct?.unit_price) {
+                                          newTotal += itemProduct.unit_price * item.quantity;
+                                        }
+                                      }
+                                    });
+                                    
+                                    // Only update if not manually edited
+                                    if (!manuallyEditedTotal) {
+                                      setValue("total_price", newTotal, { shouldDirty: true });
+                                    }
+                                  }
+                                }
+                              }}
                               {...editCustomerStyles.input}
                             >
                               {products?.data.map((product) => {
                                 const isSelected = getSelectedProductIds(index).has(product.id!);
+                                const priceDisplay = product.unit_price 
+                                  ? ` - ${getCurrencySymbol(product.price_currency)}${product.unit_price.toFixed(2)}`
+                                  : '';
                                 return (
                                   <option 
                                     key={product.id} 
                                     value={product.id}
                                     disabled={isSelected}
                                   >
-                                    {product.id} {isSelected ? "(Already in order)" : ""}
+                                    {product.id}{priceDisplay} {isSelected ? "(Already in order)" : ""}
                                   </option>
                                 );
                               })}
@@ -433,6 +606,41 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
                               type="number"
                               placeholder="Qty"
                               size="sm"
+                              onChange={(e) => {
+                                // This additional onChange handler helps ensure the calculation
+                                // is triggered immediately for single item cases
+                                const currentItems = getValues("orderItemInputs");
+                                const newQuantity = parseInt(e.target.value) || 0;
+                                
+                                if (currentItems && currentItems[index] && !manuallyEditedTotal) {
+                                  const productId = currentItems[index].product_id;
+                                  
+                                  if (productId && newQuantity > 0 && products?.data) {
+                                    // Find product and recalculate total
+                                    const product = products.data.find(p => p.id === productId);
+                                    if (product?.unit_price) {
+                                      let newTotal = 0;
+                                      
+                                      // Calculate total from all items
+                                      currentItems.forEach((item, i) => {
+                                        if (item.product_id && item.quantity > 0) {
+                                          const itemProduct = products.data.find(p => p.id === item.product_id);
+                                          // Use new quantity for the current item
+                                          const qty = i === index ? newQuantity : item.quantity;
+                                          if (itemProduct?.unit_price) {
+                                            newTotal += itemProduct.unit_price * qty;
+                                          }
+                                        }
+                                      });
+                                      
+                                      // Update total price field if not manually edited
+                                      if (!manuallyEditedTotal) {
+                                        setValue("total_price", newTotal, { shouldDirty: true });
+                                      }
+                                    }
+                                  }
+                                }
+                              }}
                               {...editCustomerStyles.input}
                             />
                             {errors.orderItemInputs?.[index]?.quantity && (
@@ -443,6 +651,25 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
                           </FormControl>
                         </GridItem>
                       </SimpleGrid>
+                      
+                      {/* Show item subtotal if product is selected */}
+                      {orderItemInputs[index]?.product_id && orderItemInputs[index]?.quantity > 0 && (
+                        <Box mt={2}>
+                          <HStack spacing={1} justifyContent="flex-end">
+                            <Text fontSize="xs" color="gray.600">Item subtotal:</Text>
+                            <Text fontSize="xs" fontWeight="bold" color="green.600">
+                              {(() => {
+                                const product = products?.data.find(p => p.id === orderItemInputs[index].product_id);
+                                if (product?.unit_price) {
+                                  const subtotal = product.unit_price * orderItemInputs[index].quantity;
+                                  return `${getCurrencySymbol(product.price_currency)}${subtotal.toFixed(2)}`;
+                                }
+                                return 'N/A';
+                              })()}
+                            </Text>
+                          </HStack>
+                        </Box>
+                      )}
                     </Box>
                   ))}
                   <Button
@@ -517,7 +744,7 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
             type="submit"
             form="edit-order-form"
             isLoading={isSubmitting}
-            isDisabled={!isDirty}
+            isDisabled={!isDirty && !manuallyEditedTotal}
             colorScheme="blue"
             px={6}
           >
