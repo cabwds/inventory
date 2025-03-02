@@ -476,36 +476,54 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
                           />
                         ) : field.id === "total_price" ? (
                           <>
-                            <Input
-                              id={field.id}
-                              {...register(field.id as keyof OrderUpdate, field.validation)}
-                              placeholder={field.placeholder}
-                              type="number"
-                              step="0.01"
-                              style={{ 
-                                backgroundColor: "#FFFFFF", 
-                                ...(showTotalAnimation ? {
-                                  borderColor: "#48BB78",
-                                  boxShadow: "0 0 0 1px #48BB78"
-                                } : {})
-                              }}
-                              onChange={(e) => {
-                                // Set the flag to indicate manual edit
-                                setManuallyEditedTotal(true);
-                                // Log the new value for debugging
-                                console.log("Manual price edit:", e.target.value);
-                              }}
-                              onBlur={(e) => {
-                                // When focus leaves the field, update the previous total
-                                const newTotal = parseFloat(e.target.value);
-                                if (!isNaN(newTotal)) {
-                                  setPreviousTotal(newTotal);
-                                  // Ensure React Hook Form knows about the change
-                                  setValue("total_price", newTotal, { shouldDirty: true });
-                                }
-                              }}
-                              {...editCustomerStyles.input}
-                            />
+                            <Flex>
+                              <Box 
+                                display="flex" 
+                                alignItems="center" 
+                                justifyContent="center"
+                                bg="gray.100" 
+                                px={3} 
+                                borderWidth="1px" 
+                                borderRight="none"
+                                borderColor={showTotalAnimation ? "#48BB78" : "inherit"}
+                                borderRadius="md" 
+                                borderRightRadius="0"
+                                fontWeight="bold"
+                              >
+                                S$
+                              </Box>
+                              <Input
+                                id={field.id}
+                                {...register(field.id as keyof OrderUpdate, field.validation)}
+                                placeholder={field.placeholder}
+                                type="number"
+                                step="0.01"
+                                borderLeftRadius="0"
+                                style={{ 
+                                  backgroundColor: "#FFFFFF", 
+                                  ...(showTotalAnimation ? {
+                                    borderColor: "#48BB78",
+                                    boxShadow: "0 0 0 1px #48BB78"
+                                  } : {})
+                                }}
+                                onChange={(e) => {
+                                  // Set the flag to indicate manual edit
+                                  setManuallyEditedTotal(true);
+                                  // Log the new value for debugging
+                                  console.log("Manual price edit:", e.target.value);
+                                }}
+                                onBlur={(e) => {
+                                  // When focus leaves the field, update the previous total
+                                  const newTotal = parseFloat(e.target.value);
+                                  if (!isNaN(newTotal)) {
+                                    setPreviousTotal(newTotal);
+                                    // Ensure React Hook Form knows about the change
+                                    setValue("total_price", newTotal, { shouldDirty: true });
+                                  }
+                                }}
+                                {...editCustomerStyles.input}
+                              />
+                            </Flex>
                             <Text 
                               fontSize="xs" 
                               color={showTotalAnimation ? "green.500" : (manuallyEditedTotal ? "blue.500" : "gray.500")} 
