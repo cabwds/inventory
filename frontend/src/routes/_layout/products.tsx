@@ -184,9 +184,11 @@ function ProductsTable() {
 
   // Get all products for client-side filtering
   const { data: allProducts, isPending: isLoadingAllProducts } = useQuery({
-    queryKey: ["products-all"],
-    queryFn: () => ProductsService.readProducts({ limit: 1000 }), // Get a larger batch for client-side filtering
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    queryKey: ["products"],
+    queryFn: () => ProductsService.readProducts({ limit: 1000 }),
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 60 * 1000,
+    refetchOnWindowFocus: true,
   })
 
   // Apply client-side filtering
