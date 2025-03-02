@@ -64,6 +64,7 @@ interface FormSection {
 
 const CURRENCY_OPTIONS = [
   { value: "SGD", label: "SGD" },
+  { value: "CNY", label: "CNY" },
   { value: "USD", label: "USD" },
   { value: "EUR", label: "EUR" },
   { value: "GBP", label: "GBP" },
