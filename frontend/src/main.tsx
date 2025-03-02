@@ -7,11 +7,15 @@ import React from "react"
 //import { StrictMode } from "react"
 import { OpenAPI } from "./client"
 import theme from "./theme"
+import { initializeCurrencyService } from "./utils/currencyUtils"
 
 OpenAPI.BASE = import.meta.env.VITE_API_URL
 OpenAPI.TOKEN = async () => {
   return localStorage.getItem("access_token") || ""
 }
+
+// Initialize currency service to fetch latest rates
+initializeCurrencyService()
 
 const queryClient = new QueryClient()
 
