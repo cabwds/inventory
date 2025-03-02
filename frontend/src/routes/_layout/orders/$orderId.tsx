@@ -74,6 +74,20 @@ const STATUS_COLORS = {
   "Refunded": "orange"
 };
 
+// Static currency conversion rates to SGD (Singapore Dollar)
+const CURRENCY_TO_SGD = {
+  "SGD": 1.0,      // 1 SGD = 1 SGD (base)
+  "USD": 1.35,     // 1 USD = 1.35 SGD
+  "EUR": 1.45,     // 1 EUR = 1.45 SGD
+  "GBP": 1.70,     // 1 GBP = 1.70 SGD
+  "JPY": 0.0088,   // 1 JPY = 0.0088 SGD
+  "AUD": 0.88,     // 1 AUD = 0.88 SGD
+  "CAD": 0.99,     // 1 CAD = 0.99 SGD
+  "CNY": 0.19,     // 1 CNY = 0.19 SGD
+  "HKD": 0.17,     // 1 HKD = 0.17 SGD
+  "INR": 0.016     // 1 INR = 0.016 SGD
+};
+
 function OrderDetail() {
   const { orderId } = Route.useParams()
   const navigate = useNavigate()
@@ -190,16 +204,17 @@ function OrderDetail() {
   // Get the maximum quantity for progress bar scaling
   const maxQuantity = Math.max(...orderItems.map(item => item.quantity), 1);
 
-  // Helper function to get currency symbol
-  const getCurrencySymbol = (currency?: string) => {
-    if (!currency) return 'S$';
-    
-    switch (currency.toUpperCase()) {
-      case 'EUR': return '€';
-      case 'GBP': return '£';
-      case 'JPY': return '¥';
-      default: return 'S$';
-    }
+  // Helper function to convert price to Singapore Dollar (SGD)
+  const convertToSGD = (price: number = 0, currency: string = 'USD'): number => {
+    // Get the conversion rate from the static mapping, default to 1 if not found
+    const conversionRate = CURRENCY_TO_SGD[currency.toUpperCase() as keyof typeof CURRENCY_TO_SGD] || 1.0;
+    // Convert price to SGD
+    return price * conversionRate;
+  };
+
+  // Format price to Singapore Dollar with 2 decimal places
+  const formatSGDPrice = (price: number = 0): string => {
+    return price.toFixed(2);
   };
 
   // Render the order summary cards
@@ -279,66 +294,77 @@ function OrderDetail() {
             <Tr>
               <Th>Product</Th>
               <Th>Quantity</Th>
-              <Th>Unit Price</Th>
-              <Th>Total</Th>
+              <Th>Unit Price (SGD)</Th>
+              <Th>Total (SGD)</Th>
               <Th>Distribution</Th>
               <Th width="100px">Actions</Th>
             </Tr>
           </Thead>
           <Tbody>
-            {orderItems.map((item, index) => (
-              <Tr 
-                key={index} 
-                _hover={{ bg: "gray.50" }}
-                transition="background-color 0.2s"
-              >
-                <Td>
-                  <VStack align="start" spacing={1}>
-                    <Text fontWeight="medium">{item.product_name}</Text>
-                    {(item.product_brand || item.product_type) && (
-                      <Text fontSize="xs" color="gray.600">
-                        {[item.product_brand, item.product_type].filter(Boolean).join(' - ')}
-                      </Text>
-                    )}
-                  </VStack>
-                </Td>
-                <Td>
-                  <Tag size="md" colorScheme="blue" borderRadius="full">
-                    {item.quantity}
-                  </Tag>
-                </Td>
-                <Td>
-                  {getCurrencySymbol(item.price_currency)}{item.unit_price?.toFixed(2) || '0.00'}
-                </Td>
-                <Td fontWeight="medium" color="green.600">
-                  {getCurrencySymbol(item.price_currency)}{item.total_price?.toFixed(2) || '0.00'}
-                </Td>
-                <Td>
-                  <Tooltip label={`${Math.round((item.quantity / totalQuantity) * 100)}% of total order`}>
-                    <Box width="100%">
-                      <Progress 
-                        value={(item.quantity / totalQuantity) * 100} 
-                        max={100} 
-                        size="sm" 
-                        colorScheme="blue" 
-                        borderRadius="full" 
-                      />
-                    </Box>
-                  </Tooltip>
-                </Td>
-                <Td>
-                  <Button
-                    size="xs"
-                    variant="outline"
-                    colorScheme="blue"
-                    rightIcon={<Icon as={FaExternalLinkAlt} boxSize="10px" />}
-                    onClick={() => handleProductClick(item.product_id)}
-                  >
-                    View
-                  </Button>
-                </Td>
-              </Tr>
-            ))}
+            {orderItems.map((item, index) => {
+              // Convert prices to SGD
+              const unitPriceSGD = convertToSGD(item.unit_price, item.price_currency);
+              const totalPriceSGD = convertToSGD(item.total_price, item.price_currency);
+              
+              return (
+                <Tr 
+                  key={index} 
+                  _hover={{ bg: "gray.50" }}
+                  transition="background-color 0.2s"
+                >
+                  <Td>
+                    <VStack align="start" spacing={1}>
+                      <Text fontWeight="medium">{item.product_name}</Text>
+                      {(item.product_brand || item.product_type) && (
+                        <Text fontSize="xs" color="gray.600">
+                          {[item.product_brand, item.product_type].filter(Boolean).join(' - ')}
+                        </Text>
+                      )}
+                      {item.price_currency && item.price_currency !== 'SGD' && (
+                        <Text fontSize="xs" color="gray.500">
+                          (Original: {item.price_currency})
+                        </Text>
+                      )}
+                    </VStack>
+                  </Td>
+                  <Td>
+                    <Tag size="md" colorScheme="blue" borderRadius="full">
+                      {item.quantity}
+                    </Tag>
+                  </Td>
+                  <Td>
+                    S${formatSGDPrice(unitPriceSGD)}
+                  </Td>
+                  <Td fontWeight="medium" color="green.600">
+                    S${formatSGDPrice(totalPriceSGD)}
+                  </Td>
+                  <Td>
+                    <Tooltip label={`${Math.round((item.quantity / totalQuantity) * 100)}% of total order`}>
+                      <Box width="100%">
+                        <Progress 
+                          value={(item.quantity / totalQuantity) * 100} 
+                          max={100} 
+                          size="sm" 
+                          colorScheme="blue" 
+                          borderRadius="full" 
+                        />
+                      </Box>
+                    </Tooltip>
+                  </Td>
+                  <Td>
+                    <Button
+                      size="xs"
+                      variant="outline"
+                      colorScheme="blue"
+                      rightIcon={<Icon as={FaExternalLinkAlt} boxSize="10px" />}
+                      onClick={() => handleProductClick(item.product_id)}
+                    >
+                      View
+                    </Button>
+                  </Td>
+                </Tr>
+              );
+            })}
           </Tbody>
         </Table>
       </Box>
