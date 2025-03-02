@@ -4,6 +4,7 @@ import {
   ModalContent,
   ModalHeader,
   ModalBody,
+  ModalFooter,
   ModalCloseButton,
   Text,
   VStack,
@@ -22,6 +23,7 @@ import {
 } from "@chakra-ui/react"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
+import { z } from "zod"
 import { CustomersService, OrdersService } from "../../../client"
 import useCustomToast from "../../../hooks/useCustomToast"
 import { modalScrollbarStyles, customerDetailsStyles } from "../../../styles/customers.styles"
@@ -29,14 +31,25 @@ import { FaExternalLinkAlt } from "react-icons/fa"
 import { FiUser } from "react-icons/fi"
 import { formatCustomerData } from "../../../utils/customerFormUtils"
 
+// Define the search parameters schema with returnTo
+const customerDetailSearchSchema = z.object({
+  returnTo: z.string().optional(),
+  page: z.number().optional(),
+  pageSize: z.number().optional(),
+  displayInvalid: z.boolean().optional(),
+  keyword: z.string().optional(),
+})
+
 export const Route = createFileRoute('/_layout/customers/$customerId')({
   component: CustomerDetail,
+  validateSearch: (search) => customerDetailSearchSchema.parse(search),
 })
 
 function CustomerDetail() {
   const { customerId } = Route.useParams()
   const navigate = useNavigate()
   const showToast = useCustomToast()
+  const { returnTo } = Route.useSearch()
 
   const { data: customer, isError } = useQuery({
     queryKey: ['customer', customerId],
@@ -63,7 +76,10 @@ function CustomerDetail() {
   }
 
   // Format customer data for display
-  const formattedData = customer ? formatCustomerData(customer) : null;
+  const formattedData = customer && customer.id ? formatCustomerData({
+    ...customer,
+    id: customer.id // Ensure id is defined
+  }) : null;
 
   const customerDetails = [
     {
@@ -121,10 +137,18 @@ function CustomerDetail() {
     }
   ]
 
+  const handleClose = () => {
+    if (returnTo) {
+      navigate({ to: returnTo, replace: true })
+    } else {
+      navigate({ to: '/customers', replace: true })
+    }
+  }
+
   return (
     <Modal 
       isOpen={true}
-      onClose={() => window.history.back()}
+      onClose={handleClose}
       size="6xl"
       isCentered
       motionPreset="slideInBottom"
@@ -156,7 +180,7 @@ function CustomerDetail() {
             </Box>
           </Flex>
         </ModalHeader>
-        <ModalCloseButton />
+        <ModalCloseButton onClick={handleClose} />
         <ModalBody 
           py={6} 
           px={8}
@@ -250,6 +274,12 @@ function CustomerDetail() {
             </VStack>
           )}
         </ModalBody>
+        
+        <ModalFooter borderTopWidth="1px" py={3}>
+          <Button onClick={handleClose} colorScheme="gray" variant="ghost">
+            Close
+          </Button>
+        </ModalFooter>
       </ModalContent>
     </Modal>
   )

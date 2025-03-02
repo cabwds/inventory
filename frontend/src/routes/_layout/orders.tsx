@@ -123,7 +123,12 @@ function OrderRow({
   const handleCustomerClick = (e: React.MouseEvent) => {
     e.stopPropagation()
     if (order.customer_id) {
-      navigate({ to: '/customers/$customerId', params: { customerId: order.customer_id } })
+      navigate({ 
+        to: '/customers/$customerId', 
+        params: { customerId: order.customer_id },
+        search: { returnTo: '/orders' },
+        replace: false
+      })
     }
   }
   
@@ -192,12 +197,12 @@ function OrderRow({
       transition="background-color 0.2s"
       bg={!order.is_valid ? "red.50" : undefined}
       position="relative"
+      onClick={() => onOrderClick(order.id!)}
+      cursor="pointer"
     >
       <Td 
         {...customerDetailsStyles.customerIdCell} 
-        onClick={() => onOrderClick(order.id!)}
         width="80px"
-        cursor="pointer"
       >
         {(page - 1) * pageSize + index + 1}
         {!order.is_valid && (
@@ -210,7 +215,7 @@ function OrderRow({
           </Tooltip>
         )}
       </Td>
-      <Td>
+      <Td onClick={(e) => e.stopPropagation()}>
         <HStack spacing={2}>
           {!isValid && (
             <Tooltip label="Customer record has been deleted">
@@ -246,7 +251,7 @@ function OrderRow({
       <Td color={!order.is_valid ? "red.600" : !isValid ? "gray.600" : undefined}>
         {order.order_date}
       </Td>
-      <Td>
+      <Td onClick={(e) => e.stopPropagation()}>
         <HStack spacing={2}>
           <IconButton
             aria-label="Download Invoice"
@@ -336,8 +341,11 @@ function OrdersTable() {
   const { data: customers, isLoading: isLoadingCustomers } = useCustomers()
 
   const handleOrderClick = (orderId: string) => {
-    console.log(orderId)
-    navigate({ to: '/orders/$orderId', params: { orderId } })
+    navigate({ 
+      to: '/orders/$orderId', 
+      params: { orderId },
+      replace: false  // Don't replace the current URL to keep proper history
+    })
   }
 
   const handleCustomerChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
