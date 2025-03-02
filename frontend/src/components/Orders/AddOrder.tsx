@@ -91,6 +91,7 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
     formState: { errors, isSubmitting },
     getValues,
     setValue,
+    watch,
   } = useForm<OrderFormData>({
     mode: "onBlur",
     criteriaMode: "all",
@@ -135,6 +136,45 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
     },
   })
 
+  // Watch for changes to orderItemInputs to recalculate total price
+  const orderItemInputs = watch("orderItemInputs");
+  const [previousTotal, setPreviousTotal] = useState<number>(0);
+  const [showTotalAnimation, setShowTotalAnimation] = useState<boolean>(false);
+
+  // Calculate total price based on selected products and quantities
+  useEffect(() => {
+    if (!products?.data || !orderItemInputs) return;
+
+    let calculatedTotalPrice = 0;
+    
+    orderItemInputs.forEach(item => {
+      if (item.product_id && item.quantity > 0) {
+        // Find the product in products data
+        const product = products.data.find(p => p.id === item.product_id);
+        if (product && product.unit_price) {
+          // Add the product's price * quantity to the total
+          calculatedTotalPrice += product.unit_price * item.quantity;
+        }
+      }
+    });
+    
+    // Always update the total_price field first
+    setValue("total_price", calculatedTotalPrice);
+    
+    // If total changed, trigger animation
+    if (calculatedTotalPrice !== previousTotal) {
+      setPreviousTotal(calculatedTotalPrice);
+      setShowTotalAnimation(true);
+      
+      // Reset animation after a short delay
+      const timer = setTimeout(() => {
+        setShowTotalAnimation(false);
+      }, 1500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [orderItemInputs, products?.data, setValue, previousTotal]);
+
   const onSubmit: SubmitHandler<OrderFormData> = (data) => {
     // Convert orderItemInputs to order_items JSON string
     const orderItemsObject: Record<string, number> = {};
@@ -144,10 +184,27 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
       }
     });
 
+    // Recalculate total price to ensure accuracy
+    let recalculatedTotal = 0;
+    orderItemInputs.forEach(item => {
+      if (item.product_id && item.quantity > 0) {
+        const product = products?.data.find(p => p.id === item.product_id);
+        if (product?.unit_price) {
+          recalculatedTotal += product.unit_price * item.quantity;
+        }
+      }
+    });
+    
+    // Always ensure we're sending the correct total price
+    const finalTotal = Number(recalculatedTotal.toFixed(2));
+    
+    // For debugging only - can be removed in production
+    console.log('Submitting order with total price:', finalTotal);
+
     mutation.mutate({
       ...data,
       order_items: JSON.stringify(orderItemsObject),
-      total_price: Number(data.total_price),
+      total_price: finalTotal,
       order_date: new Date().toISOString(),
     })
   }
@@ -206,13 +263,28 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
     }
   ]
 
-  // Replace the order_items field in the formSections
+  // Update the total_price field in formSections to be read-only
   const updatedFormSections = formSections.map(section => {
     if (section.section === "Basic Information") {
-      // Filter out order_items and order_quantity fields
-      const updatedFields = section.fields.filter(
+      // First filter out order_items and order_quantity fields
+      const filteredFields = section.fields.filter(
         field => field.id !== "order_items" && field.id !== "order_quantity"
       );
+      
+      // Then update the total_price field to be read-only
+      const updatedFields = filteredFields.map(field => {
+        if (field.id === "total_price") {
+          return {
+            ...field,
+            // Add a note to indicate the field is automatically calculated
+            label: "Total Price (Auto-calculated)",
+            // Make the field read-only
+            type: "number",
+          };
+        }
+        return field;
+      });
+      
       return {
         ...section,
         fields: updatedFields
@@ -241,6 +313,18 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
     
     // Return only products that aren't already selected
     return products.data.filter(product => !selectedProductIds.includes(product.id!));
+  };
+
+  // Helper function to get currency symbol
+  const getCurrencySymbol = (currency?: string | null) => {
+    if (!currency) return '$';
+    
+    switch (currency.toUpperCase()) {
+      case 'EUR': return '€';
+      case 'GBP': return '£';
+      case 'JPY': return '¥';
+      default: return '$';
+    }
   };
 
   return (
@@ -320,6 +404,34 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
                               placeholder={field.placeholder}
                               {...editCustomerStyles.input}
                             />
+                          ) : field.id === "total_price" ? (
+                            <>
+                              <Input
+                                id={field.id}
+                                {...register(field.id as keyof OrderCreate, field.validation)}
+                                placeholder={field.placeholder}
+                                type="number"
+                                readOnly={true}
+                                style={{ 
+                                  backgroundColor: "#F7FAFC", 
+                                  cursor: "not-allowed",
+                                  ...(showTotalAnimation ? {
+                                    borderColor: "#48BB78",
+                                    boxShadow: "0 0 0 1px #48BB78"
+                                  } : {})
+                                }}
+                                {...editCustomerStyles.input}
+                              />
+                              <Text 
+                                fontSize="xs" 
+                                color={showTotalAnimation ? "green.500" : "gray.500"} 
+                                fontWeight={showTotalAnimation ? "medium" : "normal"}
+                                transition="all 0.3s"
+                                mt={1}
+                              >
+                                Automatically calculated from product prices and quantities
+                              </Text>
+                            </>
                           ) : (
                             <Input
                               id={field.id}
@@ -384,13 +496,16 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
                             >
                               {products?.data.map((product) => {
                                 const isSelected = getSelectedProductIds(index).has(product.id!);
+                                const priceDisplay = product.unit_price 
+                                  ? ` - ${getCurrencySymbol(product.price_currency)}${product.unit_price.toFixed(2)}`
+                                  : '';
                                 return (
                                   <option 
                                     key={product.id} 
                                     value={product.id}
                                     disabled={isSelected}
                                   >
-                                    {product.id} {isSelected ? "(Already in order)" : ""}
+                                    {product.id}{priceDisplay} {isSelected ? "(Already in order)" : ""}
                                   </option>
                                 );
                               })}
@@ -425,6 +540,25 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
                           </FormControl>
                         </GridItem>
                       </SimpleGrid>
+                      
+                      {/* Show item subtotal if product is selected */}
+                      {orderItemInputs[index]?.product_id && orderItemInputs[index]?.quantity > 0 && (
+                        <Box mt={2}>
+                          <HStack spacing={1} justifyContent="flex-end">
+                            <Text fontSize="xs" color="gray.600">Item subtotal:</Text>
+                            <Text fontSize="xs" fontWeight="bold" color="green.600">
+                              {(() => {
+                                const product = products?.data.find(p => p.id === orderItemInputs[index].product_id);
+                                if (product?.unit_price) {
+                                  const subtotal = product.unit_price * orderItemInputs[index].quantity;
+                                  return `${getCurrencySymbol(product.price_currency)}${subtotal.toFixed(2)}`;
+                                }
+                                return 'N/A';
+                              })()}
+                            </Text>
+                          </HStack>
+                        </Box>
+                      )}
                     </Box>
                   ))}
                   <Button
