@@ -87,6 +87,18 @@ const PAYMENT_STATUS_OPTIONS = [
   { value: "Refunded", label: "Refunded" },
 ]
 
+// Static currency conversion rates to SGD
+const CURRENCY_CONVERSION_RATES = {
+  USD: 1.35,    // 1 USD = 1.35 SGD
+  EUR: 1.48,    // 1 EUR = 1.48 SGD
+  GBP: 1.75,    // 1 GBP = 1.75 SGD
+  JPY: 0.0092,  // 1 JPY = 0.0092 SGD
+  AUD: 0.91,    // 1 AUD = 0.91 SGD
+  CAD: 1.00,    // 1 CAD = 1.00 SGD
+  SGD: 1.00,    // 1 SGD = 1 SGD (base currency)
+  // Add more currencies as needed
+};
+
 const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
   const queryClient = useQueryClient()
   const showToast = useCustomToast()
@@ -161,6 +173,27 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
     queryFn: () => ProductsService.readProducts({ limit: 100 }),
   })
 
+  // Helper function to get currency symbol
+  const getCurrencySymbol = (currency?: string | null) => {
+    if (!currency) return '$';
+    
+    switch (currency.toUpperCase()) {
+      case 'EUR': return '€';
+      case 'GBP': return '£';
+      case 'JPY': return '¥';
+      case 'SGD': return 'S$';
+      default: return '$';
+    }
+  };
+
+  // Helper function to convert price to SGD
+  const convertToSGD = (price: number, currency?: string | null) => {
+    if (!currency) return price * CURRENCY_CONVERSION_RATES.USD; // Default to USD if no currency provided
+    
+    const conversionRate = CURRENCY_CONVERSION_RATES[currency.toUpperCase() as keyof typeof CURRENCY_CONVERSION_RATES] || 1;
+    return price * conversionRate;
+  };
+
   // Calculate total price based on selected products and quantities
   useEffect(() => {
     if (!products?.data) return;
@@ -179,15 +212,16 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
           // Find the product in products data
           const product = products.data.find(p => p.id === item.product_id);
           if (product && product.unit_price) {
-            // Add the product's price * quantity to the total
-            calculatedTotalPrice += product.unit_price * item.quantity;
+            // Convert price to SGD first, then add to total
+            const priceInSGD = convertToSGD(product.unit_price, product.price_currency);
+            calculatedTotalPrice += priceInSGD * item.quantity;
           }
         }
       });
     }
     
     // Update the total_price field - the {shouldDirty: true} option ensures the form is marked as dirty
-    setValue("total_price", calculatedTotalPrice, { shouldDirty: true });
+    setValue("total_price", parseFloat(calculatedTotalPrice.toFixed(2)), { shouldDirty: true });
     
     // If total changed, trigger animation
     if (calculatedTotalPrice !== previousTotal) {
@@ -238,7 +272,9 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
         if (item.product_id && item.quantity > 0) {
           const product = products.data.find(p => p.id === item.product_id);
           if (product?.unit_price) {
-            recalculatedTotal += product.unit_price * item.quantity;
+            // Convert price to SGD first
+            const priceInSGD = convertToSGD(product.unit_price, product.price_currency);
+            recalculatedTotal += priceInSGD * item.quantity;
           }
         }
       });
@@ -295,7 +331,7 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
         },
         {
           id: "total_price",
-          label: "Total Price",
+          label: "Total Price (SGD, Auto-calculated)",
           required: true,
           placeholder: "Enter total price",
           type: "number",
@@ -324,7 +360,15 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
     if (section.section === "Basic Information") {
       const updatedFields = section.fields.filter(
         field => field.id !== "order_items" && field.id !== "order_quantity"
-      );
+      ).map(field => {
+        if (field.id === "total_price") {
+          return {
+            ...field,
+            label: "Total Price (SGD, Auto-calculated)",
+          };
+        }
+        return field;
+      });
       return {
         ...section,
         fields: updatedFields
@@ -340,18 +384,6 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
         .map((field, idx) => idx !== currentIndex ? getValues(`orderItemInputs.${idx}.product_id`) : null)
         .filter(id => id !== null && id !== "")
     );
-  };
-
-  // Helper function to get currency symbol
-  const getCurrencySymbol = (currency?: string | null) => {
-    if (!currency) return '$';
-    
-    switch (currency.toUpperCase()) {
-      case 'EUR': return '€';
-      case 'GBP': return '£';
-      case 'JPY': return '¥';
-      default: return '$';
-    }
   };
 
   return (
@@ -556,14 +588,16 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
                                       if (productId && item.quantity > 0) {
                                         const itemProduct = products.data.find(p => p.id === productId);
                                         if (itemProduct?.unit_price) {
-                                          newTotal += itemProduct.unit_price * item.quantity;
+                                          // Convert to SGD before adding to total
+                                          const priceInSGD = convertToSGD(itemProduct.unit_price, itemProduct.price_currency);
+                                          newTotal += priceInSGD * item.quantity;
                                         }
                                       }
                                     });
                                     
                                     // Only update if not manually edited
                                     if (!manuallyEditedTotal) {
-                                      setValue("total_price", newTotal, { shouldDirty: true });
+                                      setValue("total_price", parseFloat(newTotal.toFixed(2)), { shouldDirty: true });
                                     }
                                   }
                                 }
@@ -628,14 +662,16 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
                                           // Use new quantity for the current item
                                           const qty = i === index ? newQuantity : item.quantity;
                                           if (itemProduct?.unit_price) {
-                                            newTotal += itemProduct.unit_price * qty;
+                                            // Convert to SGD before adding to total
+                                            const priceInSGD = convertToSGD(itemProduct.unit_price, itemProduct.price_currency);
+                                            newTotal += priceInSGD * qty;
                                           }
                                         }
                                       });
                                       
                                       // Update total price field if not manually edited
                                       if (!manuallyEditedTotal) {
-                                        setValue("total_price", newTotal, { shouldDirty: true });
+                                        setValue("total_price", parseFloat(newTotal.toFixed(2)), { shouldDirty: true });
                                       }
                                     }
                                   }
@@ -661,8 +697,10 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
                               {(() => {
                                 const product = products?.data.find(p => p.id === orderItemInputs[index].product_id);
                                 if (product?.unit_price) {
+                                  // Show the original currency first, then the SGD equivalent
                                   const subtotal = product.unit_price * orderItemInputs[index].quantity;
-                                  return `${getCurrencySymbol(product.price_currency)}${subtotal.toFixed(2)}`;
+                                  const subtotalSGD = convertToSGD(product.unit_price, product.price_currency) * orderItemInputs[index].quantity;
+                                  return `${getCurrencySymbol(product.price_currency)}${subtotal.toFixed(2)} (S$${subtotalSGD.toFixed(2)})`;
                                 }
                                 return 'N/A';
                               })()}
