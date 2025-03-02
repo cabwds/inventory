@@ -192,13 +192,13 @@ function OrderDetail() {
 
   // Helper function to get currency symbol
   const getCurrencySymbol = (currency?: string) => {
-    if (!currency) return '$';
+    if (!currency) return 'S$';
     
     switch (currency.toUpperCase()) {
       case 'EUR': return '€';
       case 'GBP': return '£';
       case 'JPY': return '¥';
-      default: return '$';
+      default: return 'S$';
     }
   };
 
@@ -255,7 +255,7 @@ function OrderDetail() {
           <CardBody>
             <Stat>
               <StatLabel>Total Amount</StatLabel>
-              <StatNumber>${order.total_price}</StatNumber>
+              <StatNumber>S${order.total_price}</StatNumber>
               <StatHelpText>
                 {orderItems.length} product{orderItems.length !== 1 ? 's' : ''} ({totalQuantity} unit{totalQuantity !== 1 ? 's' : ''})
               </StatHelpText>
