@@ -27,6 +27,7 @@ import useCustomToast from "../../../hooks/useCustomToast"
 import { modalScrollbarStyles, customerDetailsStyles } from "../../../styles/customers.styles"
 import { FaExternalLinkAlt } from "react-icons/fa"
 import { FiUser } from "react-icons/fi"
+import { formatCustomerData } from "../../../utils/customerFormUtils"
 
 export const Route = createFileRoute('/_layout/customers/$customerId')({
   component: CustomerDetail,
@@ -60,6 +61,9 @@ function CustomerDetail() {
   if (isError) {
     showToast("Error", "Failed to load customer details", "error")
   }
+
+  // Format customer data for display
+  const formattedData = customer ? formatCustomerData(customer) : null;
 
   const customerDetails = [
     {

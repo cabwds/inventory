@@ -1,7 +1,7 @@
 // Common product form utilities
 
 import { BRAND_OPTIONS, CURRENCY_OPTIONS, PRODUCT_TYPE_OPTIONS } from './productConstants';
-import { FormSection, ProductCreateWithId } from './productTypes';
+import { FormSection } from './productTypes';
 import { ProductPublic } from '../client';
 import { getCurrencySymbol } from './currencyUtils';
 

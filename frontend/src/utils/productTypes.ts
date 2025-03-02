@@ -13,22 +13,12 @@ export interface ProductCreateWithId extends ProductCreate {
  * Interface for form field configuration
  */
 export interface FormField {
-  id: keyof (ProductCreateWithId | ProductUpdate);
+  id: string;
   label: string;
   placeholder: string;
   required?: boolean;
   type?: string;
-  validation?: {
-    required?: string;
-    pattern?: {
-      value: RegExp;
-      message: string;
-    };
-    min?: {
-      value: number;
-      message: string;
-    };
-  };
+  validation?: any;
   options?: Array<{ value: string; label: string }>;
 }
 

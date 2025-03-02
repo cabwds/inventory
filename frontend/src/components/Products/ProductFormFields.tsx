@@ -16,22 +16,7 @@ import {
 } from "@chakra-ui/react";
 import { UseFormRegister } from "react-hook-form";
 import { BRAND_OPTIONS, CURRENCY_OPTIONS, PRODUCT_TYPE_OPTIONS } from "../../utils/productConstants";
-
-// Form field configurations
-export interface FormField {
-  id: string;
-  label: string;
-  placeholder: string;
-  required?: boolean;
-  type?: string;
-  validation?: any;
-  options?: Array<{ value: string; label: string }>;
-}
-
-export interface FormSection {
-  section: string;
-  fields: FormField[];
-}
+import { FormField, FormSection } from "../../utils/productTypes";
 
 interface ProductFormFieldsProps {
   register: UseFormRegister<any>;
