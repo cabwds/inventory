@@ -144,8 +144,8 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
 
   // Watch for changes to orderItemInputs to recalculate total price
   const orderItemInputs = watch("orderItemInputs");
-  // Also watch all form values for better reactivity
-  const formValues = watch();
+  // We don't need to watch all form values anymore, which was causing the infinite loop
+  // const formValues = watch();
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -201,31 +201,39 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
     // Skip auto-calculation if the user has manually edited the total
     if (manuallyEditedTotal) return;
 
-    // Get the most current values directly from getValues
-    const currentItems = getValues("orderItemInputs");
-    
-    let calculatedTotalPrice = 0;
-    
-    if (currentItems && currentItems.length > 0) {
-      currentItems.forEach(item => {
-        if (item.product_id && item.quantity > 0) {
-          // Find the product in products data
-          const product = products.data.find(p => p.id === item.product_id);
-          if (product && product.unit_price) {
-            // Convert price to SGD first, then add to total
-            const priceInSGD = convertToSGD(product.unit_price, product.price_currency);
-            calculatedTotalPrice += priceInSGD * item.quantity;
+    // Create a separate calculation function to avoid dependency issues
+    const calculateTotal = () => {
+      // Get the most current values directly from getValues
+      const currentItems = getValues("orderItemInputs");
+      
+      let calculatedTotalPrice = 0;
+      
+      if (currentItems && currentItems.length > 0) {
+        currentItems.forEach(item => {
+          if (item.product_id && item.quantity > 0) {
+            // Find the product in products data
+            const product = products.data.find(p => p.id === item.product_id);
+            if (product && product.unit_price) {
+              // Convert price to SGD first, then add to total
+              const priceInSGD = convertToSGD(product.unit_price, product.price_currency);
+              calculatedTotalPrice += priceInSGD * item.quantity;
+            }
           }
-        }
-      });
-    }
+        });
+      }
+      
+      return parseFloat(calculatedTotalPrice.toFixed(2));
+    };
     
-    // Update the total_price field - the {shouldDirty: true} option ensures the form is marked as dirty
-    setValue("total_price", parseFloat(calculatedTotalPrice.toFixed(2)), { shouldDirty: true });
+    // Calculate the new total
+    const newTotal = calculateTotal();
     
-    // If total changed, trigger animation
-    if (calculatedTotalPrice !== previousTotal) {
-      setPreviousTotal(calculatedTotalPrice);
+    // Only update if the total has actually changed to avoid infinite loops
+    if (newTotal !== previousTotal) {
+      // Update the form value first - the {shouldDirty: true} option ensures the form is marked as dirty
+      setValue("total_price", newTotal, { shouldDirty: true });
+      // Then update state for animation
+      setPreviousTotal(newTotal);
       setShowTotalAnimation(true);
       
       // Reset animation after a short delay
@@ -235,7 +243,7 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
       
       return () => clearTimeout(timer);
     }
-  }, [formValues, products?.data, setValue, previousTotal, getValues, manuallyEditedTotal]);
+  }, [orderItemInputs, products?.data, setValue, previousTotal, getValues, manuallyEditedTotal]);
 
   const mutation = useMutation({
     mutationFn: (data: OrderUpdate) =>
@@ -473,6 +481,7 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
                               {...register(field.id as keyof OrderUpdate, field.validation)}
                               placeholder={field.placeholder}
                               type="number"
+                              step="0.01"
                               style={{ 
                                 backgroundColor: "#FFFFFF", 
                                 ...(showTotalAnimation ? {

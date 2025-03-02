@@ -82,13 +82,16 @@ const PAYMENT_STATUS_OPTIONS = [
 
 // Static currency conversion rates to SGD
 const CURRENCY_CONVERSION_RATES = {
-  USD: 1.35,    // 1 USD = 1.35 SGD
-  EUR: 1.48,    // 1 EUR = 1.48 SGD
-  GBP: 1.75,    // 1 GBP = 1.75 SGD
-  JPY: 0.0092,  // 1 JPY = 0.0092 SGD
-  AUD: 0.91,    // 1 AUD = 0.91 SGD
-  CAD: 1.00,    // 1 CAD = 1.00 SGD
   SGD: 1.00,    // 1 SGD = 1 SGD (base currency)
+  USD: 1.35,    // 1 USD = 1.35 SGD (updated to match $orderId.tsx)
+  EUR: 1.45,    // 1 EUR = 1.45 SGD (updated to match $orderId.tsx)
+  GBP: 1.70,    // 1 GBP = 1.70 SGD (updated to match $orderId.tsx)
+  JPY: 0.0088,  // 1 JPY = 0.0088 SGD (updated to match $orderId.tsx)
+  AUD: 0.88,    // 1 AUD = 0.88 SGD (updated to match $orderId.tsx)
+  CAD: 0.99,    // 1 CAD = 0.99 SGD (updated to match $orderId.tsx)
+  CNY: 0.19,    // 1 CNY = 0.19 SGD
+  HKD: 0.17,    // 1 HKD = 0.17 SGD
+  INR: 0.016    // 1 INR = 0.016 SGD
   // Add more currencies as needed
 };
 
@@ -150,7 +153,7 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
 
   // Watch for changes to orderItemInputs to recalculate total price
   const orderItemInputs = watch("orderItemInputs");
-  // Also watch individual fields for better reactivity with single items
+  // Watch only orderItemInputs instead of all form values
   const formValues = watch();
   const [previousTotal, setPreviousTotal] = useState<number>(0);
   const [showTotalAnimation, setShowTotalAnimation] = useState<boolean>(false);
@@ -160,7 +163,13 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
   const convertToSGD = (price: number, currency?: string | null) => {
     if (!currency) return price * CURRENCY_CONVERSION_RATES.USD; // Default to USD if no currency provided
     
-    const conversionRate = CURRENCY_CONVERSION_RATES[currency.toUpperCase() as keyof typeof CURRENCY_CONVERSION_RATES] || 1;
+    // Ensure currency is uppercase and handle safely
+    const currencyKey = (currency || '').toUpperCase() as keyof typeof CURRENCY_CONVERSION_RATES;
+    const conversionRate = CURRENCY_CONVERSION_RATES[currencyKey] || CURRENCY_CONVERSION_RATES.USD;
+    
+    // For debugging - remove this in production
+    console.log(`Converting from ${currency} to SGD. Rate: ${conversionRate}, Original: ${price}, Converted: ${price * conversionRate}`);
+    
     return price * conversionRate;
   };
 
@@ -171,31 +180,39 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
     // Skip auto-calculation if the user has manually edited the total
     if (manuallyEditedTotal) return;
 
-    // Get the most current values directly from getValues
-    const currentItems = getValues("orderItemInputs");
-    
-    let calculatedTotalPrice = 0;
-    
-    if (currentItems && currentItems.length > 0) {
-      currentItems.forEach(item => {
-        if (item.product_id && item.quantity > 0) {
-          // Find the product in products data
-          const product = products.data.find(p => p.id === item.product_id);
-          if (product && product.unit_price) {
-            // Convert price to SGD first, then add to total
-            const priceInSGD = convertToSGD(product.unit_price, product.price_currency);
-            calculatedTotalPrice += priceInSGD * item.quantity;
+    // Create a separate calculation function to avoid dependency issues
+    const calculateTotal = () => {
+      // Get the most current values directly from getValues
+      const currentItems = getValues("orderItemInputs");
+      
+      let calculatedTotalPrice = 0;
+      
+      if (currentItems && currentItems.length > 0) {
+        currentItems.forEach(item => {
+          if (item.product_id && item.quantity > 0) {
+            // Find the product in products data
+            const product = products.data.find(p => p.id === item.product_id);
+            if (product && product.unit_price) {
+              // Convert price to SGD first, then add to total
+              const priceInSGD = convertToSGD(product.unit_price, product.price_currency);
+              calculatedTotalPrice += priceInSGD * item.quantity;
+            }
           }
-        }
-      });
-    }
+        });
+      }
+      
+      return parseFloat(calculatedTotalPrice.toFixed(2));
+    };
     
-    // Always update the total_price field first
-    setValue("total_price", parseFloat(calculatedTotalPrice.toFixed(2)));
+    // Calculate the new total
+    const newTotal = calculateTotal();
     
-    // If total changed, trigger animation
-    if (calculatedTotalPrice !== previousTotal) {
-      setPreviousTotal(calculatedTotalPrice);
+    // Only update if the total has actually changed to avoid infinite loops
+    if (newTotal !== previousTotal) {
+      // Update the form value first
+      setValue("total_price", newTotal);
+      // Then update state for animation
+      setPreviousTotal(newTotal);
       setShowTotalAnimation(true);
       
       // Reset animation after a short delay
@@ -205,7 +222,7 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
       
       return () => clearTimeout(timer);
     }
-  }, [formValues, products?.data, setValue, previousTotal, getValues, manuallyEditedTotal]);
+  }, [orderItemInputs, products?.data, setValue, previousTotal, getValues, manuallyEditedTotal]);
 
   const onSubmit: SubmitHandler<OrderFormData> = (data) => {
     // Convert orderItemInputs to order_items JSON string
@@ -223,18 +240,24 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
     // If we haven't manually edited, recalculate to ensure accuracy
     if (!manuallyEditedTotal) {
       let recalculatedTotal = 0;
+      console.log('Recalculating order total in SGD:');
+      
       data.orderItemInputs.forEach(item => {
         if (item.product_id && item.quantity > 0) {
           const product = products?.data.find(p => p.id === item.product_id);
           if (product?.unit_price) {
             // Convert price to SGD first
             const priceInSGD = convertToSGD(product.unit_price, product.price_currency);
-            recalculatedTotal += priceInSGD * item.quantity;
+            const itemTotal = priceInSGD * item.quantity;
+            recalculatedTotal += itemTotal;
+            
+            console.log(`Product: ${product.id}, Qty: ${item.quantity}, Original: ${product.price_currency} ${product.unit_price}, In SGD: S$${priceInSGD.toFixed(2)}, Item Total: S$${itemTotal.toFixed(2)}`);
           }
         }
       });
       
       finalTotal = Number(recalculatedTotal.toFixed(2));
+      console.log(`Recalculated total: S$${finalTotal}`);
     }
     
     // For debugging only - can be removed in production
@@ -243,13 +266,19 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
     console.log('Using manually edited price:', manuallyEditedTotal);
     console.log('Order items:', data.orderItemInputs);
 
-    mutation.mutate({
-      ...data,
-      order_items: JSON.stringify(orderItemsObject),
-      // Always use finalTotal which is either manually edited or recalculated
-      total_price: finalTotal,
-      order_date: new Date().toISOString(),
-    })
+    // Submit the actual data
+    try {
+      mutation.mutate({
+        ...data,
+        order_items: JSON.stringify(orderItemsObject),
+        // Always use finalTotal which is either manually edited or recalculated
+        total_price: finalTotal,
+        order_date: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error('Error submitting order:', error);
+      showToast("Error", "Failed to create order. See console for details.", "error");
+    }
   }
 
   const formSections: FormSection[] = [
@@ -450,36 +479,55 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
                             />
                           ) : field.id === "total_price" ? (
                             <>
-                              <Input
-                                id={field.id}
-                                {...register(field.id as keyof OrderCreate, field.validation)}
-                                placeholder={field.placeholder}
-                                type="number"
-                                readOnly={false}
-                                style={{ 
-                                  backgroundColor: "#FFFFFF", 
-                                  ...(showTotalAnimation ? {
-                                    borderColor: "#48BB78",
-                                    boxShadow: "0 0 0 1px #48BB78"
-                                  } : {})
-                                }}
-                                onChange={(e) => {
-                                  // Set the flag to indicate manual edit
-                                  setManuallyEditedTotal(true);
-                                  // Log the new value for debugging
-                                  console.log("Manual price edit:", e.target.value);
-                                }}
-                                onBlur={(e) => {
-                                  // When focus leaves the field, update the previous total
-                                  const newTotal = parseFloat(e.target.value);
-                                  if (!isNaN(newTotal)) {
-                                    setPreviousTotal(newTotal);
-                                    // Ensure React Hook Form knows about the change
-                                    setValue("total_price", newTotal);
-                                  }
-                                }}
-                                {...editCustomerStyles.input}
-                              />
+                              <Flex>
+                                <Box 
+                                  display="flex" 
+                                  alignItems="center" 
+                                  justifyContent="center"
+                                  bg="gray.100" 
+                                  px={3} 
+                                  borderWidth="1px" 
+                                  borderRight="none"
+                                  borderColor={showTotalAnimation ? "#48BB78" : "inherit"}
+                                  borderRadius="md" 
+                                  borderRightRadius="0"
+                                  fontWeight="bold"
+                                >
+                                  S$
+                                </Box>
+                                <Input
+                                  id={field.id}
+                                  {...register(field.id as keyof OrderCreate, field.validation)}
+                                  placeholder={field.placeholder}
+                                  type="number"
+                                  step="0.01"
+                                  readOnly={false}
+                                  borderLeftRadius="0"
+                                  style={{ 
+                                    backgroundColor: "#FFFFFF", 
+                                    ...(showTotalAnimation ? {
+                                      borderColor: "#48BB78",
+                                      boxShadow: "0 0 0 1px #48BB78"
+                                    } : {})
+                                  }}
+                                  onChange={(e) => {
+                                    // Set the flag to indicate manual edit
+                                    setManuallyEditedTotal(true);
+                                    // Log the new value for debugging
+                                    console.log("Manual price edit:", e.target.value);
+                                  }}
+                                  onBlur={(e) => {
+                                    // When focus leaves the field, update the previous total
+                                    const newTotal = parseFloat(e.target.value);
+                                    if (!isNaN(newTotal)) {
+                                      setPreviousTotal(newTotal);
+                                      // Ensure React Hook Form knows about the change
+                                      setValue("total_price", newTotal);
+                                    }
+                                  }}
+                                  {...editCustomerStyles.input}
+                                />
+                              </Flex>
                               <Text 
                                 fontSize="xs" 
                                 color={showTotalAnimation ? "green.500" : (manuallyEditedTotal ? "blue.500" : "gray.500")} 
