@@ -39,10 +39,16 @@ export const getCurrencySymbol = (currency?: string | null): string => {
   if (!currency) return '$';
   
   switch (currency.toUpperCase()) {
+    case 'USD': return 'US$';
     case 'EUR': return '€';
     case 'GBP': return '£';
     case 'JPY': return '¥';
+    case 'CNY': return '¥';
     case 'SGD': return 'S$';
+    case 'AUD': return 'A$';
+    case 'CAD': return 'C$';
+    case 'HKD': return 'HK$';
+    case 'INR': return '₹';
     default: return '$';
   }
 };

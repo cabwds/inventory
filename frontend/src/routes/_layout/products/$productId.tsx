@@ -23,6 +23,8 @@ import { useQuery } from "@tanstack/react-query"
 import { ProductsService } from "../../../client"
 import useCustomToast from "../../../hooks/useCustomToast"
 import { modalScrollbarStyles } from "../../../styles/customers.styles"
+import { getCurrencySymbol } from "../../../utils/currencyUtils"
+import { formatDimensions, formatPrice } from "../../../utils/productFormUtils"
 
 export const Route = createFileRoute('/_layout/products/$productId')({
   component: ProductDetail,
@@ -37,26 +39,6 @@ function ProductDetail() {
     queryKey: ['product', productId],
     queryFn: () => ProductsService.readProduct({ id: productId }),
   })
-
-  // Helper function to get currency symbol
-  const getCurrencySymbol = (currency: string | null | undefined): string => {
-    if (!currency) return 'S$';
-    
-    switch (currency) {
-      case 'SGD': return 'S$';
-      case 'USD': return 'US$';
-      case 'EUR': return '€';
-      case 'GBP': return '£';
-      case 'CNY': return '¥';
-      default: return 'S$';
-    }
-  }
-
-  // Format price with currency symbol
-  const formatPrice = (amount: number | null | undefined, currency: string | null | undefined) => {
-    if (amount == null) return 'N/A';
-    return `${getCurrencySymbol(currency)} ${amount.toFixed(2)}`;
-  }
 
   if (isError) {
     showToast("Error", "Failed to load product details", "error")
@@ -212,11 +194,7 @@ function ProductDetail() {
                   <Box textAlign="center">
                     <Text color="gray.500" fontSize="sm">Dimensions</Text>
                     <Text fontSize="md" fontWeight="medium">
-                      {product.width != null && product.length != null 
-                        ? `${product.width}m × ${product.length}m` 
-                        : 'N/A'
-                      }
-                      {product.thickness != null ? ` × ${product.thickness}mm` : ''}
+                      {formatDimensions(product)}
                     </Text>
                   </Box>
                 </Flex>
