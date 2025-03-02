@@ -346,7 +346,13 @@ function ProductsTable() {
               </Select>
             )}
             {(searchTerm || brand || type || (currentUser?.is_superuser && displayInvalid)) && (
-              <Button size="md" onClick={clearFilters}>
+              <Button 
+                size="md" 
+                onClick={clearFilters}
+                px={4}
+                minW="110px"
+                textAlign="center"
+              >
                 Clear Filters
               </Button>
             )}

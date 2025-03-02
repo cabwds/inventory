@@ -12,11 +12,18 @@ import {
     Tr,
     Select,
     Tooltip,
+    InputGroup,
+    InputLeftElement,
+    Input,
+    HStack,
+    VStack,
+    Text,
+    Button,
     } from "@chakra-ui/react"
-import { InfoIcon } from "@chakra-ui/icons"
+import { InfoIcon, SearchIcon } from "@chakra-ui/icons"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate, Outlet} from "@tanstack/react-router"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { z } from "zod"
 
 import { CustomersService} from "../../client"
@@ -32,6 +39,7 @@ const customersSearchSchema = z.object({
     page: z.number().catch(1),
     pageSize: z.number().catch(5),
     displayInvalid: z.boolean().optional(),
+    keyword: z.string().optional(),
 })
 
 export const Route = createFileRoute("/_layout/customers")({
@@ -58,8 +66,9 @@ function getCustomersQueryOptions({ page, pageSize, displayInvalid }: {
 function CustomersTable() {
   const queryClient = useQueryClient()
   const currentUser = queryClient.getQueryData<UserPublic>(["currentUser"])
-  const { page, pageSize, displayInvalid } = Route.useSearch()
+  const { page, pageSize, displayInvalid, keyword } = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
+  const [searchTerm, setSearchTerm] = useState(keyword || "")
   
   const setPage = (newPage: number) =>
     navigate({ search: (prev: Record<string, unknown>) => ({ ...prev, page: newPage }) })
@@ -77,44 +86,123 @@ function CustomersTable() {
     })
   }
 
-  const {
-    data: customers,
-    isPending,
-    isPlaceholderData,
-  } = useQuery({
-    ...getCustomersQueryOptions({ page, pageSize, displayInvalid }),
-    placeholderData: (prevData) => prevData,
+  const handleKeywordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setSearchTerm(value)
+  }
+
+  // Update URL with debounced keyword
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      navigate({ 
+        search: (prev: Record<string, unknown>) => ({ 
+          ...prev, 
+          keyword: searchTerm || undefined,
+          page: 1
+        })
+      })
+    }, 300)
+    
+    return () => clearTimeout(timer)
+  }, [searchTerm, navigate])
+
+  const clearFilters = () => {
+    setSearchTerm("")
+    navigate({ 
+      search: (prev: Record<string, unknown>) => ({ 
+        ...prev, 
+        keyword: undefined,
+        displayInvalid: undefined,
+        page: 1 
+      })
+    })
+  }
+
+  // Get all customers for client-side filtering
+  const { data: allCustomers, isPending: isLoadingAllCustomers } = useQuery({
+    queryKey: ["customers-all", displayInvalid],
+    queryFn: () => CustomersService.readCustomers({ 
+      limit: 1000,
+      displayInvalid: displayInvalid
+    }),
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 60 * 1000,
+    refetchOnWindowFocus: true,
   })
+
+  // Apply client-side filtering
+  const filteredCustomers = allCustomers?.data.filter(customer => {
+    // Apply keyword filter
+    const matchesKeyword = !keyword || 
+      (customer.company?.toLowerCase().includes(keyword.toLowerCase()));
+    
+    return matchesKeyword;
+  }) || [];
+
+  // Apply pagination
+  const paginatedCustomers = filteredCustomers.slice(
+    (page - 1) * pageSize,
+    page * pageSize
+  );
 
   const handleCustomerClick = (customerId: string) => {
     navigate({ to: '/customers/$customerId', params: { customerId } })
   }
 
-  const hasNextPage = !isPlaceholderData && customers?.data.length === pageSize
+  const hasNextPage = filteredCustomers.length > page * pageSize
   const hasPreviousPage = page > 1
-
-  useEffect(() => {
-    if (hasNextPage) {
-      queryClient.prefetchQuery(getCustomersQueryOptions({ page: page + 1, pageSize }))
-    }
-  }, [page, pageSize, queryClient, hasNextPage])
+  const isPending = isLoadingAllCustomers
 
   return (
     <>
       <Box mb={4}>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          {currentUser?.is_superuser && (
-            <Select
-              value={displayInvalid ? 'all' : 'valid'}
-              onChange={handleDisplayInvalidToggle}
-              maxW="220px"
-            >
-              <option value="valid">Valid Customers Only</option>
-              <option value="all">All Customers</option>
-            </Select>
-          )}
-          <PageSizeSelector pageSize={pageSize} onChange={setPageSize} />
-        </Box>
+        <VStack spacing={4} align="stretch">
+          {/* Filters */}
+          <HStack spacing={4} justifyContent="space-between">
+            <HStack spacing={4}>
+              <InputGroup maxW="300px">
+                <InputLeftElement pointerEvents="none">
+                  <SearchIcon color="gray.400" />
+                </InputLeftElement>
+                <Input
+                  placeholder="Search company name"
+                  value={searchTerm}
+                  onChange={handleKeywordChange}
+                  size="md"
+                />
+              </InputGroup>
+              {currentUser?.is_superuser && (
+                <Select
+                  value={displayInvalid ? 'all' : 'valid'}
+                  onChange={handleDisplayInvalidToggle}
+                  maxW="220px"
+                >
+                  <option value="valid">Valid Customers Only</option>
+                  <option value="all">All Customers</option>
+                </Select>
+              )}
+              {(searchTerm || (currentUser?.is_superuser && displayInvalid)) && (
+                <Button 
+                  size="md" 
+                  onClick={clearFilters}
+                  px={4}
+                  minW="110px"
+                  textAlign="center"
+                >
+                  Clear Filters
+                </Button>
+              )}
+            </HStack>
+            <PageSizeSelector pageSize={pageSize} onChange={setPageSize} />
+          </HStack>
+
+          {/* Page size and count */}
+          <HStack spacing={4} justify="flex-end">
+            <Text fontSize="sm" color="gray.600" whiteSpace="nowrap">
+              Showing {filteredCustomers.length === 0 ? 0 : ((page - 1) * pageSize) + 1} - {Math.min(page * pageSize, filteredCustomers.length)} of {filteredCustomers.length}
+            </Text>
+          </HStack>
+        </VStack>
       </Box>
       <TableContainer {...customerDetailsStyles.tableContainer}>
         <Table size={{ base: "sm", md: "md" }} variant="simple">
@@ -139,10 +227,10 @@ function CustomersTable() {
             </Tbody>
           ) : (
             <Tbody>
-              {customers?.data.map((customer, index) => (
+              {paginatedCustomers.map((customer, index) => (
                 <Tr 
                   key={customer.id} 
-                  opacity={isPlaceholderData ? 0.5 : 1}
+                  opacity={isPending ? 0.5 : 1}
                   _hover={{ bg: "gray.50" }}
                   transition="background-color 0.2s"
                   bg={!customer.is_valid ? "red.50" : undefined}
