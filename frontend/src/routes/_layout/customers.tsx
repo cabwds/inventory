@@ -165,7 +165,7 @@ function CustomersTable() {
                   <SearchIcon color="gray.400" />
                 </InputLeftElement>
                 <Input
-                  placeholder="Search company name"
+                  placeholder="Search Company"
                   value={searchTerm}
                   onChange={handleKeywordChange}
                   size="md"

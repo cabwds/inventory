@@ -55,6 +55,11 @@ interface OrderItem {
   product_id: string;
   quantity: number;
   product_name?: string;  // Added to store name from products data
+  product_brand?: string; // Added to store brand from products data
+  product_type?: string;  // Added to store type from products data
+  unit_price?: number;    // Added to store unit price from products data
+  price_currency?: string; // Added to store price currency
+  total_price?: number;   // Added to store calculated total price
 }
 
 // Status color mapping for visual indicators
@@ -96,12 +101,18 @@ function OrderDetail() {
       try {
         const orderItemsObj = JSON.parse(order.order_items);
         const parsedItems = Object.entries(orderItemsObj).map(([product_id, quantity]) => {
-          // Find product name from products data
+          // Find product data from products data
           const productData = products.data.find(p => p.id === product_id);
+          const unitPrice = productData?.unit_price || 0;
           return {
             product_id,
             quantity: Number(quantity),
-            product_name: productData?.id || 'Deleted Product'
+            product_name: productData?.id || 'Deleted Product',
+            product_brand: productData?.brand || '',
+            product_type: productData?.type || '',
+            unit_price: unitPrice,
+            price_currency: productData?.price_currency || 'USD',
+            total_price: unitPrice * Number(quantity)
           };
         });
         setOrderItems(parsedItems);
@@ -178,6 +189,18 @@ function OrderDetail() {
 
   // Get the maximum quantity for progress bar scaling
   const maxQuantity = Math.max(...orderItems.map(item => item.quantity), 1);
+
+  // Helper function to get currency symbol
+  const getCurrencySymbol = (currency?: string) => {
+    if (!currency) return '$';
+    
+    switch (currency.toUpperCase()) {
+      case 'EUR': return '€';
+      case 'GBP': return '£';
+      case 'JPY': return '¥';
+      default: return '$';
+    }
+  };
 
   // Render the order summary cards
   const renderOrderSummary = () => {
@@ -256,6 +279,8 @@ function OrderDetail() {
             <Tr>
               <Th>Product</Th>
               <Th>Quantity</Th>
+              <Th>Unit Price</Th>
+              <Th>Total</Th>
               <Th>Distribution</Th>
               <Th width="100px">Actions</Th>
             </Tr>
@@ -270,12 +295,23 @@ function OrderDetail() {
                 <Td>
                   <VStack align="start" spacing={1}>
                     <Text fontWeight="medium">{item.product_name}</Text>
+                    {(item.product_brand || item.product_type) && (
+                      <Text fontSize="xs" color="gray.600">
+                        {[item.product_brand, item.product_type].filter(Boolean).join(' - ')}
+                      </Text>
+                    )}
                   </VStack>
                 </Td>
                 <Td>
                   <Tag size="md" colorScheme="blue" borderRadius="full">
                     {item.quantity}
                   </Tag>
+                </Td>
+                <Td>
+                  {getCurrencySymbol(item.price_currency)}{item.unit_price?.toFixed(2) || '0.00'}
+                </Td>
+                <Td fontWeight="medium" color="green.600">
+                  {getCurrencySymbol(item.price_currency)}{item.total_price?.toFixed(2) || '0.00'}
                 </Td>
                 <Td>
                   <Tooltip label={`${Math.round((item.quantity / totalQuantity) * 100)}% of total order`}>
