@@ -183,7 +183,7 @@ const OrderItemsField = ({
             <SimpleGrid columns={{ base: 1, md: 5 }} spacing={2} alignItems="flex-end">
               <GridItem colSpan={{ base: 1, md: 3 }}>
                 <FormControl isInvalid={!!errors.orderItemInputs?.[index]?.product_id} size="sm">
-                  <FormLabel htmlFor={`orderItemInputs.${index}.product_id`} fontSize="xs" mb={1}>Product</FormLabel>
+                  <FormLabel htmlFor={`orderItemInputs.${index}.product_id`} fontSize="xs" mb={1}>Product Name</FormLabel>
                   
                   {/* Hidden input for form registration */}
                   <input
@@ -205,7 +205,7 @@ const OrderItemsField = ({
                     <PopoverTrigger>
                       <InputGroup size="sm">
                         <Input
-                          placeholder="Search products..."
+                          placeholder="Search keywords..."
                           value={searchInputs[index] || ''}
                           onChange={(e) => {
                             const newSearchInputs = [...searchInputs];
