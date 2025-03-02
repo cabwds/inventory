@@ -247,92 +247,100 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
         >
           <form id="edit-order-form" onSubmit={handleSubmit(onSubmit)}>
             <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={8}>
-              {/* First column - Basic Information */}
-              <Box>
-                <Text {...editCustomerStyles.sectionTitle}>
-                  {updatedFormSections[0].section}
-                </Text>
-                <VStack spacing={4} align="stretch">
-                  {updatedFormSections[0].fields.map((field) => (
-                    <FormControl 
-                      key={field.id} 
-                      isRequired={field.required}
-                      isInvalid={!!errors[field.id as keyof OrderUpdate]}
-                    >
-                      <Box {...editCustomerStyles.formBox}>
-                        <FormLabel 
-                          htmlFor={field.id}
-                          {...editCustomerStyles.formLabel}
-                        >
-                          {field.label}
-                          {field.required && 
-                            <Text as="span" color="red.500" ml={1}></Text>
-                          }
-                        </FormLabel>
-                        {field.id === "customer_id" ? (
-                          <Select
-                            id={field.id}
-                            {...register(field.id as keyof OrderUpdate, field.validation)}
-                            placeholder={field.placeholder}
-                            {...editCustomerStyles.input}
+              {updatedFormSections.map((section) => (
+                <Box key={section.section}>
+                  <Text {...editCustomerStyles.sectionTitle}>
+                    {section.section}
+                  </Text>
+                  <VStack spacing={4} align="stretch">
+                    {section.fields.map((field) => (
+                      <FormControl 
+                        key={field.id} 
+                        isRequired={field.required}
+                        isInvalid={!!errors[field.id as keyof OrderUpdate]}
+                      >
+                        <Box {...editCustomerStyles.formBox}>
+                          <FormLabel 
+                            htmlFor={field.id}
+                            {...editCustomerStyles.formLabel}
                           >
-                            {customers?.data.map((customer) => (
-                              <option key={customer.id} value={customer.id}>
-                                {customer.company}
-                              </option>
-                            ))}
-                          </Select>
-                        ) : field.type === "select" ? (
-                          <Select
-                            id={field.id}
-                            {...register(field.id as keyof OrderUpdate, field.validation)}
-                            placeholder={field.placeholder}
-                            {...editCustomerStyles.input}
-                          >
-                            {field.options?.map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </Select>
-                        ) : field.type === "textarea" ? (
-                          <Textarea
-                            id={field.id}
-                            {...register(field.id as keyof OrderUpdate, field.validation)}
-                            placeholder={field.placeholder}
-                            {...editCustomerStyles.input}
-                          />
-                        ) : field.id === "total_price" ? (
-                          <TotalPriceField
-                            id="total_price"
-                            label={field.label}
-                            register={register}
-                            errors={errors}
-                            setValue={setValue}
-                            showTotalAnimation={showTotalAnimation}
-                            manuallyEditedTotal={manuallyEditedTotal}
-                            setManuallyEditedTotal={setManuallyEditedTotal}
-                            shouldMarkDirty
-                          />
-                        ) : (
-                          <Input
-                            id={field.id}
-                            {...register(field.id as keyof OrderUpdate, field.validation)}
-                            placeholder={field.placeholder}
-                            type={field.type || "text"}
-                            {...editCustomerStyles.input}
-                          />
-                        )}
-                        {errors[field.id as keyof OrderUpdate] && (
-                          <FormErrorMessage>
-                            {errors[field.id as keyof OrderUpdate]?.message}
-                          </FormErrorMessage>
-                        )}
-                      </Box>
-                    </FormControl>
-                  ))}
-                </VStack>
-              </Box>
+                            {field.label}
+                            {field.required && 
+                              <Text as="span" color="red.500" ml={1}></Text>
+                            }
+                          </FormLabel>
+                          {field.id === "customer_id" ? (
+                            <Select
+                              id={field.id}
+                              {...register(field.id as keyof OrderUpdate, field.validation)}
+                              placeholder={field.placeholder}
+                              {...editCustomerStyles.input}
+                            >
+                              {customers?.data.map((customer) => (
+                                <option key={customer.id} value={customer.id}>
+                                  {customer.company}
+                                </option>
+                              ))}
+                            </Select>
+                          ) : field.type === "select" ? (
+                            <Select
+                              id={field.id}
+                              {...register(field.id as keyof OrderUpdate, field.validation)}
+                              placeholder={field.placeholder}
+                              {...editCustomerStyles.input}
+                            >
+                              {field.options?.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </Select>
+                          ) : field.type === "textarea" ? (
+                            <Textarea
+                              id={field.id}
+                              {...register(field.id as keyof OrderUpdate, field.validation)}
+                              placeholder={field.placeholder}
+                              {...editCustomerStyles.input}
+                            />
+                          ) : (
+                            <Input
+                              id={field.id}
+                              {...register(field.id as keyof OrderUpdate, field.validation)}
+                              placeholder={field.placeholder}
+                              type={field.type || "text"}
+                              {...editCustomerStyles.input}
+                            />
+                          )}
+                          {errors[field.id as keyof OrderUpdate] && (
+                            <FormErrorMessage>
+                              {errors[field.id as keyof OrderUpdate]?.message}
+                            </FormErrorMessage>
+                          )}
+                        </Box>
+                      </FormControl>
+                    ))}
+
+                    {/* Add TotalPriceField as a separate field after the section fields */}
+                    {section.section === "Basic Information" && (
+                      <FormControl 
+                        isRequired={true}
+                        isInvalid={!!errors.total_price}
+                      >
+                        <TotalPriceField
+                          id="total_price"
+                          label="Total Price (SGD, Auto-calculated)"
+                          register={register}
+                          errors={errors}
+                          setValue={setValue}
+                          showTotalAnimation={showTotalAnimation}
+                          manuallyEditedTotal={manuallyEditedTotal}
+                          setManuallyEditedTotal={setManuallyEditedTotal}
+                        />
+                      </FormControl>
+                    )}
+                  </VStack>
+                </Box>
+              ))}
 
               {/* Order Items Section - Use the shared component */}
               <OrderItemsField
@@ -344,57 +352,8 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
                 products={products}
                 manuallyEditedTotal={manuallyEditedTotal}
                 watch={watch}
-                shouldMarkDirty
+                shouldMarkDirty={true}
               />
-
-              {/* Third column - Additional Information */}
-              <Box>
-                <Text {...editCustomerStyles.sectionTitle}>
-                  {updatedFormSections[1].section}
-                </Text>
-                <VStack spacing={4} align="stretch">
-                  {updatedFormSections[1].fields.map((field) => (
-                    <FormControl 
-                      key={field.id} 
-                      isRequired={field.required}
-                      isInvalid={!!errors[field.id as keyof OrderUpdate]}
-                    >
-                      <Box {...editCustomerStyles.formBox}>
-                        <FormLabel 
-                          htmlFor={field.id}
-                          {...editCustomerStyles.formLabel}
-                        >
-                          {field.label}
-                          {field.required && 
-                            <Text as="span" color="red.500" ml={1}></Text>
-                          }
-                        </FormLabel>
-                        {field.type === "textarea" ? (
-                          <Textarea
-                            id={field.id}
-                            {...register(field.id as keyof OrderUpdate, field.validation)}
-                            placeholder={field.placeholder}
-                            {...editCustomerStyles.input}
-                          />
-                        ) : (
-                          <Input
-                            id={field.id}
-                            {...register(field.id as keyof OrderUpdate, field.validation)}
-                            placeholder={field.placeholder}
-                            type={field.type || "text"}
-                            {...editCustomerStyles.input}
-                          />
-                        )}
-                        {errors[field.id as keyof OrderUpdate] && (
-                          <FormErrorMessage>
-                            {errors[field.id as keyof OrderUpdate]?.message}
-                          </FormErrorMessage>
-                        )}
-                      </Box>
-                    </FormControl>
-                  ))}
-                </VStack>
-              </Box>
             </SimpleGrid>
           </form>
         </ModalBody>

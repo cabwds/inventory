@@ -290,17 +290,6 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
                               placeholder={field.placeholder}
                               {...editCustomerStyles.input}
                             />
-                          ) : field.id === "total_price" ? (
-                            <TotalPriceField
-                              id="total_price"
-                              label={field.label}
-                              register={register}
-                              errors={errors}
-                              setValue={setValue}
-                              showTotalAnimation={showTotalAnimation}
-                              manuallyEditedTotal={manuallyEditedTotal}
-                              setManuallyEditedTotal={setManuallyEditedTotal}
-                            />
                           ) : (
                             <Input
                               id={field.id}
@@ -318,6 +307,25 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
                         </Box>
                       </FormControl>
                     ))}
+
+                    {/* Add TotalPriceField as a separate field after the section fields */}
+                    {section.section === "Basic Information" && (
+                      <FormControl 
+                        isRequired={true}
+                        isInvalid={!!errors.total_price}
+                      >
+                        <TotalPriceField
+                          id="total_price"
+                          label="Total Price (SGD, Auto-calculated)"
+                          register={register}
+                          errors={errors}
+                          setValue={setValue}
+                          showTotalAnimation={showTotalAnimation}
+                          manuallyEditedTotal={manuallyEditedTotal}
+                          setManuallyEditedTotal={setManuallyEditedTotal}
+                        />
+                      </FormControl>
+                    )}
                   </VStack>
                 </Box>
               ))}

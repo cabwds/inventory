@@ -36,7 +36,7 @@ export const getOrderFormSections = (): FormSection[] => {
         },
         {
           id: "total_price",
-          label: "Total Price",
+          label: "Total Price (SGD, Auto-calculated)",
           required: true,
           placeholder: "Enter total price",
           type: "number",
@@ -62,32 +62,22 @@ export const getOrderFormSections = (): FormSection[] => {
 };
 
 /**
- * Updates the form sections to remove order_items, order_quantity fields
- * and updates the total_price field label
+ * Updates the form sections to remove order_items, order_quantity and total_price fields
+ * since they are handled separately in the form
  */
 export const processFormSections = (formSections: FormSection[]): FormSection[] => {
   return formSections.map(section => {
     if (section.section === "Basic Information") {
-      // First filter out order_items and order_quantity fields
+      // Filter out order_items, order_quantity, and total_price fields
       const filteredFields = section.fields.filter(
-        field => field.id !== "order_items" && field.id !== "order_quantity"
+        field => field.id !== "order_items" && 
+                field.id !== "order_quantity" && 
+                field.id !== "total_price"
       );
-      
-      // Then update the total_price field to be read-only
-      const updatedFields = filteredFields.map(field => {
-        if (field.id === "total_price") {
-          return {
-            ...field,
-            // Add a note to indicate the field is automatically calculated
-            label: "Total Price (SGD, Auto-calculated)",
-          };
-        }
-        return field;
-      });
       
       return {
         ...section,
-        fields: updatedFields
+        fields: filteredFields
       };
     }
     return section;
