@@ -76,7 +76,7 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
 
   const { data: products } = useQuery({
     queryKey: ["products"],
-    queryFn: () => ProductsService.readProducts({ limit: 100 }),
+    queryFn: () => ProductsService.readProducts({ limit: 500 }),
   })
 
   const mutation = useMutation({

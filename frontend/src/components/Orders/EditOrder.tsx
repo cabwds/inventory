@@ -100,7 +100,7 @@ const EditOrder = ({ order, isOpen, onClose }: EditOrderProps) => {
 
   const { data: products } = useQuery({
     queryKey: ["products"],
-    queryFn: () => ProductsService.readProducts({ limit: 100 }),
+    queryFn: () => ProductsService.readProducts({ limit: 500 }),
   })
 
   // Calculate total price based on selected products and quantities

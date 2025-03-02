@@ -73,7 +73,7 @@ function OrderDetail() {
   // Fetch products to get product details
   const { data: products } = useQuery({
     queryKey: ['products'],
-    queryFn: () => ProductsService.readProducts({ limit: 100 }),
+    queryFn: () => ProductsService.readProducts({ limit: 500 }),
     enabled: !!order?.order_items, // Only fetch if order_items exists
   })
   

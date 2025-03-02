@@ -42,7 +42,7 @@ def read_product(session: SessionDep, current_user: CurrentUser, id: str) -> Any
 
 @router.get("/", response_model=ProductsPublic)
 def read_products(
-    session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100,
+    session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 500,
     display_invalid: bool = False, brand: str = None, type: str = None
 ) -> Any:
     """
