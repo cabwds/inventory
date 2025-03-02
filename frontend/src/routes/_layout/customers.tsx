@@ -120,7 +120,7 @@ function CustomersTable() {
 
   // Get all customers for client-side filtering
   const { data: allCustomers, isPending: isLoadingAllCustomers } = useQuery({
-    queryKey: ["customers-all", displayInvalid],
+    queryKey: ["customers", displayInvalid],
     queryFn: () => CustomersService.readCustomers({ 
       limit: 1000,
       displayInvalid: displayInvalid
