@@ -207,16 +207,6 @@ function ProductsTable() {
     page * pageSize
   );
 
-  // Original server-side query remains for backward compatibility
-  const {
-    data: serverProducts,
-    isPending: isLoadingServerProducts,
-    isPlaceholderData,
-  } = useQuery({
-    ...getProductsQueryOptions({ page, pageSize, brand, type, displayInvalid }),
-    enabled: false, // Disable this query as we're using client-side filtering
-  })
-
   // Use allProducts instead of the current query cache for filter options
   const uniqueBrands = Array.from(
     new Set(
@@ -311,7 +301,7 @@ function ProductsTable() {
                 <SearchIcon color="gray.400" />
               </InputLeftElement>
               <Input
-                placeholder="Search products (e.g. FM-)"
+                placeholder="Search products (e.g. FM)"
                 value={searchTerm}
                 onChange={handleKeywordChange}
                 size="md"
@@ -321,7 +311,7 @@ function ProductsTable() {
               placeholder="Filter by Brand"
               value={brand || ""}
               onChange={handleBrandChange}
-              maxW="250px"
+              maxW="200px"
             >
               {uniqueBrands.map((b) => (
                 <option key={b} value={b}>
@@ -333,7 +323,7 @@ function ProductsTable() {
               placeholder="Filter by Type"
               value={type || ""}
               onChange={handleTypeChange}
-              maxW="250px"
+              maxW="160px"
             >
               {uniqueTypes.map((t) => (
                 <option key={t} value={t}>
