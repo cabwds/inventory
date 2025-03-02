@@ -17,15 +17,9 @@ import {
   VStack,
   Select,
   Textarea,
-  HStack,
-  IconButton,
-  Flex,
-  Divider,
-  GridItem,
 } from "@chakra-ui/react"
-import { AddIcon, DeleteIcon } from "@chakra-ui/icons"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { type SubmitHandler, useForm, Controller, useFieldArray } from "react-hook-form"
+import { type SubmitHandler, useForm, Controller } from "react-hook-form"
 import { useState, useEffect } from "react"
 
 import { type ApiError, type OrderCreate, OrdersService, CustomersService, ProductsService } from "../../client"
@@ -33,67 +27,22 @@ import useCustomToast from "../../hooks/useCustomToast"
 import { handleError } from "../../utils"
 import { modalScrollbarStyles, editCustomerStyles } from "../../styles/customers.styles"
 
+// Import shared utilities and components
+import { convertToSGD } from "../../utils/currencyUtils"
+import { ORDER_STATUS_OPTIONS, PAYMENT_STATUS_OPTIONS } from "../../utils/orderConstants"
+import { OrderItemInput, parseOrderItems } from "./orderTypes"
+import { getOrderFormSections, processFormSections } from "./orderFormUtils"
+import OrderItemsField from "./OrderItemsField"
+import TotalPriceField from "./TotalPriceField"
+
 interface AddOrderProps {
   isOpen: boolean
   onClose: () => void
 }
 
-interface FormField {
-  id: string;
-  label: string;
-  placeholder: string;
-  required?: boolean;
-  type?: string;
-  validation?: {
-    required?: string;
-    min?: { value: number; message: string };
-  };
-  options?: Array<{ value: string; label: string }>;
-}
-
-interface FormSection {
-  section: string;
-  fields: FormField[];
-}
-
-interface OrderItemInput {
-  product_id: string;
-  quantity: number;
-}
-
 interface OrderFormData extends OrderCreate {
   orderItemInputs: OrderItemInput[];
 }
-
-const ORDER_STATUS_OPTIONS = [
-  { value: "Pending", label: "Pending" },
-  { value: "Processing", label: "Processing" },
-  { value: "Shipped", label: "Shipped" },
-  { value: "Delivered", label: "Delivered" },
-  { value: "Cancelled", label: "Cancelled" },
-]
-
-const PAYMENT_STATUS_OPTIONS = [
-  { value: "Pending", label: "Pending" },
-  { value: "Paid", label: "Paid" },
-  { value: "Failed", label: "Failed" },
-  { value: "Refunded", label: "Refunded" },
-]
-
-// Static currency conversion rates to SGD
-const CURRENCY_CONVERSION_RATES = {
-  SGD: 1.00,    // 1 SGD = 1 SGD (base currency)
-  USD: 1.35,    // 1 USD = 1.35 SGD (updated to match $orderId.tsx)
-  EUR: 1.45,    // 1 EUR = 1.45 SGD (updated to match $orderId.tsx)
-  GBP: 1.70,    // 1 GBP = 1.70 SGD (updated to match $orderId.tsx)
-  JPY: 0.0088,  // 1 JPY = 0.0088 SGD (updated to match $orderId.tsx)
-  AUD: 0.88,    // 1 AUD = 0.88 SGD (updated to match $orderId.tsx)
-  CAD: 0.99,    // 1 CAD = 0.99 SGD (updated to match $orderId.tsx)
-  CNY: 0.19,    // 1 CNY = 0.19 SGD
-  HKD: 0.17,    // 1 HKD = 0.17 SGD
-  INR: 0.016    // 1 INR = 0.016 SGD
-  // Add more currencies as needed
-};
 
 const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
   const queryClient = useQueryClient()
@@ -119,11 +68,6 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
       orderItemInputs: [{ product_id: "", quantity: 1 }]
     },
   })
-
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "orderItemInputs",
-  });
 
   const { data: customers } = useQuery({
     queryKey: ["customers"],
@@ -153,25 +97,9 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
 
   // Watch for changes to orderItemInputs to recalculate total price
   const orderItemInputs = watch("orderItemInputs");
-  // Watch only orderItemInputs instead of all form values
-  const formValues = watch();
   const [previousTotal, setPreviousTotal] = useState<number>(0);
   const [showTotalAnimation, setShowTotalAnimation] = useState<boolean>(false);
   const [manuallyEditedTotal, setManuallyEditedTotal] = useState<boolean>(false);
-
-  // New helper function to convert price to SGD
-  const convertToSGD = (price: number, currency?: string | null) => {
-    if (!currency) return price * CURRENCY_CONVERSION_RATES.USD; // Default to USD if no currency provided
-    
-    // Ensure currency is uppercase and handle safely
-    const currencyKey = (currency || '').toUpperCase() as keyof typeof CURRENCY_CONVERSION_RATES;
-    const conversionRate = CURRENCY_CONVERSION_RATES[currencyKey] || CURRENCY_CONVERSION_RATES.USD;
-    
-    // For debugging - remove this in production
-    console.log(`Converting from ${currency} to SGD. Rate: ${conversionRate}, Original: ${price}, Converted: ${price * conversionRate}`);
-    
-    return price * conversionRate;
-  };
 
   // Calculate total price based on selected products and quantities
   useEffect(() => {
@@ -281,124 +209,9 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
     }
   }
 
-  const formSections: FormSection[] = [
-    {
-      section: "Basic Information",
-      fields: [
-        {
-          id: "customer_id",
-          label: "Customer",
-          required: true,
-          placeholder: "Select customer",
-          type: "select",
-          validation: {
-            required: "Customer is required",
-          }
-        },
-        {
-          id: "order_status",
-          label: "Order Status",
-          placeholder: "Select order status",
-          type: "select",
-          options: ORDER_STATUS_OPTIONS
-        },
-        {
-          id: "payment_status",
-          label: "Payment Status",
-          placeholder: "Select payment status",
-          type: "select",
-          options: PAYMENT_STATUS_OPTIONS
-        },
-        {
-          id: "total_price",
-          label: "Total Price",
-          required: true,
-          placeholder: "Enter total price",
-          type: "number",
-          validation: {
-            required: "Total price is required",
-            min: { value: 0, message: "Price cannot be negative" }
-          }
-        }
-      ]
-    },
-    {
-      section: "Additional Information",
-      fields: [
-        {
-          id: "notes",
-          label: "Notes",
-          placeholder: "Enter notes",
-          type: "textarea"
-        }
-      ]
-    }
-  ]
-
-  // Update the total_price field in formSections to be read-only
-  const updatedFormSections = formSections.map(section => {
-    if (section.section === "Basic Information") {
-      // First filter out order_items and order_quantity fields
-      const filteredFields = section.fields.filter(
-        field => field.id !== "order_items" && field.id !== "order_quantity"
-      );
-      
-      // Then update the total_price field to be read-only
-      const updatedFields = filteredFields.map(field => {
-        if (field.id === "total_price") {
-          return {
-            ...field,
-            // Add a note to indicate the field is automatically calculated
-            label: "Total Price (SGD, Auto-calculated)",
-            // Make the field read-only
-            type: "number",
-          };
-        }
-        return field;
-      });
-      
-      return {
-        ...section,
-        fields: updatedFields
-      };
-    }
-    return section;
-  });
-
-  // Get the set of already selected product IDs
-  const getSelectedProductIds = (currentIndex: number) => {
-    return new Set(
-      fields
-        .map((field, idx) => idx !== currentIndex ? getValues(`orderItemInputs.${idx}.product_id`) : null)
-        .filter(id => id !== null && id !== "")
-    );
-  };
-
-  // Filter out already selected products
-  const getAvailableProducts = (currentIndex: number) => {
-    if (!products?.data) return [];
-    
-    // Get all product_ids that are already selected in other items
-    const selectedProductIds = fields
-      .map((field, idx) => idx !== currentIndex ? getValues(`orderItemInputs.${idx}.product_id`) : null)
-      .filter(id => id !== null && id !== "");
-    
-    // Return only products that aren't already selected
-    return products.data.filter(product => !selectedProductIds.includes(product.id!));
-  };
-
-  // Helper function to get currency symbol
-  const getCurrencySymbol = (currency?: string | null) => {
-    if (!currency) return '$';
-    
-    switch (currency.toUpperCase()) {
-      case 'EUR': return '€';
-      case 'GBP': return '£';
-      case 'JPY': return '¥';
-      case 'SGD': return 'S$';
-      default: return '$';
-    }
-  };
+  // Get form sections from shared utility
+  const formSections = getOrderFormSections();
+  const updatedFormSections = processFormSections(formSections);
 
   return (
     <Modal
@@ -478,68 +291,16 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
                               {...editCustomerStyles.input}
                             />
                           ) : field.id === "total_price" ? (
-                            <>
-                              <Flex>
-                                <Box 
-                                  display="flex" 
-                                  alignItems="center" 
-                                  justifyContent="center"
-                                  bg="gray.100" 
-                                  px={3} 
-                                  borderWidth="1px" 
-                                  borderRight="none"
-                                  borderColor={showTotalAnimation ? "#48BB78" : "inherit"}
-                                  borderRadius="md" 
-                                  borderRightRadius="0"
-                                  fontWeight="bold"
-                                >
-                                  S$
-                                </Box>
-                                <Input
-                                  id={field.id}
-                                  {...register(field.id as keyof OrderCreate, field.validation)}
-                                  placeholder={field.placeholder}
-                                  type="number"
-                                  step="0.01"
-                                  readOnly={false}
-                                  borderLeftRadius="0"
-                                  style={{ 
-                                    backgroundColor: "#FFFFFF", 
-                                    ...(showTotalAnimation ? {
-                                      borderColor: "#48BB78",
-                                      boxShadow: "0 0 0 1px #48BB78"
-                                    } : {})
-                                  }}
-                                  onChange={(e) => {
-                                    // Set the flag to indicate manual edit
-                                    setManuallyEditedTotal(true);
-                                    // Log the new value for debugging
-                                    console.log("Manual price edit:", e.target.value);
-                                  }}
-                                  onBlur={(e) => {
-                                    // When focus leaves the field, update the previous total
-                                    const newTotal = parseFloat(e.target.value);
-                                    if (!isNaN(newTotal)) {
-                                      setPreviousTotal(newTotal);
-                                      // Ensure React Hook Form knows about the change
-                                      setValue("total_price", newTotal);
-                                    }
-                                  }}
-                                  {...editCustomerStyles.input}
-                                />
-                              </Flex>
-                              <Text 
-                                fontSize="xs" 
-                                color={showTotalAnimation ? "green.500" : (manuallyEditedTotal ? "blue.500" : "gray.500")} 
-                                fontWeight={showTotalAnimation || manuallyEditedTotal ? "medium" : "normal"}
-                                transition="all 0.3s"
-                                mt={1}
-                              >
-                                {manuallyEditedTotal 
-                                  ? "Manually edited (automatic calculation paused)" 
-                                  : "Auto-calculated but can be manually edited if needed"}
-                              </Text>
-                            </>
+                            <TotalPriceField
+                              id="total_price"
+                              label={field.label}
+                              register={register}
+                              errors={errors}
+                              setValue={setValue}
+                              showTotalAnimation={showTotalAnimation}
+                              manuallyEditedTotal={manuallyEditedTotal}
+                              setManuallyEditedTotal={setManuallyEditedTotal}
+                            />
                           ) : (
                             <Input
                               id={field.id}
@@ -561,196 +322,17 @@ const AddOrder = ({ isOpen, onClose }: AddOrderProps) => {
                 </Box>
               ))}
 
-              {/* Order Items Section */}
-              <Box>
-                <Text {...editCustomerStyles.sectionTitle}>
-                  Order Items
-                </Text>
-                <VStack spacing={3} align="stretch">
-                  {fields.map((field, index) => (
-                    <Box 
-                      key={field.id} 
-                      border="1px solid" 
-                      borderColor="gray.200" 
-                      p={2} 
-                      borderRadius="md"
-                      _hover={{ borderColor: "blue.200", boxShadow: "xs" }}
-                    >
-                      <Flex justify="space-between" align="center" mb={1}>
-                        <Text fontSize="sm" fontWeight="medium" color="gray.600">Item {index + 1}</Text>
-                        {index > 0 && (
-                          <IconButton
-                            size="xs"
-                            aria-label="Remove item"
-                            icon={<DeleteIcon />}
-                            onClick={() => remove(index)}
-                            colorScheme="red"
-                            variant="ghost"
-                          />
-                        )}
-                      </Flex>
-                      <SimpleGrid columns={{ base: 1, md: 5 }} spacing={2} alignItems="flex-end">
-                        <GridItem colSpan={{ base: 1, md: 3 }}>
-                          <FormControl isInvalid={!!errors.orderItemInputs?.[index]?.product_id} size="sm">
-                            <FormLabel htmlFor={`orderItemInputs.${index}.product_id`} fontSize="xs" mb={1}>Product</FormLabel>
-                            <Select
-                              id={`orderItemInputs.${index}.product_id`}
-                              {...register(`orderItemInputs.${index}.product_id` as const, {
-                                required: "Product is required"
-                              })}
-                              placeholder="Select product"
-                              size="sm"
-                              onChange={(e) => {
-                                // This additional onChange handler helps ensure the calculation
-                                // is triggered immediately for single item cases
-                                const currentItems = getValues("orderItemInputs");
-                                const newProductId = e.target.value;
-                                
-                                if (currentItems && currentItems[index] && products?.data) {
-                                  // Find product and recalculate total
-                                  const product = products.data.find(p => p.id === newProductId);
-                                  if (product?.unit_price) {
-                                    let newTotal = 0;
-                                    
-                                    // Calculate total from all items
-                                    currentItems.forEach((item, i) => {
-                                      // Use new product for the current item
-                                      const productId = i === index ? newProductId : item.product_id;
-                                      
-                                      if (productId && item.quantity > 0) {
-                                        const itemProduct = products.data.find(p => p.id === productId);
-                                        if (itemProduct?.unit_price) {
-                                          // Convert to SGD before adding to total
-                                          const priceInSGD = convertToSGD(itemProduct.unit_price, itemProduct.price_currency);
-                                          newTotal += priceInSGD * item.quantity;
-                                        }
-                                      }
-                                    });
-                                    
-                                    // Update total price field
-                                    setValue("total_price", parseFloat(newTotal.toFixed(2)));
-                                  }
-                                }
-                              }}
-                              {...editCustomerStyles.input}
-                            >
-                              {products?.data.map((product) => {
-                                const isSelected = getSelectedProductIds(index).has(product.id!);
-                                const priceDisplay = product.unit_price 
-                                  ? ` - ${getCurrencySymbol(product.price_currency)}${product.unit_price.toFixed(2)}`
-                                  : '';
-                                return (
-                                  <option 
-                                    key={product.id} 
-                                    value={product.id}
-                                    disabled={isSelected}
-                                  >
-                                    {product.id}{priceDisplay} {isSelected ? "(Already in order)" : ""}
-                                  </option>
-                                );
-                              })}
-                            </Select>
-                            {errors.orderItemInputs?.[index]?.product_id && (
-                              <FormErrorMessage fontSize="xs">
-                                {errors.orderItemInputs[index]?.product_id?.message}
-                              </FormErrorMessage>
-                            )}
-                          </FormControl>
-                        </GridItem>
-                        <GridItem colSpan={{ base: 1, md: 2 }}>
-                          <FormControl isInvalid={!!errors.orderItemInputs?.[index]?.quantity} size="sm">
-                            <FormLabel htmlFor={`orderItemInputs.${index}.quantity`} fontSize="xs" mb={1}>Quantity</FormLabel>
-                            <Input
-                              id={`orderItemInputs.${index}.quantity`}
-                              {...register(`orderItemInputs.${index}.quantity` as const, {
-                                required: "Required",
-                                min: { value: 1, message: "Min 1" },
-                                valueAsNumber: true
-                              })}
-                              type="number"
-                              placeholder="Qty"
-                              size="sm"
-                              onChange={(e) => {
-                                // This additional onChange handler helps ensure the calculation
-                                // is triggered immediately for single item cases
-                                const currentItems = getValues("orderItemInputs");
-                                const newQuantity = parseInt(e.target.value) || 0;
-                                
-                                if (currentItems && currentItems[index]) {
-                                  const productId = currentItems[index].product_id;
-                                  
-                                  if (productId && newQuantity > 0 && products?.data) {
-                                    // Find product and recalculate total
-                                    const product = products.data.find(p => p.id === productId);
-                                    if (product?.unit_price) {
-                                      let newTotal = 0;
-                                      
-                                      // Calculate total from all items
-                                      currentItems.forEach((item, i) => {
-                                        if (item.product_id && item.quantity > 0) {
-                                          const itemProduct = products.data.find(p => p.id === item.product_id);
-                                          // Use new quantity for the current item
-                                          const qty = i === index ? newQuantity : item.quantity;
-                                          if (itemProduct?.unit_price) {
-                                            // Convert to SGD before adding to total
-                                            const priceInSGD = convertToSGD(itemProduct.unit_price, itemProduct.price_currency);
-                                            newTotal += priceInSGD * qty;
-                                          }
-                                        }
-                                      });
-                                      
-                                      // Update total price field
-                                      setValue("total_price", parseFloat(newTotal.toFixed(2)));
-                                    }
-                                  }
-                                }
-                              }}
-                              {...editCustomerStyles.input}
-                            />
-                            {errors.orderItemInputs?.[index]?.quantity && (
-                              <FormErrorMessage fontSize="xs">
-                                {errors.orderItemInputs[index]?.quantity?.message}
-                              </FormErrorMessage>
-                            )}
-                          </FormControl>
-                        </GridItem>
-                      </SimpleGrid>
-                      
-                      {/* Show item subtotal if product is selected */}
-                      {orderItemInputs[index]?.product_id && orderItemInputs[index]?.quantity > 0 && (
-                        <Box mt={2}>
-                          <HStack spacing={1} justifyContent="flex-end">
-                            <Text fontSize="xs" color="gray.600">Item subtotal:</Text>
-                            <Text fontSize="xs" fontWeight="bold" color="green.600">
-                              {(() => {
-                                const product = products?.data.find(p => p.id === orderItemInputs[index].product_id);
-                                if (product?.unit_price) {
-                                  // Show the original currency first, then the SGD equivalent
-                                  const subtotal = product.unit_price * orderItemInputs[index].quantity;
-                                  const subtotalSGD = convertToSGD(product.unit_price, product.price_currency) * orderItemInputs[index].quantity;
-                                  return `${getCurrencySymbol(product.price_currency)}${subtotal.toFixed(2)} (S$${subtotalSGD.toFixed(2)})`;
-                                }
-                                return 'N/A';
-                              })()}
-                            </Text>
-                          </HStack>
-                        </Box>
-                      )}
-                    </Box>
-                  ))}
-                  <Button
-                    leftIcon={<AddIcon />}
-                    onClick={() => append({ product_id: "", quantity: 1 })}
-                    size="sm"
-                    colorScheme="blue"
-                    variant="ghost"
-                    width="auto"
-                    alignSelf="flex-start"
-                  >
-                    Add Product
-                  </Button>
-                </VStack>
-              </Box>
+              {/* Order Items Section - Use the shared component */}
+              <OrderItemsField
+                control={control}
+                register={register}
+                errors={errors}
+                getValues={getValues}
+                setValue={setValue}
+                products={products}
+                manuallyEditedTotal={manuallyEditedTotal}
+                watch={watch}
+              />
             </SimpleGrid>
           </form>
         </ModalBody>

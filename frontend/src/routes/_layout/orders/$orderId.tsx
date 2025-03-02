@@ -46,47 +46,14 @@ import { modalScrollbarStyles } from "../../../styles/orders.styles"
 import { useEffect, useState } from "react"
 import { FaExternalLinkAlt, FaTag, FaCheckCircle, FaTimesCircle, FaClock, FaShippingFast, FaDollarSign } from "react-icons/fa"
 
+// Import shared utilities
+import { convertToSGD, getCurrencySymbol } from "../../../utils/currencyUtils"
+import { STATUS_COLORS } from "../../../utils/orderConstants"
+import { OrderItem, parseOrderItems } from "../../../components/Orders/orderTypes"
+
 export const Route = createFileRoute('/_layout/orders/$orderId')({
   component: OrderDetail,
 })
-
-// Define interface for parsed order items
-interface OrderItem {
-  product_id: string;
-  quantity: number;
-  product_name?: string;  // Added to store name from products data
-  product_brand?: string; // Added to store brand from products data
-  product_type?: string;  // Added to store type from products data
-  unit_price?: number;    // Added to store unit price from products data
-  price_currency?: string; // Added to store price currency
-  total_price?: number;   // Added to store calculated total price
-}
-
-// Status color mapping for visual indicators
-const STATUS_COLORS = {
-  "Pending": "yellow",
-  "Processing": "blue",
-  "Shipped": "purple",
-  "Delivered": "green",
-  "Cancelled": "red",
-  "Paid": "green",
-  "Failed": "red",
-  "Refunded": "orange"
-};
-
-// Static currency conversion rates to SGD (Singapore Dollar)
-const CURRENCY_TO_SGD = {
-  "SGD": 1.0,      // 1 SGD = 1 SGD (base)
-  "USD": 1.35,     // 1 USD = 1.35 SGD
-  "EUR": 1.45,     // 1 EUR = 1.45 SGD
-  "GBP": 1.70,     // 1 GBP = 1.70 SGD
-  "JPY": 0.0088,   // 1 JPY = 0.0088 SGD
-  "AUD": 0.88,     // 1 AUD = 0.88 SGD
-  "CAD": 0.99,     // 1 CAD = 0.99 SGD
-  "CNY": 0.19,     // 1 CNY = 0.19 SGD
-  "HKD": 0.17,     // 1 HKD = 0.17 SGD
-  "INR": 0.016     // 1 INR = 0.016 SGD
-};
 
 function OrderDetail() {
   const { orderId } = Route.useParams()
@@ -113,20 +80,18 @@ function OrderDetail() {
   useEffect(() => {
     if (order?.order_items && products) {
       try {
-        const orderItemsObj = JSON.parse(order.order_items);
-        const parsedItems = Object.entries(orderItemsObj).map(([product_id, quantity]) => {
+        const parsedItems = parseOrderItems(order.order_items).map(item => {
           // Find product data from products data
-          const productData = products.data.find(p => p.id === product_id);
+          const productData = products.data.find(p => p.id === item.product_id);
           const unitPrice = productData?.unit_price || 0;
           return {
-            product_id,
-            quantity: Number(quantity),
+            ...item,
             product_name: productData?.id || 'Deleted Product',
             product_brand: productData?.brand || '',
             product_type: productData?.type || '',
             unit_price: unitPrice,
             price_currency: productData?.price_currency || 'USD',
-            total_price: unitPrice * Number(quantity)
+            total_price: unitPrice * item.quantity
           };
         });
         setOrderItems(parsedItems);
@@ -135,7 +100,7 @@ function OrderDetail() {
         const totalQty = parsedItems.reduce((sum, item) => sum + item.quantity, 0);
         setTotalQuantity(totalQty);
       } catch (e) {
-        console.error("Error parsing order items:", e);
+        console.error("Error processing order items:", e);
         setOrderItems([]);
         setTotalQuantity(0);
       }
@@ -203,14 +168,6 @@ function OrderDetail() {
 
   // Get the maximum quantity for progress bar scaling
   const maxQuantity = Math.max(...orderItems.map(item => item.quantity), 1);
-
-  // Helper function to convert price to Singapore Dollar (SGD)
-  const convertToSGD = (price: number = 0, currency: string = 'USD'): number => {
-    // Get the conversion rate from the static mapping, default to 1 if not found
-    const conversionRate = CURRENCY_TO_SGD[currency.toUpperCase() as keyof typeof CURRENCY_TO_SGD] || 1.0;
-    // Convert price to SGD
-    return price * conversionRate;
-  };
 
   // Format price to Singapore Dollar with 2 decimal places
   const formatSGDPrice = (price: number = 0): string => {
@@ -303,8 +260,8 @@ function OrderDetail() {
           <Tbody>
             {orderItems.map((item, index) => {
               // Convert prices to SGD
-              const unitPriceSGD = convertToSGD(item.unit_price, item.price_currency);
-              const totalPriceSGD = convertToSGD(item.total_price, item.price_currency);
+              const unitPriceSGD = convertToSGD(item.unit_price ?? 0, item.price_currency);
+              const totalPriceSGD = convertToSGD(item.total_price ?? 0, item.price_currency);
               
               return (
                 <Tr 
