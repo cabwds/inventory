@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Box,
   Button,
@@ -10,12 +10,21 @@ import {
   HStack,
   IconButton,
   Input,
+  InputGroup,
+  InputRightElement,
+  List,
+  ListItem,
+  Popover,
+  PopoverBody,
+  PopoverContent,
+  PopoverTrigger,
   Select,
   SimpleGrid,
   Text,
   VStack,
+  useOutsideClick,
 } from "@chakra-ui/react";
-import { AddIcon, DeleteIcon } from "@chakra-ui/icons";
+import { AddIcon, DeleteIcon, SearchIcon, CloseIcon } from "@chakra-ui/icons";
 import { useFieldArray, UseFormGetValues, UseFormRegister, UseFormSetValue } from "react-hook-form";
 import { OrderItemInput } from "./orderTypes";
 import { getCurrencySymbol, convertToSGD } from "../../utils/currencyUtils";
@@ -57,6 +66,17 @@ const OrderItemsField = ({
   // Watch orderItemInputs for calculations and UI updates
   const orderItemInputs = watch("orderItemInputs");
 
+  // State for managing search inputs for each order item
+  const [searchInputs, setSearchInputs] = useState<string[]>([]);
+  const [searchFocusIndex, setSearchFocusIndex] = useState<number | null>(null);
+  
+  // Initialize search inputs array when fields change
+  useEffect(() => {
+    if (fields.length > searchInputs.length) {
+      setSearchInputs(prev => [...prev, ...Array(fields.length - prev.length).fill('')]);
+    }
+  }, [fields.length, searchInputs.length]);
+
   // Function to calculate and display item subtotal
   const calculateItemSubtotal = (productId: string, quantity: number) => {
     const product = products?.data?.find((p: any) => p.id === productId);
@@ -67,6 +87,69 @@ const OrderItemsField = ({
       return `${getCurrencySymbol(product.price_currency)}${subtotal.toFixed(2)} (S$${subtotalSGD.toFixed(2)})`;
     }
     return 'N/A';
+  };
+
+  // Function to handle product selection
+  const handleProductSelect = (productId: string, index: number) => {
+    // Set the product ID in the form
+    setValue(`orderItemInputs.${index}.product_id`, productId, shouldMarkDirty ? { shouldDirty: true } : undefined);
+    
+    // Clear the search input for this index
+    const updatedSearchInputs = [...searchInputs];
+    updatedSearchInputs[index] = '';
+    setSearchInputs(updatedSearchInputs);
+    
+    // Close the search dropdown
+    setSearchFocusIndex(null);
+    
+    // Handle recalculation (similar to existing onChange handler)
+    const currentItems = getValues("orderItemInputs");
+    if (currentItems && currentItems[index] && products?.data) {
+      const product = products.data.find((p: any) => p.id === productId);
+      if (product?.unit_price) {
+        let newTotal = 0;
+        
+        // Calculate total from all items
+        currentItems.forEach((item: OrderItemInput, i: number) => {
+          // Use new product for the current item
+          const itemProductId = i === index ? productId : item.product_id;
+          
+          if (itemProductId && item.quantity > 0) {
+            const itemProduct = products.data.find((p: any) => p.id === itemProductId);
+            if (itemProduct?.unit_price) {
+              // Convert to SGD before adding to total
+              const priceInSGD = convertToSGD(itemProduct.unit_price, itemProduct.price_currency);
+              newTotal += priceInSGD * item.quantity;
+            }
+          }
+        });
+        
+        // Only update if not manually edited
+        if (!manuallyEditedTotal) {
+          setValue("total_price", parseFloat(newTotal.toFixed(2)), shouldMarkDirty ? { shouldDirty: true } : undefined);
+        }
+      }
+    }
+  };
+
+  // Filter products based on search input
+  const getFilteredProducts = (searchInput: string, index: number) => {
+    if (!products?.data || !searchInput.trim()) return [];
+    
+    const selectedProductIds = getSelectedProductIds(fields, getValues, index);
+    
+    return products.data.filter((product: any) => {
+      // Don't show already selected products (except the current selection)
+      if (selectedProductIds.has(product.id) && product.id !== getValues(`orderItemInputs.${index}.product_id`)) {
+        return false;
+      }
+      
+      // Search by product ID or other properties if available
+      const searchLower = searchInput.toLowerCase();
+      return product.id.toLowerCase().includes(searchLower) || 
+             (product.name && product.name.toLowerCase().includes(searchLower)) ||
+             (product.description && product.description.toLowerCase().includes(searchLower));
+    });
   };
 
   return (
@@ -101,67 +184,117 @@ const OrderItemsField = ({
               <GridItem colSpan={{ base: 1, md: 3 }}>
                 <FormControl isInvalid={!!errors.orderItemInputs?.[index]?.product_id} size="sm">
                   <FormLabel htmlFor={`orderItemInputs.${index}.product_id`} fontSize="xs" mb={1}>Product</FormLabel>
-                  <Select
-                    id={`orderItemInputs.${index}.product_id`}
+                  
+                  {/* Hidden input for form registration */}
+                  <input
+                    type="hidden"
                     {...register(`orderItemInputs.${index}.product_id` as const, {
                       required: "Product is required"
                     })}
-                    placeholder="Select product"
-                    size="sm"
-                    onChange={(e) => {
-                      // Handle immediate recalculation on product change
-                      const currentItems = getValues("orderItemInputs");
-                      const newProductId = e.target.value;
-                      
-                      // Immediately set the value in form state to ensure the UI updates
-                      setValue(`orderItemInputs.${index}.product_id`, newProductId, shouldMarkDirty ? { shouldDirty: true } : undefined);
-                      
-                      if (currentItems && currentItems[index] && products?.data) {
-                        // Find product and recalculate total
-                        const product = products.data.find((p: any) => p.id === newProductId);
-                        if (product?.unit_price) {
-                          let newTotal = 0;
-                          
-                          // Calculate total from all items
-                          currentItems.forEach((item: OrderItemInput, i: number) => {
-                            // Use new product for the current item
-                            const productId = i === index ? newProductId : item.product_id;
-                            
-                            if (productId && item.quantity > 0) {
-                              const itemProduct = products.data.find((p: any) => p.id === productId);
-                              if (itemProduct?.unit_price) {
-                                // Convert to SGD before adding to total
-                                const priceInSGD = convertToSGD(itemProduct.unit_price, itemProduct.price_currency);
-                                newTotal += priceInSGD * item.quantity;
-                              }
-                            }
-                          });
-                          
-                          // Only update if not manually edited
-                          if (!manuallyEditedTotal) {
-                            setValue("total_price", parseFloat(newTotal.toFixed(2)), shouldMarkDirty ? { shouldDirty: true } : undefined);
-                          }
-                        }
-                      }
-                    }}
-                    {...editCustomerStyles.input}
+                  />
+                  
+                  {/* Search input with dropdown */}
+                  <Popover
+                    isOpen={searchFocusIndex === index}
+                    onClose={() => setSearchFocusIndex(null)}
+                    placement="bottom"
+                    autoFocus={false}
+                    closeOnBlur={true}
+                    gutter={0}
                   >
-                    {products?.data.map((product: any) => {
-                      const isSelected = getSelectedProductIds(fields, getValues, index).has(product.id!);
-                      const priceDisplay = product.unit_price 
-                        ? ` - ${getCurrencySymbol(product.price_currency)}${product.unit_price.toFixed(2)}`
-                        : '';
-                      return (
-                        <option 
-                          key={product.id} 
-                          value={product.id}
-                          disabled={isSelected}
-                        >
-                          {product.id}{priceDisplay} {isSelected ? "(Already in order)" : ""}
-                        </option>
-                      );
-                    })}
-                  </Select>
+                    <PopoverTrigger>
+                      <InputGroup size="sm">
+                        <Input
+                          placeholder="Search products..."
+                          value={searchInputs[index] || ''}
+                          onChange={(e) => {
+                            const newSearchInputs = [...searchInputs];
+                            newSearchInputs[index] = e.target.value;
+                            setSearchInputs(newSearchInputs);
+                            if (e.target.value.trim()) {
+                              setSearchFocusIndex(index);
+                            }
+                          }}
+                          onFocus={() => setSearchFocusIndex(index)}
+                          {...editCustomerStyles.input}
+                        />
+                        <InputRightElement>
+                          {orderItemInputs[index]?.product_id && (
+                            <CloseIcon 
+                              w={3} 
+                              h={3} 
+                              color="gray.500" 
+                              cursor="pointer"
+                              onClick={() => {
+                                setValue(`orderItemInputs.${index}.product_id`, "", shouldMarkDirty ? { shouldDirty: true } : undefined);
+                                const newSearchInputs = [...searchInputs];
+                                newSearchInputs[index] = '';
+                                setSearchInputs(newSearchInputs);
+                              }}
+                            />
+                          )}
+                          {!orderItemInputs[index]?.product_id && (
+                            <SearchIcon w={3} h={3} color="gray.500" />
+                          )}
+                        </InputRightElement>
+                      </InputGroup>
+                    </PopoverTrigger>
+                    <PopoverContent width="100%" maxH="200px" overflowY="auto" boxShadow="lg">
+                      <PopoverBody p={0}>
+                        <List spacing={0}>
+                          {getFilteredProducts(searchInputs[index] || '', index).map((product: any) => {
+                            const priceDisplay = product.unit_price 
+                              ? ` - ${getCurrencySymbol(product.price_currency)}${product.unit_price.toFixed(2)}`
+                              : '';
+                            return (
+                              <ListItem
+                                key={product.id}
+                                px={3}
+                                py={2}
+                                _hover={{ bg: "blue.50" }}
+                                cursor="pointer"
+                                onClick={() => handleProductSelect(product.id, index)}
+                              >
+                                <Text fontSize="sm">
+                                  {product.id}{priceDisplay}
+                                  {product.name && ` - ${product.name}`}
+                                </Text>
+                              </ListItem>
+                            );
+                          })}
+                          {getFilteredProducts(searchInputs[index] || '', index).length === 0 && (
+                            <ListItem px={3} py={2}>
+                              <Text fontSize="sm" color="gray.500">No matching products found</Text>
+                            </ListItem>
+                          )}
+                        </List>
+                      </PopoverBody>
+                    </PopoverContent>
+                  </Popover>
+
+                  {/* Display selected product */}
+                  {orderItemInputs[index]?.product_id && products?.data && (
+                    <Box mt={1} p={1} bg="blue.50" borderRadius="sm">
+                      <Text fontSize="xs" fontWeight="medium">
+                        {(() => {
+                          const product = products.data.find((p: any) => p.id === orderItemInputs[index].product_id);
+                          if (product) {
+                            const priceDisplay = product.unit_price 
+                              ? ` - ${getCurrencySymbol(product.price_currency)}${product.unit_price.toFixed(2)}`
+                              : '';
+                            return (
+                              <>
+                                {product.id}{priceDisplay}
+                                {product.name && ` - ${product.name}`}
+                              </>
+                            );
+                          }
+                          return orderItemInputs[index].product_id;
+                        })()}
+                      </Text>
+                    </Box>
+                  )}
+                  
                   {errors.orderItemInputs?.[index]?.product_id && (
                     <FormErrorMessage fontSize="xs">
                       {errors.orderItemInputs[index]?.product_id?.message}
