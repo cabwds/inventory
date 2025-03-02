@@ -101,7 +101,7 @@ function OrderDetail() {
           return {
             product_id,
             quantity: Number(quantity),
-            product_name: productData?.id || 'Unknown Product'
+            product_name: productData?.id || 'Deleted Product'
           };
         });
         setOrderItems(parsedItems);

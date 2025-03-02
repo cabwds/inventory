@@ -72,6 +72,7 @@ const PRODUCT_TYPE_OPTIONS = [
   { value: "Metal", label: "Metal" },
   { value: "Pure", label: "Pure" },
   { value: "Sensory", label: "Sensory" },
+  { value: "Other", label: "Other" },
 ]
 
 const BRAND_OPTIONS = [
