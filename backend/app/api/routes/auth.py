@@ -7,7 +7,7 @@ from fastapi import Depends
 from starlette.config import Config
 import google_auth_oauthlib.flow
 import requests
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
 from urllib.parse import parse_qs
 from app.api.deps import SessionDep
 from app.crud import user_crud
@@ -109,9 +109,10 @@ async def google_callback(session:SessionDep, request: Request, response: Respon
     auth_token=security.create_access_token(user.id, expires_delta=access_token_expires, user_email=user.email, is_socialUser=True)
 
     response.set_cookie(key="access_token", value=access_token, httponly=False, max_age=300, samesite='none', domain='localhost')
-    return RedirectResponse(
-        url="http://localhost:5173/login?access_token={}".format(auth_token)
-    )
+    
+    # Use settings.FRONTEND_HOST to build the redirect URL
+    redirect_url = urljoin(settings.FRONTEND_HOST, f"/login?access_token={auth_token}")
+    return RedirectResponse(url=redirect_url)
 
 @router.get("/health-check/")
 async def health_check() -> bool:
