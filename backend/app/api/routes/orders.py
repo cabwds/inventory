@@ -22,6 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent  # Adjust if nee
 # Route to get an order invoice
 @router.get("/get-order-invoice/{order_id}")
 def get_order_invoice(session: SessionDep, order_id: str):
+
     order = session.get(Order, order_id)
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -50,11 +51,11 @@ def get_order_invoice(session: SessionDep, order_id: str):
     sheet["C11"] = customer.phone # Adjust to the customer contact number 
 
     # Product - Write with order product list
-    sheet["B15"] = 1
-    sheet["C15"] = "XFG 1001" 
-    sheet["E15"] = 2
-    sheet["F15"] = 220
-    sheet["G15"] = 2 * 220
+    process_order_item_excel(sheet=sheet, 
+                            order_items=order.order_items,
+                            total_price=order.total_price,
+                            start_row=15,
+                            end_row=36)
 
     # Save the modified file
     wb.save(output_path)
@@ -254,3 +255,27 @@ def delete_order(
     session.refresh(order)
     return Message(message="Order deleted successfully, mark as invalid")
 
+def parse_str2dict(input:str):
+    try:
+        # Convert JSON string to dictionary
+        out_dict = json.loads(input)
+        return out_dict
+    except json.JSONDecodeError as e:
+        print(f"Error decoding JSON: {e}")
+        return None  # Return None or an empty dict {} as needed
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        return None
+
+def process_order_item_excel(sheet, order_items:str, total_price: float, start_row: int = 15, end_row: int = 36):
+
+    order_dict = parse_str2dict(order_items)
+    for items in order_dict:
+        print(items)
+    sheet["B15"] = 1
+    sheet["C15"] = "XFG 1001" 
+    sheet["E15"] = 2
+    sheet["F15"] = 220
+    sheet["G15"] = 2 * 220
+
+    return
