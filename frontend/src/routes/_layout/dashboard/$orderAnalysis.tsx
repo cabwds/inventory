@@ -1,3 +1,4 @@
+import React from "react"
 import {
   Box,
   Container,
@@ -29,7 +30,7 @@ import {
 import { createFileRoute } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
 import { FiTrendingUp, FiDollarSign, FiShoppingBag, FiCalendar, FiBarChart2 } from "react-icons/fi"
-import { OrdersService } from "../../../client/sdk.gen"
+import { OrdersService, CustomersService } from "../../../client/sdk.gen"
 import { useState, useEffect } from "react"
 
 export const Route = createFileRoute("/_layout/dashboard/$orderAnalysis")({ 
@@ -58,12 +59,32 @@ function OrderAnalysis() {
   const [topProducts, setTopProducts] = useState<any[]>([])
   const [ordersByStatus, setOrdersByStatus] = useState<Record<string, number>>({})
   const [recentOrders, setRecentOrders] = useState<any[]>([])
+  const [conversionRate, setConversionRate] = useState<number>(0)
+  const [conversionGrowth, setConversionGrowth] = useState<number>(0)
+  const [customerCompanies, setCustomerCompanies] = useState<Record<string, string>>({})
   
   // Fetch orders data
   const { data: orders, isLoading } = useQuery({
     queryKey: ["ordersAnalysis"],
     queryFn: () => OrdersService.readOrders({ limit: 100, displayInvalid: false }),
   })
+
+  // Fetch customers data
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const response = await CustomersService.readCustomers({ limit: 500 })
+        const companies: Record<string, string> = {}
+        response.data.forEach(customer => {
+          companies[customer.id] = customer.company || 'N/A'
+        })
+        setCustomerCompanies(companies)
+      } catch (error) {
+        console.error('Error fetching customers:', error)
+      }
+    }
+    fetchCustomers()
+  }, [])
 
   // Process order data when it's available
   useEffect(() => {
@@ -89,35 +110,78 @@ function OrderAnalysis() {
       })
       setRecentOrders(sortedOrders.slice(0, 5))
       
-      // Calculate monthly growth (simplified - would need more data for accurate calculation)
-      // This is a placeholder calculation
-      const currentMonth = new Date().getMonth()
+      // Calculate monthly metrics
+      const currentDate = new Date()
+      const currentMonth = currentDate.getMonth()
+      const currentYear = currentDate.getFullYear()
+      
       const currentMonthOrders = orders.data.filter(order => {
         const orderDate = new Date(order.order_date || '')
-        return orderDate.getMonth() === currentMonth
+        return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear
       })
       
       const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1
+      const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear
       const previousMonthOrders = orders.data.filter(order => {
         const orderDate = new Date(order.order_date || '')
-        return orderDate.getMonth() === previousMonth
+        return orderDate.getMonth() === previousMonth && orderDate.getFullYear() === previousYear
       })
       
+      // Calculate monthly growth
       if (previousMonthOrders.length > 0) {
         const growth = ((currentMonthOrders.length - previousMonthOrders.length) / previousMonthOrders.length) * 100
         setMonthlyGrowth(growth)
       }
       
-      // Extract top products (would need to parse order_items for accurate data)
-      // This is a placeholder for demonstration
-      // In a real implementation, you would aggregate product quantities across orders
-      setTopProducts([
-        { name: "Film Roll Type A", quantity: 42, revenue: 2100 },
-        { name: "Camera Model X", quantity: 28, revenue: 5600 },
-        { name: "Lens Kit Pro", quantity: 23, revenue: 4600 },
-        { name: "Tripod Ultra", quantity: 19, revenue: 1900 },
-        { name: "Lighting Set", quantity: 15, revenue: 3000 },
-      ])
+      // Calculate conversion rate (completed orders / total orders)
+      const completedOrders = orders.data.filter(order => order.order_status === 'Delivered').length
+      const conversionRateValue = (completedOrders / orders.data.length) * 100
+      setConversionRate(conversionRateValue)
+      
+      // Calculate conversion rate growth
+      const previousCompletedOrders = previousMonthOrders.filter(order => order.order_status === 'Delivered').length
+      if (previousMonthOrders.length > 0) {
+        const previousConversionRate = (previousCompletedOrders / previousMonthOrders.length) * 100
+        const conversionGrowthValue = conversionRateValue - previousConversionRate
+        setConversionGrowth(conversionGrowthValue)
+      }
+      
+      // Analyze order items and aggregate product data
+      const productStats = new Map()
+      
+      orders.data.forEach(order => {
+        if (order.order_items) {
+          try {
+            const items = JSON.parse(order.order_items)
+            items.forEach((item: { product_id: string; quantity: string; unit_price: string; product_name?: string }) => {
+              const productId = item.product_id
+              const quantity = Number(item.quantity) || 0
+              const revenue = quantity * (Number(item.unit_price) || 0)
+              
+              if (productStats.has(productId)) {
+                const stats = productStats.get(productId)
+                stats.quantity += quantity
+                stats.revenue += revenue
+              } else {
+                productStats.set(productId, {
+                  name: item.product_name || productId,
+                  quantity,
+                  revenue
+                })
+              }
+            })
+          } catch (e) {
+            console.error('Error parsing order items:', e)
+          }
+        }
+      })
+      
+      // Convert to array and sort by revenue
+      const topProductsList = Array.from(productStats.values())
+        .sort((a, b) => b.revenue - a.revenue)
+        .slice(0, 5)
+      
+      setTopProducts(topProductsList)
     }
   }, [orders])
 
@@ -179,12 +243,12 @@ function OrderAnalysis() {
               <Stat>
                 <StatLabel display="flex" alignItems="center">
                   <Icon as={FiTrendingUp} mr={2} color="orange.500" />
-                  Conversion Rate
+                  Conversion Rate 
                 </StatLabel>
-                <StatNumber>68.3%</StatNumber>
+                <StatNumber>{conversionRate.toFixed(1)}%</StatNumber>
                 <StatHelpText>
-                  <StatArrow type="increase" />
-                  5.2% increase
+                  <StatArrow type={conversionGrowth >= 0 ? "increase" : "decrease"} />
+                  {Math.abs(conversionGrowth).toFixed(1)}% {conversionGrowth >= 0 ? "increase" : "decrease"}
                 </StatHelpText>
               </Stat>
             </CardBody>
@@ -297,7 +361,7 @@ function OrderAnalysis() {
                     <Tr key={index}>
                       <Td fontWeight="medium">{order.id}</Td>
                       <Td>{new Date(order.order_date).toLocaleDateString()}</Td>
-                      <Td>{order.customer_id || 'N/A'}</Td>
+                      <Td>{customerCompanies[order.customer_id] || 'N/A'}</Td>
                       <Td>
                         <Badge colorScheme={statusColor}>{order.order_status}</Badge>
                       </Td>
@@ -309,46 +373,7 @@ function OrderAnalysis() {
             </Table>
           </CardBody>
         </Card>
-        
-        {/* Business Insights */}
-        <Card bg={cardBgColor} borderColor={borderColor} borderWidth="1px" borderRadius="lg" overflow="hidden">
-          <CardHeader>
-            <Heading size="md">Business Insights</Heading>
-          </CardHeader>
-          <CardBody>
-            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
-              <Box p={4} borderWidth="1px" borderRadius="md" borderColor={borderColor}>
-                <Flex align="center" mb={2}>
-                  <Icon as={FiDollarSign} color="purple.500" mr={2} />
-                  <Text fontWeight="bold">Pricing Strategy</Text>
-                </Flex>
-                <Text fontSize="sm" color={textColor}>
-                  Higher-priced Camera Model X has strong sales. Consider bundling with accessories to increase average order value.
-                </Text>
-              </Box>
-
-              <Box p={4} borderWidth="1px" borderRadius="md" borderColor={borderColor}>
-                <Flex align="center" mb={2}>
-                  <Icon as={FiTrendingUp} color="green.500" mr={2} />
-                  <Text fontWeight="bold">Growth Opportunity</Text>
-                </Flex>
-                <Text fontSize="sm" color={textColor}>
-                  Film Roll Type A shows consistent demand. Consider increasing inventory and running promotions to boost sales further.
-                </Text>
-              </Box>
-
-              <Box p={4} borderWidth="1px" borderRadius="md" borderColor={borderColor}>
-                <Flex align="center" mb={2}>
-                  <Icon as={FiCalendar} color="blue.500" mr={2} />
-                  <Text fontWeight="bold">Seasonal Trend</Text>
-                </Flex>
-                <Text fontSize="sm" color={textColor}>
-                  Orders peak during holiday seasons. Plan inventory and marketing campaigns accordingly to maximize revenue.
-                </Text>
-              </Box>
-            </SimpleGrid>
-          </CardBody>
-        </Card>
+      
       </Container>
     </Box>
   )
