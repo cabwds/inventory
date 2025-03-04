@@ -261,70 +261,6 @@ function OrderAnalysis() {
           </Tooltip>
         </SimpleGrid>
 
-        {/* Additional Insights */}
-        <SimpleGrid columns={{ base: 1, md: 2 }} spacing={8} mb={8}>
-          {/* Customer Segmentation */}
-          <Card bg={cardBgColor} borderColor={borderColor} borderWidth="1px" borderRadius="lg" overflow="hidden">
-            <CardHeader pb={0}>
-              <Heading size="md">Customer Segmentation</Heading>
-            </CardHeader>
-            <CardBody>
-              <VStack spacing={4} align="stretch">
-                {Object.entries(customerSegments).map(([segment, count]) => {
-                  const percentage = Object.keys(customerCompanies).length > 0 ? (count / Object.keys(customerCompanies).length) * 100 : 0
-                  return (
-                    <Box key={segment}>
-                      <Flex justify="space-between" mb={1}>
-                        <Text fontSize="sm">{segment}</Text>
-                        <Text fontSize="sm" fontWeight="bold">{percentage.toFixed(1)}%</Text>
-                      </Flex>
-                      <Box w="100%" bg="gray.100" borderRadius="full" h="8px">
-                        <Box
-                          w={`${percentage}%`}
-                          bg="blue.500"
-                          borderRadius="full"
-                          h="100%"
-                        />
-                      </Box>
-                    </Box>
-                  )
-                })}
-              </VStack>
-            </CardBody>
-          </Card>
-
-          {/* Seasonal Trends */}
-          <Card bg={cardBgColor} borderColor={borderColor} borderWidth="1px" borderRadius="lg" overflow="hidden">
-            <CardHeader pb={0}>
-              <Heading size="md">Seasonal Order Trends</Heading>
-            </CardHeader>
-            <CardBody>
-              <VStack spacing={2} align="stretch">
-                {Object.entries(seasonalTrends).map(([month, count]) => {
-                  const maxOrders = Math.max(...Object.values(seasonalTrends), 1)
-                  const percentage = (count / maxOrders) * 100
-                  return (
-                    <Box key={month}>
-                      <Flex justify="space-between" mb={1}>
-                        <Text fontSize="sm">{month}</Text>
-                        <Text fontSize="sm">{count} orders</Text>
-                      </Flex>
-                      <Box w="100%" bg="gray.100" borderRadius="full" h="6px">
-                        <Box
-                          w={`${percentage}%`}
-                          bg="green.500"
-                          borderRadius="full"
-                          h="100%"
-                        />
-                      </Box>
-                    </Box>
-                  )
-                })}
-              </VStack>
-            </CardBody>
-          </Card>
-        </SimpleGrid>
-
         {/* Order Status Distribution */}
         <SimpleGrid columns={{ base: 1, md: 2 }} spacing={8} mb={8}>
           <Card bg={cardBgColor} borderColor={borderColor} borderWidth="1px" borderRadius="lg" overflow="hidden">
@@ -397,6 +333,40 @@ function OrderAnalysis() {
                   ))}
                 </Tbody>
               </Table>
+            </CardBody>
+          </Card>
+        </SimpleGrid>
+        
+        {/* Additional Insights */}
+        <SimpleGrid columns={{ base: 1, md: 2 }} spacing={8} mb={8}>
+          {/* Seasonal Trends */}
+          <Card bg={cardBgColor} borderColor={borderColor} borderWidth="1px" borderRadius="lg" overflow="hidden">
+            <CardHeader pb={0}>
+              <Heading size="md">Seasonal Order Trends</Heading>
+            </CardHeader>
+            <CardBody>
+              <VStack spacing={2} align="stretch">
+                {Object.entries(seasonalTrends).map(([month, count]) => {
+                  const maxOrders = Math.max(...Object.values(seasonalTrends), 1)
+                  const percentage = (count / maxOrders) * 100
+                  return (
+                    <Box key={month}>
+                      <Flex justify="space-between" mb={1}>
+                        <Text fontSize="sm">{month}</Text>
+                        <Text fontSize="sm">{count} orders</Text>
+                      </Flex>
+                      <Box w="100%" bg="gray.100" borderRadius="full" h="6px">
+                        <Box
+                          w={`${percentage}%`}
+                          bg="green.500"
+                          borderRadius="full"
+                          h="100%"
+                        />
+                      </Box>
+                    </Box>
+                  )
+                })}
+              </VStack>
             </CardBody>
           </Card>
         </SimpleGrid>
