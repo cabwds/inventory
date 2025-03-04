@@ -10,6 +10,7 @@ from sqlmodel import func, select, cast, DateTime, and_
 from app.api.deps import CurrentUser, SessionDep
 from app.models.order_models import *
 from app.models.customer_models import *
+from app.models.product_models import *
 from app.models.user_models import Message
 from pydantic import BaseModel
 from fastapi.responses import FileResponse, Response
@@ -51,7 +52,8 @@ def get_order_invoice(session: SessionDep, order_id: str):
     sheet["C11"] = customer.phone # Adjust to the customer contact number 
 
     # Product - Write with order product list
-    process_order_item_excel(sheet=sheet, 
+    process_order_item_excel(session=session,
+                            sheet=sheet, 
                             order_items=order.order_items,
                             total_price=order.total_price,
                             start_row=15,
@@ -267,15 +269,35 @@ def parse_str2dict(input:str):
         print(f"An unexpected error occurred: {e}")
         return None
 
-def process_order_item_excel(sheet, order_items:str, total_price: float, start_row: int = 15, end_row: int = 36):
+def process_order_item_excel(session, sheet, order_items:str, total_price: float, start_row: int = 15, end_row: int = 36):
 
+    ITEM_COLUMN = "B{}"
+    DESCRIPTION_COLUMN = "C{}"
+    QTY_COLUMN = "E{}"
+    UNIT_PRICE_COLUMN = "F{}"
+    SUBTOTAL_COLUMN = "G{}"
+    
+    row_count = start_row
+    item_count = 0
     order_dict = parse_str2dict(order_items)
-    for items in order_dict:
-        print(items)
-    sheet["B15"] = 1
-    sheet["C15"] = "XFG 1001" 
-    sheet["E15"] = 2
-    sheet["F15"] = 220
-    sheet["G15"] = 2 * 220
+    
+    for product_name in order_dict:
+        product : Product = session.get(Product, product_name)
+        
+        item_count+=1
+        product_quantity = order_dict[product_name]
+        
+        item_column_str = ITEM_COLUMN.format(row_count)
+        description_column_str = DESCRIPTION_COLUMN.format(row_count)
+        qty_column_str = QTY_COLUMN.format(row_count)
+        unit_price_column_str = UNIT_PRICE_COLUMN.format(row_count)
+        subtotal_column_str = SUBTOTAL_COLUMN.format(row_count)
+        row_count+=2
+
+        sheet[item_column_str] = item_count
+        sheet[description_column_str] = product_name
+        sheet[qty_column_str] = product_quantity
+        sheet[unit_price_column_str] = product.unit_price
+        sheet[subtotal_column_str] = product_quantity * product.unit_price
 
     return

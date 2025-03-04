@@ -63,6 +63,9 @@ function OrderAnalysis() {
   const [conversionRate, setConversionRate] = useState<number>(0)
   const [conversionGrowth, setConversionGrowth] = useState<number>(0)
   const [customerCompanies, setCustomerCompanies] = useState<Record<string, string>>({})
+  const [customerSegments, setCustomerSegments] = useState<Record<string, number>>({})
+  const [seasonalTrends, setSeasonalTrends] = useState<Record<string, number>>({})
+  // Removed categoryPerformance state variable
   
   // Fetch orders data
   const { data: orders, isLoading } = useQuery({
@@ -146,43 +149,37 @@ function OrderAnalysis() {
         const conversionGrowthValue = conversionRateValue - previousConversionRate
         setConversionGrowth(conversionGrowthValue)
       }
-      
-      // Analyze order items and aggregate product data
-      const productStats = new Map()
-      
+
+      // Analyze customer segments by order frequency
+      const customerOrderCounts: Record<string, number> = {}
       orders.data.forEach(order => {
-        if (order.order_items) {
-          try {
-            const items = JSON.parse(order.order_items)
-            items.forEach((item: { product_id: string; quantity: string; unit_price: string; product_name?: string }) => {
-              const productId = item.product_id
-              const quantity = Number(item.quantity) || 0
-              const revenue = quantity * (Number(item.unit_price) || 0)
-              
-              if (productStats.has(productId)) {
-                const stats = productStats.get(productId)
-                stats.quantity += quantity
-                stats.revenue += revenue
-              } else {
-                productStats.set(productId, {
-                  name: item.product_name || productId,
-                  quantity,
-                  revenue
-                })
-              }
-            })
-          } catch (e) {
-            console.error('Error parsing order items:', e)
-          }
+        if (order.customer_id) {
+          customerOrderCounts[order.customer_id] = (customerOrderCounts[order.customer_id] || 0) + 1
         }
       })
-      
-      // Convert to array and sort by revenue
-      const topProductsList = Array.from(productStats.values())
-        .sort((a, b) => b.revenue - a.revenue)
-        .slice(0, 5)
-      
-      setTopProducts(topProductsList)
+      const segments: Record<string, number> = {
+        'High Volume (>10)': 0,
+        'Medium Volume (5-10)': 0,
+        'Low Volume (<5)': 0
+      }
+      Object.values(customerOrderCounts).forEach(count => {
+        if (count > 10) segments['High Volume (>10)']++
+        else if (count >= 5) segments['Medium Volume (5-10)']++
+        else segments['Low Volume (<5)']++
+      })
+      setCustomerSegments(segments)
+
+      // Analyze seasonal trends
+      const monthlyOrders: Record<string, number> = {}
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+      orders.data.forEach(order => {
+        if (order.order_date) {
+          const orderDate = new Date(order.order_date)
+          const monthKey = months[orderDate.getMonth()]
+          monthlyOrders[monthKey] = (monthlyOrders[monthKey] || 0) + 1
+        }
+      })
+      setSeasonalTrends(monthlyOrders)
     }
   }, [orders])
 
@@ -201,7 +198,7 @@ function OrderAnalysis() {
                   <Icon as={FiDollarSign} mr={2} color="green.500" />
                   Total Revenue
                 </StatLabel>
-                <StatNumber>{formatCurrency(totalRevenue)}</StatNumber>
+                <StatNumber>S{formatCurrency(totalRevenue)}</StatNumber>
                 <StatHelpText>
                   <StatArrow type={monthlyGrowth >= 0 ? "increase" : "decrease"} />
                   {Math.abs(monthlyGrowth).toFixed(1)}% from last month
@@ -236,7 +233,7 @@ function OrderAnalysis() {
                   <Icon as={FiBarChart2} mr={2} color="purple.500" />
                   Average Order Value
                 </StatLabel>
-                <StatNumber>{formatCurrency(averageOrderValue)}</StatNumber>
+                <StatNumber>S{formatCurrency(averageOrderValue)}</StatNumber>
                 <StatHelpText>
                   Per transaction
                 </StatHelpText>
@@ -263,7 +260,71 @@ function OrderAnalysis() {
           </Card>
           </Tooltip>
         </SimpleGrid>
-        
+
+        {/* Additional Insights */}
+        <SimpleGrid columns={{ base: 1, md: 2 }} spacing={8} mb={8}>
+          {/* Customer Segmentation */}
+          <Card bg={cardBgColor} borderColor={borderColor} borderWidth="1px" borderRadius="lg" overflow="hidden">
+            <CardHeader pb={0}>
+              <Heading size="md">Customer Segmentation</Heading>
+            </CardHeader>
+            <CardBody>
+              <VStack spacing={4} align="stretch">
+                {Object.entries(customerSegments).map(([segment, count]) => {
+                  const percentage = Object.keys(customerCompanies).length > 0 ? (count / Object.keys(customerCompanies).length) * 100 : 0
+                  return (
+                    <Box key={segment}>
+                      <Flex justify="space-between" mb={1}>
+                        <Text fontSize="sm">{segment}</Text>
+                        <Text fontSize="sm" fontWeight="bold">{percentage.toFixed(1)}%</Text>
+                      </Flex>
+                      <Box w="100%" bg="gray.100" borderRadius="full" h="8px">
+                        <Box
+                          w={`${percentage}%`}
+                          bg="blue.500"
+                          borderRadius="full"
+                          h="100%"
+                        />
+                      </Box>
+                    </Box>
+                  )
+                })}
+              </VStack>
+            </CardBody>
+          </Card>
+
+          {/* Seasonal Trends */}
+          <Card bg={cardBgColor} borderColor={borderColor} borderWidth="1px" borderRadius="lg" overflow="hidden">
+            <CardHeader pb={0}>
+              <Heading size="md">Seasonal Order Trends</Heading>
+            </CardHeader>
+            <CardBody>
+              <VStack spacing={2} align="stretch">
+                {Object.entries(seasonalTrends).map(([month, count]) => {
+                  const maxOrders = Math.max(...Object.values(seasonalTrends), 1)
+                  const percentage = (count / maxOrders) * 100
+                  return (
+                    <Box key={month}>
+                      <Flex justify="space-between" mb={1}>
+                        <Text fontSize="sm">{month}</Text>
+                        <Text fontSize="sm">{count} orders</Text>
+                      </Flex>
+                      <Box w="100%" bg="gray.100" borderRadius="full" h="6px">
+                        <Box
+                          w={`${percentage}%`}
+                          bg="green.500"
+                          borderRadius="full"
+                          h="100%"
+                        />
+                      </Box>
+                    </Box>
+                  )
+                })}
+              </VStack>
+            </CardBody>
+          </Card>
+        </SimpleGrid>
+
         {/* Order Status Distribution */}
         <SimpleGrid columns={{ base: 1, md: 2 }} spacing={8} mb={8}>
           <Card bg={cardBgColor} borderColor={borderColor} borderWidth="1px" borderRadius="lg" overflow="hidden">
