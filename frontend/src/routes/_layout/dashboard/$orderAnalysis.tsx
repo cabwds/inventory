@@ -26,6 +26,7 @@ import {
   Badge,
   HStack,
   VStack,
+  Tooltip,
 } from "@chakra-ui/react"
 import { createFileRoute } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
@@ -192,6 +193,7 @@ function OrderAnalysis() {
         
         {/* Key Metrics */}
         <SimpleGrid columns={{ base: 1, md: 4 }} spacing={4} mb={8}>
+          <Tooltip label="Total revenue generated from all orders" placement="top">
           <Card bg={cardBgColor} borderColor={borderColor} borderWidth="1px" borderRadius="lg" overflow="hidden">
             <CardBody>
               <Stat>
@@ -207,7 +209,9 @@ function OrderAnalysis() {
               </Stat>
             </CardBody>
           </Card>
+          </Tooltip>
           
+          <Tooltip label="Total number of orders placed across all time periods" placement="top">
           <Card bg={cardBgColor} borderColor={borderColor} borderWidth="1px" borderRadius="lg" overflow="hidden">
             <CardBody>
               <Stat>
@@ -222,7 +226,9 @@ function OrderAnalysis() {
               </Stat>
             </CardBody>
           </Card>
+          </Tooltip>
           
+          <Tooltip label="Average amount spent per order (Total Revenue ÷ Total Orders)" placement="top">
           <Card bg={cardBgColor} borderColor={borderColor} borderWidth="1px" borderRadius="lg" overflow="hidden">
             <CardBody>
               <Stat>
@@ -237,7 +243,9 @@ function OrderAnalysis() {
               </Stat>
             </CardBody>
           </Card>
+          </Tooltip>
           
+          <Tooltip label="Percentage of orders that have been successfully delivered (Delivered Orders ÷ Total Orders). This metric indicates the efficiency of order fulfillment." placement="top">
           <Card bg={cardBgColor} borderColor={borderColor} borderWidth="1px" borderRadius="lg" overflow="hidden">
             <CardBody>
               <Stat>
@@ -253,6 +261,7 @@ function OrderAnalysis() {
               </Stat>
             </CardBody>
           </Card>
+          </Tooltip>
         </SimpleGrid>
         
         {/* Order Status Distribution */}
