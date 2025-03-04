@@ -11,7 +11,7 @@ import {
   Flex,
   useColorModeValue,
 } from "@chakra-ui/react"
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
 import { FiUsers, FiShoppingBag, FiPackage } from "react-icons/fi"
 
@@ -27,12 +27,14 @@ function StatCard({
   title, 
   value, 
   icon, 
-  helpText 
+  helpText,
+  onClick
 }: { 
   title: string
   value: string | number
   icon: React.ElementType
   helpText?: string
+  onClick?: () => void
 }) {
   const bgColor = useColorModeValue('white', 'gray.700')
   const borderColor = useColorModeValue('gray.200', 'gray.600')
@@ -42,7 +44,7 @@ function StatCard({
   const styles = getStatCardStyles(bgColor, borderColor, iconBg, textColor)
 
   return (
-    <Stat {...styles.stat}>
+    <Stat {...styles.stat} onClick={onClick} cursor={onClick ? "pointer" : "default"} _hover={onClick ? { transform: "translateY(-2px)", transition: "transform 0.2s" } : undefined}>
       <Flex {...styles.statContent}>
         <Box {...styles.textContainer}>
           <StatLabel {...styles.label}>
@@ -69,6 +71,7 @@ function StatCard({
 
 function Dashboard() {
   const { user: currentUser } = useAuth()
+  const navigate = useNavigate()
   const bgColor = useColorModeValue('gray.50', 'gray.800')
   const textColor = useColorModeValue('gray.600', 'gray.200')
 
@@ -114,6 +117,7 @@ function Dashboard() {
             value={orderCount?.count ?? "Loading..."}
             icon={FiShoppingBag}
             helpText="Total number of valid orders"
+            onClick={() => navigate({ to: "/dashboard/orderAnalysis" })}
           />
           <StatCard
             title="Product Inventory"
