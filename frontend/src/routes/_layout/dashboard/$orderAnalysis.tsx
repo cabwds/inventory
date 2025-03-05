@@ -320,10 +320,6 @@ function OrderAnalysis() {
                   Total Revenue
                 </StatLabel>
                 <StatNumber>S{formatCurrency(totalRevenue)}</StatNumber>
-                <StatHelpText>
-                  <StatArrow type={monthlyGrowth >= 0 ? "increase" : "decrease"} />
-                  {Math.abs(monthlyGrowth).toFixed(1)}% from previous period
-                </StatHelpText>
               </Stat>
             </CardBody>
           </Card>
@@ -372,10 +368,6 @@ function OrderAnalysis() {
                   Conversion Rate 
                 </StatLabel>
                 <StatNumber>{conversionRate.toFixed(1)}%</StatNumber>
-                <StatHelpText>
-                  <StatArrow type={conversionGrowth >= 0 ? "increase" : "decrease"} />
-                  {Math.abs(conversionGrowth).toFixed(1)}% {conversionGrowth >= 0 ? "increase" : "decrease"}
-                </StatHelpText>
               </Stat>
             </CardBody>
           </Card>
