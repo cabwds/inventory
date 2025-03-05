@@ -300,7 +300,7 @@ def process_order_item_excel(session, sheet, order_items:str, total_price: float
         sheet[description_column_str] = product_name
         sheet[qty_column_str] = product_quantity
         unit_price_converted_sgd = convert_to_sgd(product.unit_price, product.price_currency)
-        sheet[unit_price_column_str] = unit_price_converted_sgd
-        sheet[subtotal_column_str] = product_quantity * unit_price_converted_sgd
+        sheet[unit_price_column_str] = round(unit_price_converted_sgd, 2)
+        sheet[subtotal_column_str] = round(product_quantity * unit_price_converted_sgd, 2)
 
     return

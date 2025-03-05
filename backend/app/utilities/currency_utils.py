@@ -37,7 +37,7 @@ async def fetch_currency_rates():
     
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(CURRENCY_API_URL) as response:
+            async with session.get(CURRENCY_API_URL, ssl=False) as response:
                 if response.status != 200:
                     raise aiohttp.ClientError(f"API error: {response.status}")
                 
