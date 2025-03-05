@@ -66,7 +66,16 @@ function ProductDetail() {
       items: [
         { 
           label: "Unit Price", 
-          value: formatPrice(product?.unit_price, product?.price_currency)
+          value: (
+            <>
+              {formatPrice(product?.unit_price, product?.price_currency)}
+              {product?.price_currency !== 'SGD' && product?.unit_price && (
+                <Text fontSize="sm" color="gray.500" mt={1}>
+                  S${convertToSGD(product?.unit_price, product?.price_currency).toFixed(2)} SGD
+                </Text>
+              )}
+            </>
+          )
         },
         { 
           label: "Price Currency", 
@@ -74,7 +83,16 @@ function ProductDetail() {
         },
         { 
           label: "Unit Cost", 
-          value: formatPrice(product?.unit_cost, product?.cost_currency)
+          value: (
+            <>
+              {formatPrice(product?.unit_cost, product?.cost_currency)}
+              {product?.cost_currency !== 'SGD' && product?.unit_cost && (
+                <Text fontSize="sm" color="gray.500" mt={1}>
+                  S${convertToSGD(product?.unit_cost, product?.cost_currency).toFixed(2)} SGD
+                </Text>
+              )}
+            </>
+          )
         },
         { 
           label: "Cost Currency", 
@@ -178,6 +196,11 @@ function ProductDetail() {
                     <Text fontSize="2xl" fontWeight="bold" color="blue.600">
                       {formatPrice(product.unit_price, product.price_currency)}
                     </Text>
+                    {product.price_currency !== 'SGD' && product.unit_price && (
+                      <Text fontSize="sm" color="gray.500">
+                        (S${convertToSGD(product.unit_price, product.price_currency).toFixed(2)} SGD)
+                      </Text>
+                    )}
                   </Box>
                   
                   <Divider orientation="vertical" height="70px" display={{ base: "none", md: "block" }} />
@@ -187,6 +210,11 @@ function ProductDetail() {
                     <Text fontSize="2xl" fontWeight="bold" color="green.600">
                       {formatPrice(product.unit_cost, product.cost_currency)}
                     </Text>
+                    {product.cost_currency !== 'SGD' && product.unit_cost && (
+                      <Text fontSize="sm" color="gray.500">
+                        (S${convertToSGD(product.unit_cost, product.cost_currency).toFixed(2)} SGD)
+                      </Text>
+                    )}
                   </Box>
                   
                   <Divider orientation="vertical" height="70px" display={{ base: "none", md: "block" }} />
