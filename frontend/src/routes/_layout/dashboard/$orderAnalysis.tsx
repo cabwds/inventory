@@ -431,6 +431,7 @@ function OrderAnalysis() {
               <Table size="sm" variant="simple">
                 <Thead>
                   <Tr>
+                    <Th>Brand</Th>
                     <Th>Product</Th>
                     <Th isNumeric>Quantity</Th>
                     <Th isNumeric>Revenue</Th>
@@ -439,6 +440,7 @@ function OrderAnalysis() {
                 <Tbody>
                   {topProducts.map((product, index) => (
                     <Tr key={index}>
+                      <Td>{product.Brand}</Td>
                       <Td>{product.name}</Td>
                       <Td isNumeric>{product.quantity}</Td>
                       <Td isNumeric>{formatCurrency(product.revenue)}</Td>

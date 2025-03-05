@@ -23,7 +23,7 @@ import { useQuery } from "@tanstack/react-query"
 import { ProductsService } from "../../../client"
 import useCustomToast from "../../../hooks/useCustomToast"
 import { modalScrollbarStyles } from "../../../styles/customers.styles"
-import { getCurrencySymbol } from "../../../utils/currencyUtils"
+import { getCurrencySymbol, convertToSGD } from "../../../utils/currencyUtils"
 import { formatDimensions, formatPrice } from "../../../utils/productFormUtils"
 
 export const Route = createFileRoute('/_layout/products/$productId')({
@@ -187,6 +187,38 @@ function ProductDetail() {
                     <Text fontSize="2xl" fontWeight="bold" color="green.600">
                       {formatPrice(product.unit_cost, product.cost_currency)}
                     </Text>
+                  </Box>
+                  
+                  <Divider orientation="vertical" height="70px" display={{ base: "none", md: "block" }} />
+                  
+                  <Box textAlign="center" mb={{ base: 4, md: 0 }}>
+                    {product.unit_price && product.unit_cost ? (
+                      <>
+                        <Text color="gray.500" fontSize="sm">Profit (SGD)</Text>
+                        {(() => {
+                          const priceSGD = convertToSGD(product.unit_price, product.price_currency);
+                          const costSGD = convertToSGD(product.unit_cost, product.cost_currency);
+                          const profitSGD = priceSGD - costSGD;
+                          const profitPercentage = (profitSGD / costSGD) * 100;
+                          
+                          return (
+                            <>
+                              <Text fontSize="2xl" fontWeight="bold" color={profitSGD >= 0 ? "purple.600" : "red.600"}>
+                                S${profitSGD.toFixed(2)}
+                              </Text>
+                              <Text fontSize="sm" color={profitSGD >= 0 ? "purple.400" : "red.400"}>
+                                ({profitPercentage.toFixed(1)}%)
+                              </Text>
+                            </>
+                          );
+                        })()} 
+                      </>
+                    ) : (
+                      <>
+                        <Text color="gray.500" fontSize="sm">Profit (SGD)</Text>
+                        <Text fontSize="2xl" fontWeight="bold" color="gray.400">N/A</Text>
+                      </>
+                    )}
                   </Box>
                   
                   <Divider orientation="vertical" height="70px" display={{ base: "none", md: "block" }} />
