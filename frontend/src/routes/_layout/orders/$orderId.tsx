@@ -223,7 +223,7 @@ function OrderDetail() {
                 <Badge 
                   colorScheme={STATUS_COLORS[order.order_status as keyof typeof STATUS_COLORS] || "gray"}
                   px={2} py={1} borderRadius="md"
-                  display="flex" alignItems="center"
+                  display="flex" alignItems="center" fontSize="small"
                 >
                   {order.order_status === "Delivered" && <Icon as={FaCheckCircle} mr={1} />}
                   {order.order_status === "Cancelled" && <Icon as={FaTimesCircle} mr={1} />}
@@ -246,7 +246,7 @@ function OrderDetail() {
               <Flex align="center" mt={2}>
                 <Badge 
                   colorScheme={STATUS_COLORS[order.payment_status as keyof typeof STATUS_COLORS] || "gray"}
-                  px={2} py={1} borderRadius="md"
+                  px={2} py={1} borderRadius="md"  fontSize="small"
                 >
                   {order.payment_status}
                 </Badge>
@@ -299,6 +299,7 @@ function OrderDetail() {
               <Th>Quantity</Th>
               <Th>Unit Price (SGD)</Th>
               <Th>Total (SGD)</Th>
+              <Th>Total Cost (SGD)</Th>
               <Th>Profit (SGD)</Th>
               <Th>Distribution</Th>
               <Th width="100px">Actions</Th>
@@ -351,6 +352,14 @@ function OrderDetail() {
                     {item.price_currency && item.price_currency !== 'SGD' && (
                         <Text fontSize="xs" color="gray.500">
                           (Original: {getCurrencySymbol(item.price_currency)}{item.total_price})
+                        </Text>
+                    )}
+                  </Td>
+                  <Td fontWeight="medium" color="orange.600">
+                    S${formatSGDPrice(totalCostSGD)}
+                    {item.cost_currency && item.cost_currency !== 'SGD' && (
+                        <Text fontSize="xs" color="gray.500">
+                          (Original: {getCurrencySymbol(item.cost_currency)}{item.total_cost})
                         </Text>
                     )}
                   </Td>
