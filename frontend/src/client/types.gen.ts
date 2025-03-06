@@ -514,6 +514,12 @@ export type ProductsCreateProductData = {
 
 export type ProductsCreateProductResponse = Product
 
+export type ProductsGetProductsByNamesData = {
+  requestBody: string
+}
+
+export type ProductsGetProductsByNamesResponse = ProductsPublic
+
 export type UsersReadUsersData = {
   limit?: number
   skip?: number

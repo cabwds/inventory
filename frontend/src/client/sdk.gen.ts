@@ -70,6 +70,8 @@ import type {
   ProductsReadProductsResponse,
   ProductsCreateProductData,
   ProductsCreateProductResponse,
+  ProductsGetProductsByNamesData,
+  ProductsGetProductsByNamesResponse,
   UsersReadUsersData,
   UsersReadUsersResponse,
   UsersCreateUserData,
@@ -908,6 +910,31 @@ export class ProductsService {
     return __request(OpenAPI, {
       method: "POST",
       url: "/api/v1/products/",
+      body: data.requestBody,
+      mediaType: "application/json",
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Get Products By Names
+   * Get multiple products by their names in a single request.
+   *
+   * Accepts a JSON string containing a list of product names and returns information for all found products.
+   * Products that don't exist will be silently skipped.
+   * @param data The data for the request.
+   * @param data.requestBody
+   * @returns ProductsPublic Successful Response
+   * @throws ApiError
+   */
+  public static getProductsByNames(
+    data: ProductsGetProductsByNamesData,
+  ): CancelablePromise<ProductsGetProductsByNamesResponse> {
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/api/v1/products/batch-by-names",
       body: data.requestBody,
       mediaType: "application/json",
       errors: {
