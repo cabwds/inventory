@@ -42,8 +42,11 @@ export interface OrderItem {
   product_brand?: string;
   product_type?: string;
   unit_price?: number;
+  unit_cost?: number;
   price_currency?: string;
+  cost_currency?: string;
   total_price?: number;
+  total_cost?: number;
 }
 
 /**
@@ -64,4 +67,4 @@ export const parseOrderItems = (orderItemsJson?: string | null): OrderItemInput[
     console.error("Error parsing order items:", e);
     return [{ product_id: "", quantity: 1 }];
   }
-}; 
+};

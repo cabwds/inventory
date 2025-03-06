@@ -63,6 +63,8 @@ function OrderDetail() {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
   const [totalQuantity, setTotalQuantity] = useState<number>(0)
   const [totalOrderPrice, setTotalOrderPrice] = useState<number>(0)
+  const [totalOrderCost, setTotalOrderCost] = useState<number>(0)
+  const [totalProfit, setTotalProfit] = useState<number>(0)
   const [formattedDate, setFormattedDate] = useState<string>('N/A')
 
   const { data: order, isError } = useQuery({
@@ -85,14 +87,19 @@ function OrderDetail() {
           // Find product data from products data
           const productData = products.data.find(p => p.id === item.product_id);
           const unitPrice = productData?.unit_price || 0;
+          const unitCost = productData?.unit_cost || 0;
+          const unitProfit = unitPrice - unitCost;
           return {
             ...item,
             product_name: productData?.id || 'Deleted Product',
             product_brand: productData?.brand || '',
             product_type: productData?.type || '',
             unit_price: unitPrice,
+            unit_cost: unitCost,
             price_currency: productData?.price_currency || 'USD',
-            total_price: unitPrice * item.quantity
+            cost_currency: productData?.cost_currency || 'USD',
+            total_price: unitPrice * item.quantity,
+            total_cost: unitCost * item.quantity
           };
         });
         setOrderItems(parsedItems);
@@ -101,22 +108,37 @@ function OrderDetail() {
         const totalQty = parsedItems.reduce((sum, item) => sum + item.quantity, 0);
         setTotalQuantity(totalQty);
 
-        // Calculate total price in SGD for percentage calculations
+        // Calculate total price, cost and profit in SGD
         const totalPrice = parsedItems.reduce((sum, item) => {
           const itemPriceSGD = convertToSGD(item.total_price ?? 0, item.price_currency);
           return sum + itemPriceSGD;
         }, 0);
         setTotalOrderPrice(totalPrice);
+
+        const totalCost = parsedItems.reduce((sum, item) => {
+          const itemCostSGD = convertToSGD(item.total_cost ?? 0, item.cost_currency);
+          return sum + itemCostSGD;
+        }, 0);
+        setTotalOrderCost(totalCost);
+
+        const totalProfit = parsedItems.reduce((sum, item) => {
+          const itemPriceSGD = convertToSGD(item.total_price ?? 0, item.price_currency);
+          const itemCostSGD = convertToSGD(item.total_cost ?? 0, item.cost_currency);
+          return sum + (itemPriceSGD - itemCostSGD);
+        }, 0);
+        setTotalProfit(totalProfit);
       } catch (e) {
         console.error("Error processing order items:", e);
         setOrderItems([]);
         setTotalQuantity(0);
         setTotalOrderPrice(0);
+        setTotalProfit(0);
       }
     } else {
       setOrderItems([]);
       setTotalQuantity(0);
       setTotalOrderPrice(0);
+      setTotalProfit(0);
     }
   }, [order?.order_items, products]);
 
@@ -189,7 +211,7 @@ function OrderDetail() {
     if (!order) return null;
     
     return (
-      <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mb={6}>
+      <SimpleGrid columns={{ base: 1, md: 4 }} spacing={4} mb={6}>
         <Card variant="outline">
           <CardBody>
             <Stat>
@@ -244,6 +266,20 @@ function OrderDetail() {
             </Stat>
           </CardBody>
         </Card>
+
+        <Card variant="outline">
+          <CardBody>
+            <Stat>
+              <StatLabel>Total Profit</StatLabel>
+              <StatNumber color={totalProfit >= 0 ? "green.500" : "red.500"}>
+                S${formatSGDPrice(totalProfit)}
+              </StatNumber>
+              <StatHelpText>
+                {((totalProfit / totalOrderCost) * 100).toFixed(1)}% margin
+              </StatHelpText>
+            </Stat>
+          </CardBody>
+        </Card>
       </SimpleGrid>
     );
   };
@@ -263,6 +299,7 @@ function OrderDetail() {
               <Th>Quantity</Th>
               <Th>Unit Price (SGD)</Th>
               <Th>Total (SGD)</Th>
+              <Th>Profit (SGD)</Th>
               <Th>Distribution</Th>
               <Th width="100px">Actions</Th>
             </Tr>
@@ -272,6 +309,8 @@ function OrderDetail() {
               // Convert prices to SGD
               const unitPriceSGD = convertToSGD(item.unit_price ?? 0, item.price_currency);
               const totalPriceSGD = convertToSGD(item.total_price ?? 0, item.price_currency);
+              const totalCostSGD = convertToSGD(item.total_cost ?? 0, item.cost_currency);
+              const profitSGD = totalPriceSGD - totalCostSGD;
               
               // Calculate the percentage contribution to the total order price
               const pricePercentage = totalOrderPrice > 0 
@@ -314,6 +353,9 @@ function OrderDetail() {
                           (Original: {getCurrencySymbol(item.price_currency)}{item.total_price})
                         </Text>
                     )}
+                  </Td>
+                  <Td fontWeight="medium" color={profitSGD >= 0 ? "green.600" : "red.600"}>
+                    S${formatSGDPrice(profitSGD)}
                   </Td>
                   <Td>
                     <Tooltip label={`S$${formatSGDPrice(totalPriceSGD)} (${Math.round(pricePercentage)}% of total order value)`}>
@@ -495,4 +537,4 @@ function OrderDetail() {
       </ModalContent>
     </Modal>
   )
-} 
+}
