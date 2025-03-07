@@ -415,6 +415,7 @@ export type LoginRecoverPasswordHtmlContentResponse = string
 
 export type OrdersGetOrderInvoiceData = {
   orderId: string
+  outputCurrency?: string
 }
 
 export type OrdersGetOrderInvoiceResponse = unknown

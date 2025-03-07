@@ -12,7 +12,7 @@ from app.models.order_models import *
 from app.models.customer_models import *
 from app.models.product_models import *
 from app.models.user_models import Message
-from app.utilities.currency_utils import convert_to_sgd
+from app.utilities.currency_utils import convert_to_sgd, convert_to_target_currency
 from pydantic import BaseModel
 from fastapi.responses import FileResponse, Response
 from openpyxl import load_workbook
@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent  # Adjust if nee
 
 # Route to get an order invoice
 @router.get("/get-order-invoice/{order_id}")
-def get_order_invoice(session: SessionDep, order_id: str):
+def get_order_invoice(session: SessionDep, order_id: str, output_currency: str = "SGD"):
 
     order = session.get(Order, order_id)
     if not order:
@@ -52,10 +52,13 @@ def get_order_invoice(session: SessionDep, order_id: str):
     sheet["G3"] = order_id # Adjust to the order id
     sheet["B7"] = customer.company # Adjust to the customer company name
     sheet["C11"] = customer.phone # Adjust to the customer contact number 
+    sheet["F14"] = "UNIT PRICE ({})".format(output_currency)
+    sheet["F15"] = "SUBTOTAL ({})".format(output_currency)
 
     # Product - Write with order product list
     process_order_item_excel(session=session,
                             sheet=sheet, 
+                            output_currency=output_currency,
                             order_items=order.order_items,
                             total_price=order.total_price,
                             start_row=15,
@@ -271,7 +274,7 @@ def parse_str2dict(input:str):
         print(f"An unexpected error occurred: {e}")
         return None
 
-def process_order_item_excel(session, sheet, order_items:str, total_price: float, start_row: int = 15, end_row: int = 36):
+def process_order_item_excel(session, sheet, output_currency: str, order_items:str, total_price: float, start_row: int = 15, end_row: int = 36):
 
     ITEM_COLUMN = "B{}"
     DESCRIPTION_COLUMN = "C{}"
@@ -299,8 +302,11 @@ def process_order_item_excel(session, sheet, order_items:str, total_price: float
         sheet[item_column_str] = item_count
         sheet[description_column_str] = product_name
         sheet[qty_column_str] = product_quantity
-        unit_price_converted_sgd = convert_to_sgd(product.unit_price, product.price_currency)
-        sheet[unit_price_column_str] = round(unit_price_converted_sgd, 2)
-        sheet[subtotal_column_str] = round(product_quantity * unit_price_converted_sgd, 2)
+        if product.price_currency == output_currency:
+            unit_price_converted = product.unit_price
+        else:
+            unit_price_converted = convert_to_target_currency(product.unit_price, product.price_currency, target_currency=output_currency)
+        sheet[unit_price_column_str] = round(unit_price_converted, 2)
+        sheet[subtotal_column_str] = round(product_quantity * unit_price_converted, 2)
 
     return

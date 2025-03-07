@@ -79,6 +79,17 @@ def convert_to_sgd(amount: float, currency: str) -> float:
     rate = get_conversion_rate(currency)
     return amount * rate
 
+def convert_to_target_currency(amount: float, original_currency: str, target_currency: str) -> float:
+    """Converts an amount from the specified currency to SGD"""
+    rate = get_conversion_rate(original_currency)
+    sgd_value = amount * rate
+
+    """Converts an amount from SGD to the specified currency"""
+    rate2 = get_conversion_rate(target_currency)
+    target_currency_value = sgd_value / rate2
+    
+    return target_currency_value
+
 async def update_rates_if_needed():
     """Updates the currency rates if the last update was more than UPDATE_INTERVAL ago"""
     global last_update

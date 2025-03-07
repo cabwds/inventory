@@ -557,6 +557,7 @@ export class OrdersService {
    * Get Order Invoice
    * @param data The data for the request.
    * @param data.orderId
+   * @param data.outputCurrency
    * @returns unknown Successful Response
    * @throws ApiError
    */
@@ -568,6 +569,9 @@ export class OrdersService {
       url: "/api/v1/orders/get-order-invoice/{order_id}",
       path: {
         order_id: data.orderId,
+      },
+      query: {
+        output_currency: data.outputCurrency,
       },
       errors: {
         422: "Validation Error",
