@@ -53,7 +53,7 @@ def get_order_invoice(session: SessionDep, order_id: str, output_currency: str =
     sheet["B7"] = customer.company # Adjust to the customer company name
     sheet["C11"] = customer.phone # Adjust to the customer contact number 
     sheet["F14"] = "UNIT PRICE ({})".format(output_currency)
-    sheet["F15"] = "SUBTOTAL ({})".format(output_currency)
+    sheet["G14"] = "SUBTOTAL ({})".format(output_currency)
 
     # Product - Write with order product list
     process_order_item_excel(session=session,
