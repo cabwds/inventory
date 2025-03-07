@@ -86,6 +86,7 @@ const getCurrencySymbol = (currency: string | null | undefined): string => {
     case 'EUR': return '€';
     case 'GBP': return '£';
     case 'CNY': return '¥';
+    case 'MYR': return 'RM';
     default: return 'S$';
   }
 }

@@ -14,7 +14,8 @@ DEFAULT_CONVERSION_RATES = {
     "CAD": 0.99,    # 1 CAD = 0.99 SGD
     "CNY": 0.19,    # 1 CNY = 0.19 SGD
     "HKD": 0.17,    # 1 HKD = 0.17 SGD
-    "INR": 0.016    # 1 INR = 0.016 SGD
+    "INR": 0.016,   # 1 INR = 0.016 SGD
+    "MYR": 0.30     # 1 MYR = 0.30 SGD
 }
 
 # Mutable object to store the currently active conversion rates
