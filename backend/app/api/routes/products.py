@@ -145,6 +145,7 @@ class ProductsRequest(BaseModel):
 @router.post("/batch-by-names", response_model=ProductsPublic)
 def get_products_by_names(
     session: SessionDep,
+    current_user: CurrentUser,
     request_data: list[str] = Body(..., description="list of string containing a list of product names"),
 ) -> Any:
     """

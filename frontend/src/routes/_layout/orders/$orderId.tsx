@@ -1,3 +1,4 @@
+import React from "react"
 import {
   Modal,
   ModalOverlay,
@@ -72,11 +73,23 @@ function OrderDetail() {
     queryFn: () => OrdersService.readOrder({ id: orderId }),
   })
 
-  // Fetch products to get product details
+  // Extract product IDs from order items when order data is available
+  const productIds = React.useMemo(() => {
+    if (!order?.order_items) return [];
+    try {
+      const parsedItems = parseOrderItems(order.order_items);
+      return parsedItems.map(item => item.product_id).filter(Boolean);
+    } catch (e) {
+      console.error("Error extracting product IDs:", e);
+      return [];
+    }
+  }, [order?.order_items]);
+
+  // Fetch only the products needed for this order using the new batch API
   const { data: products } = useQuery({
-    queryKey: ['products'],
-    queryFn: () => ProductsService.readProducts({ limit: 500 }),
-    enabled: !!order?.order_items, // Only fetch if order_items exists
+    queryKey: ['products', productIds],
+    queryFn: () => ProductsService.getProductsByNames({ requestBody: productIds }),
+    enabled: productIds.length > 0, // Only fetch if we have product IDs
   })
   
   // Parse order items when order data is available
