@@ -145,8 +145,7 @@ class ProductsRequest(BaseModel):
 @router.post("/batch-by-names", response_model=ProductsPublic)
 def get_products_by_names(
     session: SessionDep,
-    current_user: CurrentUser,
-    request_data: str = Body(..., description="JSON string containing a list of product names"),
+    request_data: list[str] = Body(..., description="list of string containing a list of product names"),
 ) -> Any:
     """
     Get multiple products by their names in a single request.
@@ -156,14 +155,11 @@ def get_products_by_names(
     """
     try:
         # Parse the JSON string to get the list of product names
-        product_names = json.loads(request_data)
-        
-        if not isinstance(product_names, list):
-            raise HTTPException(status_code=400, detail="Request body must be a JSON string containing a list of product names")
+        #product_names = json.loads(request_data)
         
         # Build query to fetch all requested products in one database call
-        query = select(Product).where(Product.id.in_(product_names))
-        
+        query = select(Product).where(Product.id.in_(request_data))
+
         # Execute query
         products = session.exec(query).all()
         
@@ -172,7 +168,5 @@ def get_products_by_names(
         
         return ProductsPublic(data=products, count=count)
         
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=400, detail="Invalid JSON format in request body")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing request: {str(e)}")

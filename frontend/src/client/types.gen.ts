@@ -516,7 +516,7 @@ export type ProductsCreateProductData = {
 export type ProductsCreateProductResponse = Product
 
 export type ProductsGetProductsByNamesData = {
-  requestBody: string
+  requestBody: Array<string>
 }
 
 export type ProductsGetProductsByNamesResponse = ProductsPublic
