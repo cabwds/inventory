@@ -20,10 +20,17 @@ import {
   VStack,
   Tooltip,
   IconButton,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalCloseButton,
+  ModalFooter,
 } from "@chakra-ui/react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate, Outlet } from "@tanstack/react-router"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { z } from "zod"
 import { ChevronUpIcon, ChevronDownIcon, InfoIcon, DownloadIcon } from "@chakra-ui/icons"
 import type { UserPublic } from "../../client"
@@ -132,15 +139,23 @@ function OrderRow({
     }
   }
   
+  const [isInvoiceCurrencyModalOpen, setIsInvoiceCurrencyModalOpen] = useState<boolean>(false)
+  const [selectedCurrency, setSelectedCurrency] = useState<string>('SGD')
+  const [processingOrderId, setProcessingOrderId] = useState<string | null>(null)
+
   const handleDownloadInvoice = async (e: React.MouseEvent) => {
     e.stopPropagation() // Prevent row click
+    setProcessingOrderId(order.id)
+    setIsInvoiceCurrencyModalOpen(true)
+  }
+
+  const downloadInvoiceWithCurrency = async (orderId: string, currency: string) => {
     try {
-      
       // Get the base URL from the OpenAPI configuration
       const baseUrl = import.meta.env.VITE_API_URL || '';
       
-      // Make the API call to get the invoice - use fetch directly for binary data
-      const response = await fetch(`${baseUrl}/api/v1/orders/get-order-invoice/${order.id}`, {
+      // Make the API call to get the invoice with selected currency
+      const response = await fetch(`${baseUrl}/api/v1/orders/get-order-invoice/${orderId}?output_currency=${currency}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -270,6 +285,50 @@ function OrderRow({
           />
         </HStack>
       </Td>
+
+      {/* Currency Selection Modal */}
+      <Modal
+        isOpen={isInvoiceCurrencyModalOpen}
+        onClose={() => setIsInvoiceCurrencyModalOpen(false)}
+        isCentered
+        size="sm"
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Select Invoice Currency</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6}>
+            <FormControl>
+              <FormLabel>Currency</FormLabel>
+              <Select
+                value={selectedCurrency}
+                onChange={(e) => setSelectedCurrency(e.target.value)}
+              >
+                <option value="SGD">SGD - Singapore Dollar</option>
+                <option value="MYR">MYR - Malaysia Ringgit</option>
+                <option value="CNY">CNY - Chinese Yuan</option>
+                <option value="USD">USD - US Dollar</option>
+              </Select>
+            </FormControl>
+          </ModalBody>
+
+          <ModalFooter>
+            <Button
+              colorScheme="blue"
+              mr={3}
+              onClick={() => {
+                setIsInvoiceCurrencyModalOpen(false)
+                if (processingOrderId) {
+                  downloadInvoiceWithCurrency(processingOrderId, selectedCurrency)
+                }
+              }}
+            >
+              Download
+            </Button>
+            <Button onClick={() => setIsInvoiceCurrencyModalOpen(false)}>Cancel</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Tr>
   )
 }
