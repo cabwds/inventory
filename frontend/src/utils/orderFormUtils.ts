@@ -2,7 +2,7 @@ import { FormSection } from "../components/Orders/orderTypes";
 import { CURRENCY_OPTIONS } from "./productConstants";
 import { ORDER_STATUS_OPTIONS as STATUS_OPTIONS } from "./orderConstants";
 
-export function getOrderFormSections(isEditMode: boolean = false): FormSection[] {
+export function getOrderFormSections(): FormSection[] {
   return [
     {
       section: "Basic Information",

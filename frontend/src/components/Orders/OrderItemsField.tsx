@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Button,
@@ -18,11 +18,9 @@ import {
   PopoverBody,
   PopoverContent,
   PopoverTrigger,
-  Select,
   SimpleGrid,
   Text,
-  VStack,
-  useOutsideClick,
+  VStack
 } from "@chakra-ui/react";
 import { AddIcon, DeleteIcon, SearchIcon, CloseIcon } from "@chakra-ui/icons";
 import { useFieldArray, UseFormGetValues, UseFormRegister, UseFormSetValue } from "react-hook-form";

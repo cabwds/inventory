@@ -16,7 +16,6 @@ import {
   HStack,
   VStack,
   Tooltip,
-  IconButton,
   Input,
   InputGroup,
   InputLeftElement,
@@ -25,15 +24,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate, Outlet } from "@tanstack/react-router"
 import { useEffect, useState } from "react"
 import { z } from "zod"
-import { ChevronUpIcon, ChevronDownIcon, InfoIcon, SearchIcon } from "@chakra-ui/icons"
+import { InfoIcon, SearchIcon } from "@chakra-ui/icons"
 import { ProductsService, UserPublic } from "../../client/index.ts"
 import ActionsMenu from "../../components/Common/ActionsMenu.tsx"
 import Navbar from "../../components/Common/Navbar.tsx"
 import AddProduct from "../../components/Products/AddProduct.tsx"
 import { PaginationFooter } from "../../components/Common/PaginationFooter.tsx"
 import { PageSizeSelector } from "../../components/Common/PageSizeSelector"
-
-type SortOrder = "asc" | "desc"
 
 const productsSearchSchema = z.object({
   page: z.number().catch(1),
@@ -51,30 +48,6 @@ export const Route = createFileRoute("/_layout/products")({
   validateSearch: (search) => productsSearchSchema.parse(search),
 })
 
-function getProductsQueryOptions({ 
-  page, 
-  pageSize, 
-  brand, 
-  type,
-  displayInvalid
-}: { 
-  page: number; 
-  pageSize: number;
-  brand?: string;
-  type?: string;
-  displayInvalid?: boolean;
-}) {
-  return {
-    queryFn: () => ProductsService.readProducts({ 
-      ...(brand && { brand }),
-      ...(type && { type }),
-      ...(displayInvalid !== undefined && { displayInvalid }),
-      skip: (page - 1) * pageSize, 
-      limit: pageSize 
-    }),
-    queryKey: ["products", { page, pageSize, brand, type, displayInvalid }],
-  }
-}
 
 // Helper function to get currency symbol
 const getCurrencySymbol = (currency: string | null | undefined): string => {

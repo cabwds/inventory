@@ -1,4 +1,3 @@
-import React from "react"
 import {
   Box,
   Container,
@@ -12,10 +11,8 @@ import {
   StatLabel,
   StatNumber,
   StatHelpText,
-  StatArrow,
   Flex,
   Icon,
-  Divider,
   useColorModeValue,
   Table,
   Thead,
@@ -28,19 +25,13 @@ import {
   VStack,
   Tooltip,
   Select,
-  Button,
-  ButtonGroup,
-  Menu,
-  MenuButton,
-  MenuList,
-  MenuItem,
   FormControl,
   FormLabel,
   Input,
 } from "@chakra-ui/react"
 import { createFileRoute } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
-import { FiTrendingUp, FiDollarSign, FiShoppingBag, FiCalendar, FiBarChart2, FiChevronDown } from "react-icons/fi"
+import { FiTrendingUp, FiDollarSign, FiShoppingBag, FiBarChart2 } from "react-icons/fi"
 import { OrdersService, CustomersService } from "../../../client/sdk.gen"
 import { useState, useEffect } from "react"
 
@@ -66,14 +57,11 @@ function OrderAnalysis() {
   // State for order data analysis
   const [totalRevenue, setTotalRevenue] = useState<number>(0)
   const [averageOrderValue, setAverageOrderValue] = useState<number>(0)
-  const [monthlyGrowth, setMonthlyGrowth] = useState<number>(0)
-  const [topProducts, setTopProducts] = useState<any[]>([])
+  const [topProducts] = useState<any[]>([])
   const [ordersByStatus, setOrdersByStatus] = useState<Record<string, number>>({})
   const [recentOrders, setRecentOrders] = useState<any[]>([])
   const [conversionRate, setConversionRate] = useState<number>(0)
-  const [conversionGrowth, setConversionGrowth] = useState<number>(0)
   const [customerCompanies, setCustomerCompanies] = useState<Record<string, string>>({})
-  const [customerSegments, setCustomerSegments] = useState<Record<string, number>>({})
   const [seasonalTrends, setSeasonalTrends] = useState<Record<string, number>>({})
   const [filteredOrders, setFilteredOrders] = useState<any[]>([])
   
@@ -87,7 +75,7 @@ function OrderAnalysis() {
   const [endDate, setEndDate] = useState<Date>(new Date())
   
   // Fetch orders data
-  const { data: orders, isLoading } = useQuery({
+  const { data: orders } = useQuery({
     queryKey: ["ordersAnalysis", timeRange, startDate.toISOString(), endDate.toISOString()],
     queryFn: () => OrdersService.readOrders({ limit: 500, displayInvalid: false }),
   })
@@ -181,46 +169,19 @@ function OrderAnalysis() {
       })
       setRecentOrders(sortedOrders.slice(0, 5))
       
-      // Calculate period metrics for growth comparison
-      const currentDate = new Date()
-      
       // Determine comparison periods based on selected time range
-      let currentPeriodStart, previousPeriodStart
+      let previousPeriodStart
       const periodLength = endDate.getTime() - startDate.getTime()
       
-      currentPeriodStart = new Date(startDate)
       previousPeriodStart = new Date(startDate)
       previousPeriodStart.setTime(previousPeriodStart.getTime() - periodLength)
-      
-      const currentPeriodOrders = filtered
-      const previousPeriodOrders = orders.data.filter(order => {
-        if (!order.order_date) return false
-        const orderDate = new Date(order.order_date)
-        return orderDate >= previousPeriodStart && orderDate < startDate
-      })
-      
-      // Calculate period-over-period growth
-      if (previousPeriodOrders.length > 0) {
-        const growth = ((currentPeriodOrders.length - previousPeriodOrders.length) / previousPeriodOrders.length) * 100
-        setMonthlyGrowth(growth)
-      } else {
-        setMonthlyGrowth(0)
-      }
+    
       
       // Calculate conversion rate (completed orders / total orders)
       const completedOrders = filtered.filter(order => order.order_status === 'Delivered').length
       const conversionRateValue = filtered.length > 0 ? (completedOrders / filtered.length) * 100 : 0
       setConversionRate(conversionRateValue)
       
-      // Calculate conversion rate growth
-      const previousCompletedOrders = previousPeriodOrders.filter(order => order.order_status === 'Delivered').length
-      if (previousPeriodOrders.length > 0) {
-        const previousConversionRate = (previousCompletedOrders / previousPeriodOrders.length) * 100
-        const conversionGrowthValue = conversionRateValue - previousConversionRate
-        setConversionGrowth(conversionGrowthValue)
-      } else {
-        setConversionGrowth(0)
-      }
 
       // Analyze customer segments by order frequency
       const customerOrderCounts: Record<string, number> = {}
@@ -239,7 +200,7 @@ function OrderAnalysis() {
         else if (count >= 5) segments['Medium Volume (5-10)']++
         else segments['Low Volume (<5)']++
       })
-      setCustomerSegments(segments)
+
 
       // Analyze seasonal trends
       const monthlyOrders: Record<string, number> = {}

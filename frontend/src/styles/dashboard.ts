@@ -1,5 +1,3 @@
-import { SystemStyleObject } from "@chakra-ui/react"
-
 export const dashboardStyles = {
   container: {
     maxW: { base: "container.sm", md: "container.md", lg: "container.lg" },

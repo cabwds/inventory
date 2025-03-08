@@ -29,7 +29,6 @@ import useCustomToast from "../../../hooks/useCustomToast"
 import { modalScrollbarStyles, customerDetailsStyles } from "../../../styles/customers.styles"
 import { FaExternalLinkAlt } from "react-icons/fa"
 import { FiUser } from "react-icons/fi"
-import { formatCustomerData } from "../../../utils/customerFormUtils"
 
 // Define the search parameters schema with returnTo
 const customerDetailSearchSchema = z.object({
@@ -74,12 +73,6 @@ function CustomerDetail() {
   if (isError) {
     showToast("Error", "Failed to load customer details", "error")
   }
-
-  // Format customer data for display
-  const formattedData = customer && customer.id ? formatCustomerData({
-    ...customer,
-    id: customer.id // Ensure id is defined
-  }) : null;
 
   const customerDetails = [
     {

@@ -371,7 +371,6 @@ function OrdersTable() {
   const queryClient = useQueryClient()
   const currentUser = queryClient.getQueryData<UserPublic>(["currentUser"])
   const { page, pageSize, customerId, orderStatus, sortOrder, startDate, endDate, displayInvalid } = Route.useSearch()
-  const showToast = useCustomToast()
   const navigate = useNavigate({ from: Route.fullPath })
   const setPage = (newPage: number) =>
     navigate({ search: (prev: Record<string, unknown>) => ({ ...prev, page: newPage }) })

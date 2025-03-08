@@ -18,12 +18,12 @@ import {
   Badge,
   Divider,
 } from "@chakra-ui/react"
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { createFileRoute } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
 import { ProductsService } from "../../../client"
 import useCustomToast from "../../../hooks/useCustomToast"
 import { modalScrollbarStyles } from "../../../styles/customers.styles"
-import { getCurrencySymbol, convertToSGD } from "../../../utils/currencyUtils"
+import { convertToSGD } from "../../../utils/currencyUtils"
 import { formatDimensions, formatPrice } from "../../../utils/productFormUtils"
 
 export const Route = createFileRoute('/_layout/products/$productId')({
@@ -32,7 +32,6 @@ export const Route = createFileRoute('/_layout/products/$productId')({
 
 function ProductDetail() {
   const { productId } = Route.useParams()
-  const navigate = useNavigate()
   const showToast = useCustomToast()
 
   const { data: product, isError, isLoading } = useQuery({

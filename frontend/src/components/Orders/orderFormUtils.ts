@@ -1,5 +1,5 @@
 // Common form utilities and configuration for order forms
-import { FormSection, FormField } from './orderTypes';
+import { FormSection } from './orderTypes';
 import { ORDER_STATUS_OPTIONS, PAYMENT_STATUS_OPTIONS } from '../../utils/orderConstants';
 
 /**
@@ -90,7 +90,7 @@ export const processFormSections = (formSections: FormSection[]): FormSection[] 
 export const getSelectedProductIds = (fields: any[], getValues: Function, currentIndex: number): Set<string> => {
   return new Set(
     fields
-      .map((field, idx) => idx !== currentIndex ? getValues(`orderItemInputs.${idx}.product_id`) : null)
+      .map((idx) => idx !== currentIndex ? getValues(`orderItemInputs.${idx}.product_id`) : null)
       .filter(id => id !== null && id !== "")
   );
 }; 

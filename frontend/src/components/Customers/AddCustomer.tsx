@@ -63,7 +63,7 @@ const AddCustomer = ({ isOpen, onClose }: AddCustomerProps) => {
   }
 
   // Get form sections configuration (false for Add mode)
-  const formSections = getDefaultCustomerFormSections(false);
+  const formSections = getDefaultCustomerFormSections();
 
   return (
     <Modal

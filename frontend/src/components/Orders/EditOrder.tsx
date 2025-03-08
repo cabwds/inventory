@@ -36,7 +36,6 @@ import { modalScrollbarStyles, editCustomerStyles } from "../../styles/customers
 
 // Import shared utilities and components
 import { convertToSGD } from "../../utils/currencyUtils"
-import { ORDER_STATUS_OPTIONS, PAYMENT_STATUS_OPTIONS } from "../../utils/orderConstants"
 import { OrderItemInput, parseOrderItems } from "./orderTypes"
 import { getOrderFormSections, processFormSections } from "./orderFormUtils"
 import OrderItemsField from "./OrderItemsField"

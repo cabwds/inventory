@@ -6,10 +6,9 @@ import { CustomerPublic } from '../client';
 
 /**
  * Returns form sections configuration for customer forms
- * @param isEditMode - Whether the form is in edit mode
  * @returns Form sections configuration
  */
-export const getCustomerFormSections = (isEditMode: boolean = false): FormSection[] => {
+export const getCustomerFormSections = (): FormSection[] => {
   return [
     {
       section: "Basic Information",

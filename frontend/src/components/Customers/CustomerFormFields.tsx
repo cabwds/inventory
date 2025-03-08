@@ -93,8 +93,8 @@ const CustomerFormFields: React.FC<CustomerFormFieldsProps> = ({
 /**
  * Returns the default customer form sections configuration
  */
-export const getDefaultCustomerFormSections = (isEditMode: boolean = false): FormSection[] => {
-  return getCustomerFormSections(isEditMode);
+export const getDefaultCustomerFormSections = (): FormSection[] => {
+  return getCustomerFormSections();
 };
 
 export default CustomerFormFields; 

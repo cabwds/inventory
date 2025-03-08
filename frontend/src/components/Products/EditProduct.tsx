@@ -1,4 +1,3 @@
-import React from "react"
 import {
   Button,
   Modal,
@@ -9,8 +8,7 @@ import {
   ModalHeader,
   ModalOverlay,
   SimpleGrid,
-  Text,
-  Box,
+  Text
 } from "@chakra-ui/react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { type SubmitHandler, useForm } from "react-hook-form"

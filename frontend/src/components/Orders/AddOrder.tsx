@@ -19,7 +19,7 @@ import {
   Textarea,
 } from "@chakra-ui/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { type SubmitHandler, useForm, Controller } from "react-hook-form"
+import { type SubmitHandler, useForm } from "react-hook-form"
 import { useState, useEffect } from "react"
 
 import { type ApiError, type OrderCreate, OrdersService, CustomersService, ProductsService } from "../../client"
@@ -29,8 +29,7 @@ import { modalScrollbarStyles, editCustomerStyles } from "../../styles/customers
 
 // Import shared utilities and components
 import { convertToSGD } from "../../utils/currencyUtils"
-import { ORDER_STATUS_OPTIONS, PAYMENT_STATUS_OPTIONS } from "../../utils/orderConstants"
-import { OrderItemInput, parseOrderItems } from "./orderTypes"
+import { OrderItemInput } from "./orderTypes"
 import { getOrderFormSections, processFormSections } from "./orderFormUtils"
 import OrderItemsField from "./OrderItemsField"
 import TotalPriceField from "./TotalPriceField"

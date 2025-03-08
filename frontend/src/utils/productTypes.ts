@@ -1,6 +1,6 @@
 // Common product-related type definitions
 
-import { ProductCreate, ProductUpdate } from "../client";
+import { ProductCreate } from "../client";
 
 /**
  * Extended product create type to include id field

@@ -25,7 +25,6 @@ import {
   Th,
   Td,
   Badge,
-  Divider,
   Stat,
   StatLabel,
   StatNumber,
@@ -35,8 +34,6 @@ import {
   CardBody,
   Progress,
   Tooltip,
-  Grid,
-  GridItem,
   Tag,
 } from "@chakra-ui/react"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
@@ -101,7 +98,6 @@ function OrderDetail() {
           const productData = products.data.find(p => p.id === item.product_id);
           const unitPrice = productData?.unit_price || 0;
           const unitCost = productData?.unit_cost || 0;
-          const unitProfit = unitPrice - unitCost;
           return {
             ...item,
             product_name: productData?.id || 'Deleted Product',
@@ -210,9 +206,6 @@ function OrderDetail() {
       params: { productId: productId } 
     })
   }
-
-  // Get the maximum quantity for progress bar scaling
-  const maxQuantity = Math.max(...orderItems.map(item => item.quantity), 1);
 
   // Format price to Singapore Dollar with 2 decimal places
   const formatSGDPrice = (price: number = 0): string => {

@@ -1,10 +1,6 @@
 import React from "react"
 import {
   Button,
-  FormControl,
-  FormErrorMessage,
-  FormLabel,
-  Input,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -16,7 +12,6 @@ import {
   Text,
   Box,
   VStack,
-  Image,
   IconButton,
   Flex,
   Avatar,
@@ -177,7 +172,7 @@ const EditCustomer = ({ customer, isOpen, onClose }: EditCustomerProps) => {
   }
 
   // Get form sections configuration (true for Edit mode)
-  const formSections = getDefaultCustomerFormSections(true);
+  const formSections = getDefaultCustomerFormSections();
 
   return (
     <Modal

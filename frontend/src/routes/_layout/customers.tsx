@@ -47,22 +47,6 @@ export const Route = createFileRoute("/_layout/customers")({
   validateSearch: (search) => customersSearchSchema.parse(search),
 })
 
-function getCustomersQueryOptions({ page, pageSize, displayInvalid }: { 
-  page: number; 
-  pageSize: number;
-  displayInvalid?: boolean;
-}) {
-  return {
-    queryFn: () =>
-      CustomersService.readCustomers({ 
-        skip: (page - 1) * pageSize, 
-        limit: pageSize,
-        ...(displayInvalid !== undefined && { displayInvalid }),
-      }),
-    queryKey: ["customers", { page, pageSize, displayInvalid }],
-  }
-}
-
 function CustomersTable() {
   const queryClient = useQueryClient()
   const currentUser = queryClient.getQueryData<UserPublic>(["currentUser"])
