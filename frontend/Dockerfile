@@ -11,7 +11,7 @@ COPY ./ /app/
 
 ARG VITE_API_URL=${VITE_API_URL}
 
-RUN npm run build
+RUN npm run dev
 
 
 # Stage 1, based on Nginx, to have only the compiled app, ready for production with Nginx
