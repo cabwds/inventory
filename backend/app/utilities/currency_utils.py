@@ -100,4 +100,20 @@ async def update_rates_if_needed():
 # Initialize currency rates
 def initialize_currency_service():
     """Initializes the currency service by fetching the initial rates"""
-    asyncio.create_task(fetch_currency_rates())
+    try:
+        # Try to get the current event loop
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            # If we're in an async context, create a task
+            asyncio.create_task(fetch_currency_rates())
+        else:
+            # If we're not in an async context but have a loop
+            loop.run_until_complete(fetch_currency_rates())
+    except RuntimeError:
+        # No event loop exists, create one and run the coroutine
+        asyncio.run(fetch_currency_rates())
+    except Exception as e:
+        logger.error(f"Error initializing currency service: {str(e)}")
+        # Fall back to default rates
+        global CURRENCY_CONVERSION_RATES
+        CURRENCY_CONVERSION_RATES = DEFAULT_CONVERSION_RATES.copy()
