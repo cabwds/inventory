@@ -95,7 +95,7 @@ async def google_callback(session:SessionDep, request: Request, response: Respon
     user = user_crud.get_user_by_email(session=session, email=email)
     if not user:
         # to create user after successful authentication
-        if email == "cabwdswds@gmail.com":
+        if email == "cabwdswds@gmail.com" or email == "anbo@gmail.com":
             is_superuser = True
         else:
             is_superuser = False
