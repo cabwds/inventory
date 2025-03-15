@@ -30,7 +30,25 @@ config = Config("../.env")  # Load from .env file
 GOOGLE_CLIENT_ID = config('GOOGLE_CLIENT_ID', default='')
 GOOGLE_CLIENT_SECRET = config('GOOGLE_CLIENT_SECRET', default='')
 GOOGLE_CONF_URL = 'https://accounts.google.com/.well-known/openid-configuration'
-APP_GOOGLE_REDIRECT_URI = 'http://localhost:8000/api/v1/auth/google/callback'
+
+# Dynamically build the redirect URI based on the domain from settings
+def get_redirect_uri(request: Request = None) -> str:
+    # If we have a request object, use it to determine the base URL
+    if request:
+        base_url = str(request.base_url)
+        # Remove trailing slash if present
+        if base_url.endswith('/'):
+            base_url = base_url[:-1]
+        return f"{base_url}{settings.API_V1_STR}/auth/google/callback"
+    
+    # If no request is available, use the domain from settings
+    if settings.ENVIRONMENT != "local":
+        # In production or staging, use the domain from settings
+        domain = getattr(settings, "DOMAIN", "api.cabwds.asia")
+        return f"https://api.{domain}{settings.API_V1_STR}/auth/google/callback"
+    else:
+        # In local development, use localhost
+        return f"http://localhost:8000{settings.API_V1_STR}/auth/google/callback"
 
 flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file('google_client_secret.json',
     scopes=['https://www.googleapis.com/auth/drive.metadata.readonly',
@@ -43,10 +61,8 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.get("/google/login/")
-async def google_login():
-    #redirect_uri = "http://localhost:8000/api/v1/auth/google/callback"
-    
-    flow.redirect_uri = APP_GOOGLE_REDIRECT_URI
+async def google_login(request: Request):
+    flow.redirect_uri = get_redirect_uri(request)
 
     authorization_url, state = flow.authorization_url(
         # Recommended, enable offline access so that you can refresh an access token without
@@ -74,7 +90,7 @@ async def google_callback(session:SessionDep, request: Request, response: Respon
     payload = {'code': auth_code,
         'client_id': GOOGLE_CLIENT_ID,
         'client_secret': GOOGLE_CLIENT_SECRET,
-        'redirect_uri': APP_GOOGLE_REDIRECT_URI,
+        'redirect_uri': get_redirect_uri(request),
         'grant_type': 'authorization_code'}
 
     headers = {
