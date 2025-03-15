@@ -31,6 +31,8 @@ ENV PYTHONPATH=/app
 
 COPY ./scripts /app/scripts
 
+COPY ./Invoice_Template.xlsx /app/Invoice_Template.xlsx
+
 COPY ./pyproject.toml ./uv.lock ./alembic.ini /app/
 
 COPY ./app /app/app

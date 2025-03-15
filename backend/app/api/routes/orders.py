@@ -36,10 +36,10 @@ def get_order_invoice(session: SessionDep, order_id: str, output_currency: str =
     
     current_date = datetime.now().strftime("%d-%m-%Y")
 
-    template_path = BASE_DIR / "Invoice Template.xlsx"
+    template_path = BASE_DIR / "app/Invoice_Template.xlsx"
     output_dir = BASE_DIR / "temp"
     output_dir.mkdir(parents=True, exist_ok=True)  # Ensure 'temp' directory exists
-    output_path = output_dir / f"Invoice_{order_id}_{current_date}.xlsx"
+    output_path = output_dir / f"Invoice_out.xlsx"
 
     # Load the workbook (this preserves formatting)
     wb = load_workbook(template_path)
